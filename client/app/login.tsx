@@ -113,13 +113,20 @@ export default function Login() {
         <TouchableOpacity 
           onPress={handleDevLogin}
           disabled={loading}
-          style={{ backgroundColor: isDark ? '#374151' : '#f3f4f6', padding: 16, borderRadius: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', borderWidth: 1, borderColor: isDark ? '#4b5563' : '#e5e7eb' }}
+          style={{ backgroundColor: isDark ? '#374151' : '#f3f4f6', padding: 16, borderRadius: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', borderWidth: 1, borderColor: isDark ? '#4b5563' : '#e5e7eb', marginBottom: 20 }}
         >
           <Ionicons name="code-slash" size={20} color={isDark ? '#9ca3af' : '#6b7280'} style={{ marginRight: 8 }} />
           <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontWeight: 'bold' }}>Quick Dev Login (Auto-seed)</Text>
         </TouchableOpacity>
-      </View>
 
+        {/* Toggle to Signup */}
+        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={{ color: isDark ? '#9ca3af' : '#6b7280' }}>Don't have an account? </Text>
+          <TouchableOpacity onPress={() => router.push('/register')}>
+            <Text style={{ color: '#2563eb', fontWeight: 'bold' }}>Sign Up</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </View>
   );
 }

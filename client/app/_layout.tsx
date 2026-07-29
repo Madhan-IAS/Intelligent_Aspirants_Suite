@@ -17,7 +17,7 @@ function AppContent() {
   const router = useRouter();
   const { user, loading } = useAuth();
 
-  const isAuthPage = pathname === '/login' || pathname === '/welcome';
+  const isAuthPage = pathname === '/login' || pathname === '/welcome' || pathname === '/register';
 
   const [welcomeCompleted, setWelcomeCompleted] = useState(false);
 
@@ -31,11 +31,17 @@ function AppContent() {
   useEffect(() => {
     if (!loading && !welcomeCompleted) {
       setWelcomeCompleted(true);
-      if (pathname !== '/welcome') {
-        router.replace('/welcome');
+      if (user) {
+        if (pathname === '/welcome' || pathname === '/login' || pathname === '/register') {
+          router.replace('/');
+        }
+      } else {
+        if (pathname !== '/welcome' && pathname !== '/login' && pathname !== '/register') {
+          router.replace('/welcome');
+        }
       }
     }
-  }, [loading]);
+  }, [loading, user]);
 
   if (loading) {
     return (

@@ -162,20 +162,20 @@ exports.login = async (req, res) => {
     if (slotCount === 0) {
       const slotsWithUser = MASTER_TIMETABLE.map((s, i) => ({ ...s, userId: user._id, order: i }));
       await TimetableSlot.insertMany(slotsWithUser);
+    }
 
-      const checklistCount = await ChecklistItem.countDocuments({ userId: user._id });
-      if (checklistCount === 0) {
-        const allChecklist = [...DAILY_TARGETS, ...END_OF_DAY_CHECKLIST].map((item, i) => ({
-          ...item, userId: user._id, order: i
-        }));
-        await ChecklistItem.insertMany(allChecklist);
-      }
+    const checklistCount = await ChecklistItem.countDocuments({ userId: user._id });
+    if (checklistCount === 0) {
+      const allChecklist = [...DAILY_TARGETS, ...END_OF_DAY_CHECKLIST].map((item, i) => ({
+        ...item, userId: user._id, order: i
+      }));
+      await ChecklistItem.insertMany(allChecklist);
+    }
 
-      const weeklyCount = await WeeklySchedule.countDocuments({ userId: user._id });
-      if (weeklyCount === 0) {
-        const weeklyWithUser = WEEKLY_SCHEDULE.map((w, i) => ({ ...w, userId: user._id, order: i }));
-        await WeeklySchedule.insertMany(weeklyWithUser);
-      }
+    const weeklyCount = await WeeklySchedule.countDocuments({ userId: user._id });
+    if (weeklyCount === 0) {
+      const weeklyWithUser = WEEKLY_SCHEDULE.map((w, i) => ({ ...w, userId: user._id, order: i }));
+      await WeeklySchedule.insertMany(weeklyWithUser);
     }
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '30d' });

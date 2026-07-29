@@ -3,6 +3,17 @@ const DailyProgress = require('../models/DailyProgress');
 const ChecklistItem = require('../models/ChecklistItem');
 const WeeklySchedule = require('../models/WeeklySchedule');
 
+// Helper to get YYYY-MM-DD date string in Indian Standard Time (IST)
+const getTodayDateString = () => {
+  const date = new Date();
+  const utcOffset = date.getTime() + (date.getTimezoneOffset() * 60000);
+  const istTime = new Date(utcOffset + (3600000 * 5.5));
+  const yyyy = istTime.getFullYear();
+  const mm = String(istTime.getMonth() + 1).padStart(2, '0');
+  const dd = String(istTime.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
 // Master Seeding Arrays to initialize users on-the-fly
 const MASTER_TIMETABLE = [
   { time: '05:00 – 05:20 AM', duration: '20 min', session: 'Morning Routine', activity: 'Wake Up, Freshen Up', category: 'Morning Routine', objective: 'Prepare for the day', expectedOutput: 'Fresh & Ready', isStudyBlock: false },
@@ -136,7 +147,7 @@ exports.deleteSlot = async (req, res) => {
 // Get today's progress
 exports.getDailyProgress = async (req, res) => {
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayDateString();
     const progress = await DailyProgress.find({ userId: req.user.id, date: today });
     // Return as a map: slotId -> completed
     const progressMap = {};
@@ -150,7 +161,7 @@ exports.getDailyProgress = async (req, res) => {
 // Toggle a slot's completion for today
 exports.toggleProgress = async (req, res) => {
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayDateString();
     const { slotId } = req.params;
     
     let progress = await DailyProgress.findOne({ userId: req.user.id, date: today, slotId });
@@ -189,7 +200,7 @@ exports.getChecklistItems = async (req, res) => {
 // Get today's checklist progress (uses DailyProgress with checklist item IDs)
 exports.getChecklistProgress = async (req, res) => {
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayDateString();
     const progress = await DailyProgress.find({ userId: req.user.id, date: today });
     const progressMap = {};
     progress.forEach(p => { progressMap[p.slotId.toString()] = p.completed; });
@@ -202,7 +213,7 @@ exports.getChecklistProgress = async (req, res) => {
 // Toggle checklist item completion (reuses DailyProgress model)
 exports.toggleChecklistProgress = async (req, res) => {
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayDateString();
     const { itemId } = req.params;
 
     let progress = await DailyProgress.findOne({ userId: req.user.id, date: today, slotId: itemId });

@@ -57,20 +57,24 @@ app.use('/api/directives', directivesRoutes);
 app.use('/api/quotes', quotesRoutes);
 app.use('/api/backup', require('./routes/backup'));
 
-mongoose.connect(MONGO_URI)
-  .then(() => {
-    console.log('Connected to MongoDB');
-    
-    // Schedule Scraper at 6:00 AM every day
-    cron.schedule('0 6 * * *', () => {
-      console.log('Running daily Current Affairs scraper...');
-      runScraper();
-    });
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
 
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+if (MONGO_URI) {
+  mongoose.connect(MONGO_URI)
+    .then(() => {
+      console.log('Connected to MongoDB');
+      
+      // Schedule Scraper at 6:00 AM every day
+      cron.schedule('0 6 * * *', () => {
+        console.log('Running daily Current Affairs scraper...');
+        runScraper();
+      });
+    })
+    .catch((err) => {
+      console.error('Error connecting to MongoDB:', err.message);
     });
-  })
-  .catch((err) => {
-    console.error('Error connecting to MongoDB:', err.message);
-  });
+} else {
+  console.warn('Warning: MONGO_URI environment variable is not defined.');
+}

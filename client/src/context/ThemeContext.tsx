@@ -44,13 +44,13 @@ const lightColors: ThemeColors = {
 };
 
 const ThemeContext = createContext<ThemeContextType>({
-  mode: 'dark',
-  colors: darkColors,
+  mode: 'light',
+  colors: lightColors,
   toggleTheme: () => {},
 });
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const [mode, setMode] = useState<ThemeMode>('dark');
+  const [mode, setMode] = useState<ThemeMode>('light');
 
   useEffect(() => {
     AsyncStorage.getItem('theme').then(saved => {
@@ -64,8 +64,10 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
           }
         }
       } else {
+        // Default to light mode
+        setMode('light');
         if (Platform.OS === 'web') {
-          document.documentElement.classList.add('dark'); // Default to dark
+          document.documentElement.classList.remove('dark');
         }
       }
     });

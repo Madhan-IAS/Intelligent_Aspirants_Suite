@@ -16,6 +16,21 @@ app.get('/', (req, res) => {
   res.send('Intelligent Aspirant\'s Suite API is running...');
 });
 
+app.get('/api/health', (req, res) => {
+  const dbStatus = mongoose.connection.readyState;
+  const states = {
+    0: 'disconnected',
+    1: 'connected',
+    2: 'connecting',
+    3: 'disconnecting'
+  };
+  res.json({
+    status: 'running',
+    database: states[dbStatus] || 'unknown',
+    uri_configured: !!process.env.MONGO_URI
+  });
+});
+
 // Database Connection
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/upsc-kms';

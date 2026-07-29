@@ -48,7 +48,7 @@ export default function WelcomeScreen() {
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 800,
-      useNativeDriver: true,
+      useNativeDriver: false,
     }).start();
 
     // 2. Pulse Animation for Logo
@@ -58,13 +58,13 @@ export default function WelcomeScreen() {
           toValue: 1.05,
           duration: 1200,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(pulseAnim, {
           toValue: 1,
           duration: 1200,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: false,
         })
       ])
     ).start();
@@ -102,13 +102,13 @@ export default function WelcomeScreen() {
     Animated.timing(textFadeAnim, {
       toValue: 0,
       duration: 250,
-      useNativeDriver: true,
+      useNativeDriver: false,
     }).start(() => {
       setPhaseIndex(nextIndex);
       Animated.timing(textFadeAnim, {
         toValue: 1,
         duration: 350,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }).start();
     });
   };

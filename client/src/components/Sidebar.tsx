@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, usePathname } from 'expo-router';
 import CommandPalette from './CommandPalette';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import { scheduleLocalNotification } from '../services/notifications';
 
 interface SidebarProps {
@@ -37,6 +38,7 @@ const SidebarItem = ({ icon, label, href, onNavigate }: { icon: any, label: stri
 export default function Sidebar({ onNavigate }: SidebarProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const { mode, toggleTheme } = useTheme();
+  const { user, logout } = useAuth();
   const isDark = mode === 'dark';
 
   const handleGlobalReminder = () => {
@@ -151,6 +153,20 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
         <Ionicons name={isDark ? 'sunny' : 'moon'} size={20} color={isDark ? '#fbbf24' : '#6366f1'} />
         <Text style={{ marginLeft: 12, fontWeight: '500', color: isDark ? '#d1d5db' : '#374151' }}>{isDark ? 'Light Mode' : 'Dark Mode'}</Text>
       </TouchableOpacity>
+
+      {/* Logout Button */}
+      {user && (
+        <TouchableOpacity 
+          onPress={async () => {
+            if (onNavigate) onNavigate();
+            await logout();
+          }}
+          style={{ flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 12, backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : '#fee2e2', borderWidth: 1, borderColor: isDark ? '#ef4444' : '#fca5a5', marginTop: 8 }}
+        >
+          <Ionicons name="log-out" size={20} color="#ef4444" />
+          <Text style={{ marginLeft: 12, fontWeight: 'bold', color: '#ef4444' }}>Log Out</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }

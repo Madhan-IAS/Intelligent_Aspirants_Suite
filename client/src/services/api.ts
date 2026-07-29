@@ -8,7 +8,8 @@ const getBackendURL = () => {
   }
   
   if (Platform.OS === 'web') {
-    return 'http://localhost:5000/api';
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+    return `http://${hostname}:5000/api`;
   }
 
   // Automatically extract host IP from Expo hostUri on physical mobile devices

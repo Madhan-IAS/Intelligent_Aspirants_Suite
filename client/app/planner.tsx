@@ -64,9 +64,21 @@ export default function Planner() {
 
   // Determine which day in the 8-day rotation we are on
   const getRotationDay = () => {
-    const startDate = new Date('2026-07-28'); // Reference start date
-    const today = new Date();
-    const diffDays = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    // Reference date: July 28, 2026
+    const startYear = 2026;
+    const startMonth = 6; // July is 6 (0-indexed)
+    const startDateNum = 28;
+    
+    // Get current local date in Asia/Kolkata timezone
+    const now = new Date();
+    const utcOffset = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const istTime = new Date(utcOffset + (3600000 * 5.5));
+    
+    const start = new Date(startYear, startMonth, startDateNum);
+    const todayLocal = new Date(istTime.getFullYear(), istTime.getMonth(), istTime.getDate());
+    
+    const diffTime = todayLocal.getTime() - start.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
     return Math.abs(diffDays) % 8;
   };
 

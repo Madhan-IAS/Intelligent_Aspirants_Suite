@@ -1,0 +1,10 @@
+const express = require('express');
+const router = express.Router();
+const caController = require('../controllers/currentAffairsController');
+
+router.get('/', caController.getAllCurrentAffairs);
+router.get('/topic/:topicId', caController.getArticlesByTopic);
+router.post('/', caController.createArticle);
+router.delete('/:id', caController.deleteArticle);
+
+module.exports = router;

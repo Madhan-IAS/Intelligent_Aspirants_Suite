@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "IAS — Intelligent Aspirant's Suite",
+    "slug": "ias",
+    "scheme": "ias-kms",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/ias_logo.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "name": "IAS — Intelligent Aspirant's Suite",
+      "shortName": "IAS",
+      "favicon": "./assets/ias_logo.png"
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}

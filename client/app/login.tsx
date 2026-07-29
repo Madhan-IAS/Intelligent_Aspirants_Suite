@@ -103,24 +103,8 @@ export default function Login() {
           {loading ? <ActivityIndicator color="white" /> : <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 18 }}>Login</Text>}
         </TouchableOpacity>
 
-        <View style={{ position: 'relative', alignItems: 'center', paddingVertical: 16 }}>
-          <View style={{ position: 'absolute', top: '50%', width: '100%', borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#e5e7eb' }} />
-          <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', paddingHorizontal: 16 }}>
-            <Text style={{ color: isDark ? '#6b7280' : '#9ca3af' }}>OR</Text>
-          </View>
-        </View>
-
-        <TouchableOpacity 
-          onPress={handleDevLogin}
-          disabled={loading}
-          style={{ backgroundColor: isDark ? '#374151' : '#f3f4f6', padding: 16, borderRadius: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', borderWidth: 1, borderColor: isDark ? '#4b5563' : '#e5e7eb', marginBottom: 20 }}
-        >
-          <Ionicons name="code-slash" size={20} color={isDark ? '#9ca3af' : '#6b7280'} style={{ marginRight: 8 }} />
-          <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontWeight: 'bold' }}>Quick Dev Login (Auto-seed)</Text>
-        </TouchableOpacity>
-
         {/* Toggle to Signup */}
-        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 12 }}>
           <Text style={{ color: isDark ? '#9ca3af' : '#6b7280' }}>Don't have an account? </Text>
           <TouchableOpacity onPress={() => router.push('/register')}>
             <Text style={{ color: '#2563eb', fontWeight: 'bold' }}>Sign Up</Text>

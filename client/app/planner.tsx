@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../src/context/ThemeContext';
 import api from '../src/services/api';
+import { playCompletionSound } from '../src/services/sound';
 
 const CATEGORY_COLORS: Record<string, string> = {
   Study: '#3b82f6',
@@ -97,7 +98,11 @@ export default function Planner() {
 
   const toggleSlot = async (slotId: string) => {
     try {
-      setProgress(prev => ({ ...prev, [slotId]: !prev[slotId] }));
+      const nextVal = !progress[slotId];
+      setProgress(prev => ({ ...prev, [slotId]: nextVal }));
+      if (nextVal) {
+        await playCompletionSound();
+      }
       await api.post(`/timetable/progress/${slotId}`);
     } catch (error) {
       console.error('Error toggling progress:', error);
@@ -107,7 +112,11 @@ export default function Planner() {
 
   const toggleChecklistItem = async (itemId: string) => {
     try {
-      setProgress(prev => ({ ...prev, [itemId]: !prev[itemId] }));
+      const nextVal = !progress[itemId];
+      setProgress(prev => ({ ...prev, [itemId]: nextVal }));
+      if (nextVal) {
+        await playCompletionSound();
+      }
       await api.post(`/timetable/checklist/progress/${itemId}`);
     } catch (error) {
       console.error('Error toggling checklist item progress:', error);

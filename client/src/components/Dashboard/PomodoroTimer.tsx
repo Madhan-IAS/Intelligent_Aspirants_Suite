@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import api from '../../services/api';
 import { scheduleLocalNotification } from '../../services/notifications';
+import { playCompletionSound } from '../../services/sound';
 
 interface ActiveSlot {
   _id: string;
@@ -315,6 +316,9 @@ const PomodoroTimer = ({
 
   const handleSessionComplete = async () => {
     const displayMins = Math.ceil(sessionSeconds / 60);
+
+    // Play remainder ringtone/chime
+    await playCompletionSound();
 
     if (Platform.OS === 'web') {
       window.alert(`Focus session complete for ${currentBoundSlot ? currentBoundSlot.activity : subject}! Great job.`);

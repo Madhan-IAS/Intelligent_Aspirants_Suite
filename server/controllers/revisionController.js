@@ -9,6 +9,7 @@ exports.getPendingRevisions = async (req, res) => {
     today.setHours(23, 59, 59, 999); // End of today
 
     const revisions = await Revision.find({
+      userId: req.user.id,
       status: 'Pending',
       scheduledDate: { $lte: today }
     }).populate('topicId');
@@ -27,6 +28,7 @@ exports.scheduleInitialRevision = async (req, res) => {
     nextDate.setDate(nextDate.getDate() + 1); // First revision is 1 day later
     
     const revision = new Revision({
+      userId: req.user.id,
       topicId,
       interval: 1,
       scheduledDate: nextDate
@@ -41,7 +43,7 @@ exports.scheduleInitialRevision = async (req, res) => {
 
 exports.completeRevision = async (req, res) => {
   try {
-    const revision = await Revision.findById(req.params.id);
+    const revision = await Revision.findOne({ _id: req.params.id, userId: req.user.id });
     if (!revision) return res.status(404).json({ message: 'Revision not found' });
     
     // Mark current as completed
@@ -57,6 +59,7 @@ exports.completeRevision = async (req, res) => {
       nextDate.setDate(nextDate.getDate() + nextInterval);
       
       const nextRevision = new Revision({
+        userId: req.user.id,
         topicId: revision.topicId,
         interval: nextInterval,
         scheduledDate: nextDate

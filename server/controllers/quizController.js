@@ -9,7 +9,11 @@ exports.getDailyQuiz = async (req, res) => {
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
 
-    let quiz = await Quiz.findOne({ date: { $gte: startOfDay }, type: 'Daily' });
+    let quiz = await Quiz.findOne({ 
+      userId: req.user.id,
+      date: { $gte: startOfDay }, 
+      type: 'Daily' 
+    });
     res.json(quiz);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching daily quiz', error: error.message });
@@ -78,6 +82,7 @@ exports.generateDailyQuiz = async (req, res) => {
     }));
 
     const newQuiz = new Quiz({
+      userId: req.user.id,
       type: 'Daily',
       questions,
       status: 'Pending'
@@ -96,7 +101,12 @@ exports.submitQuiz = async (req, res) => {
     const { id } = req.params;
     const { score } = req.body;
     
-    const quiz = await Quiz.findByIdAndUpdate(id, { status: 'Completed', score }, { new: true });
+    const quiz = await Quiz.findOneAndUpdate(
+      { _id: id, userId: req.user.id }, 
+      { status: 'Completed', score }, 
+      { new: true }
+    );
+    if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
     res.json(quiz);
   } catch (error) {
     res.status(500).json({ message: 'Error submitting quiz', error: error.message });

@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Image, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import api from '../src/services/api';
 import { useAuth } from '../src/context/AuthContext';
 import { useTheme } from '../src/context/ThemeContext';
+import api from '../src/services/api';
 
 export default function Register() {
   const router = useRouter();
@@ -24,7 +23,6 @@ export default function Register() {
       return;
     }
 
-    // Clean username input (remove spaces or @ if entered accidentally)
     const cleanUsername = username.replace(/[^a-zA-Z0-9._-]/g, '').toLowerCase();
     if (!cleanUsername) {
       setError('Please enter a valid username');
@@ -77,7 +75,7 @@ export default function Register() {
           <View>
             <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', marginBottom: 8, fontWeight: '500' }}>Full Name</Text>
             <TextInput 
-              style={{ backgroundColor: isDark ? '#111827' : '#f9fafb', color: isDark ? 'white' : '#111827', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', outlineStyle: 'none' } as any}
+              style={{ backgroundColor: isDark ? '#111827' : '#f9fafb', color: isDark ? 'white' : '#111827', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', outlineStyle: Platform.OS === 'web' ? 'none' : undefined } as any}
               placeholder="Madhan Mohan"
               placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
               value={name}
@@ -94,15 +92,14 @@ export default function Register() {
               backgroundColor: isDark ? '#111827' : '#f9fafb', 
               borderRadius: 12, 
               borderWidth: 1, 
-              borderColor: isDark ? '#374151' : '#e5e7eb',
-              overflow: 'hidden'
+              borderColor: isDark ? '#374151' : '#e5e7eb'
             }}>
               <TextInput 
                 style={{ 
                   flex: 1, 
                   color: isDark ? 'white' : '#111827', 
                   padding: 16, 
-                  outlineStyle: 'none' 
+                  outlineStyle: Platform.OS === 'web' ? 'none' : undefined 
                 } as any}
                 placeholder="madhan"
                 placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
@@ -110,16 +107,14 @@ export default function Register() {
                 onChangeText={(val) => setUsername(val.replace(/[^a-zA-Z0-9._-]/g, ''))}
                 autoCapitalize="none"
               />
-              <View style={{ 
-                backgroundColor: isDark ? '#1f2937' : '#e5e7eb', 
-                height: '100%', 
-                paddingHorizontal: 16, 
-                justifyContent: 'center',
-                borderLeftWidth: 1,
-                borderLeftColor: isDark ? '#374151' : '#d1d5db'
+              <Text style={{ 
+                color: isDark ? '#9ca3af' : '#4b5563', 
+                fontWeight: 'bold', 
+                fontSize: 14,
+                paddingRight: 16
               }}>
-                <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', fontWeight: 'bold', fontSize: 14 }}>@upsc.kms</Text>
-              </View>
+                @upsc.kms
+              </Text>
             </View>
           </View>
 
@@ -127,7 +122,7 @@ export default function Register() {
           <View>
             <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', marginBottom: 8, fontWeight: '500' }}>Password</Text>
             <TextInput 
-              style={{ backgroundColor: isDark ? '#111827' : '#f9fafb', color: isDark ? 'white' : '#111827', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', outlineStyle: 'none' } as any}
+              style={{ backgroundColor: isDark ? '#111827' : '#f9fafb', color: isDark ? 'white' : '#111827', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', outlineStyle: Platform.OS === 'web' ? 'none' : undefined } as any}
               placeholder="••••••••"
               placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
               value={password}

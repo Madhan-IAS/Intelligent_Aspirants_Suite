@@ -9,20 +9,26 @@ const ASPIRANT_PHASES = [
   {
     icon: 'school',
     title: 'UPSC CSE 2027',
-    subtitle: 'The Dedicated Journey to LBSNAA Begins',
+    subtitle: 'Building Unbreakable Discipline & The LBSNAA Dream',
     badge: 'STAGE 1: FOUNDATION'
   },
   {
     icon: 'book',
-    title: 'GS I-IV & Optional Mastery',
-    subtitle: '1000+ Structured Topics, PYQs & Answer Evaluation',
-    badge: 'STAGE 2: STRATEGY'
+    title: 'GS I-IV, CSAT & Optional Integration',
+    subtitle: '1000+ Topic Micro-Trackers & Daily Answer Writing',
+    badge: 'STAGE 2: STRATEGY & SYLLABUS'
   },
   {
-    icon: 'timer',
-    title: 'Smart 3-5-7 Revisions',
-    subtitle: 'Deep Work Analytics & Intelligent Daily Planner',
-    badge: 'STAGE 3: EXECUTION'
+    icon: 'refresh-circle',
+    title: 'Scientific 3-5-7 Spaced Repetition',
+    subtitle: 'Automated Flashcards, Active Recall & Memory Engine',
+    badge: 'STAGE 3: REVISION ENGINE'
+  },
+  {
+    icon: 'stats-chart',
+    title: 'Intelligent Daily Planner & Analytics',
+    subtitle: 'Optimizing Study Hours & Real-Time Performance Heatmaps',
+    badge: 'STAGE 4: PEAK PERFORMANCE'
   }
 ];
 
@@ -39,63 +45,79 @@ export default function WelcomeScreen() {
   const textFadeAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    // 1. Initial Fade In
+    // 1. Initial Screen Fade In
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 800,
       useNativeDriver: false,
     }).start();
 
-    // 2. Pulse Animation for Logo
+    // 2. Pulse Animation for Emblem Logo (Slower, elegant 1.6s pulse)
     Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
-          toValue: 1.05,
-          duration: 1200,
+          toValue: 1.06,
+          duration: 1600,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: false,
         }),
         Animated.timing(pulseAnim, {
           toValue: 1,
-          duration: 1200,
+          duration: 1600,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: false,
         })
       ])
     ).start();
 
-    // 3. 5-Second Progress Bar
+    // 3. 10-Second Linear Progress Bar
     Animated.timing(progressAnim, {
       toValue: 1,
-      duration: 5000,
+      duration: 10000,
       easing: Easing.linear,
       useNativeDriver: false,
     }).start();
 
-    // 4. Phase Text Rotations (at 1.7s and 3.4s)
+    // 4. Smooth Phase Text Rotations (every 2.5 seconds: at 2.5s, 5.0s, and 7.5s)
     const timer1 = setTimeout(() => {
       animateTextChange(1);
-    }, 1700);
+    }, 2500);
 
     const timer2 = setTimeout(() => {
       animateTextChange(2);
-    }, 3400);
-
-    // 5. Final Redirect after 5.0 seconds
-    const timerFinal = setTimeout(() => {
-      if (user) {
-        router.replace('/');
-      } else {
-        router.replace('/login');
-      }
     }, 5000);
+
+    const timer3 = setTimeout(() => {
+      animateTextChange(3);
+    }, 7500);
+
+    // 5. Final Redirect after 10.0 seconds
+    const timerFinal = setTimeout(() => {
+      handleNext();
+    }, 10000);
 
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
+      clearTimeout(timer3);
       clearTimeout(timerFinal);
     };
-  }, [user]);
+  }, []);
+
+  const animateTextChange = (nextIndex: number) => {
+    Animated.timing(textFadeAnim, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: false,
+    }).start(() => {
+      setPhaseIndex(nextIndex);
+      Animated.timing(textFadeAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: false,
+      }).start();
+    });
+  };
 
   const handleNext = () => {
     if (user) {
@@ -103,25 +125,6 @@ export default function WelcomeScreen() {
     } else {
       router.replace('/login');
     }
-  };
-
-  const animateTextChange = (nextIndex: number) => {
-    Animated.timing(textFadeAnim, {
-      toValue: 0,
-      duration: 250,
-      useNativeDriver: false,
-    }).start(() => {
-      setPhaseIndex(nextIndex);
-      Animated.timing(textFadeAnim, {
-        toValue: 1,
-        duration: 350,
-        useNativeDriver: false,
-      }).start();
-    });
-  };
-
-  const handleSkip = () => {
-    router.replace('/login');
   };
 
   const currentPhase = ASPIRANT_PHASES[phaseIndex];
@@ -144,7 +147,7 @@ export default function WelcomeScreen() {
       {/* Top Bar: Skip Button */}
       <View style={{ width: '100%', flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' }}>
         <TouchableOpacity 
-          onPress={handleSkip}
+          onPress={handleNext}
           style={{
             backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
             paddingHorizontal: 16,
@@ -170,33 +173,33 @@ export default function WelcomeScreen() {
           width: '100%'
         }}
       >
-        {/* Pulsing Logo Container */}
+        {/* Pulsing Emblem Container */}
         <Animated.View 
           style={{
             transform: [{ scale: pulseAnim }],
-            width: 200,
-            height: 200,
-            borderRadius: 44,
+            width: 210,
+            height: 210,
+            borderRadius: 48,
             backgroundColor: '#ffffff',
             justifyContent: 'center',
             alignItems: 'center',
             shadowColor: '#2563eb',
             shadowOffset: { width: 0, height: 12 },
-            shadowOpacity: 0.18,
-            shadowRadius: 24,
-            elevation: 12,
+            shadowOpacity: 0.2,
+            shadowRadius: 26,
+            elevation: 14,
             borderWidth: 1,
-            borderColor: 'rgba(37, 99, 235, 0.15)',
+            borderColor: 'rgba(37, 99, 235, 0.18)',
             marginBottom: 36,
           }}
         >
           <Image 
             source={require('../assets/ias_logo.png')} 
-            style={{ width: 155, height: 155, resizeMode: 'contain' }}
+            style={{ width: 160, height: 160, resizeMode: 'contain' }}
           />
         </Animated.View>
 
-        {/* Title */}
+        {/* Suite Title */}
         <Text 
           style={{
             color: isDark ? '#ffffff' : '#111827',
@@ -210,49 +213,49 @@ export default function WelcomeScreen() {
           IAS — Intelligent Aspirant's Suite
         </Text>
 
-        {/* Dynamic Aspirant Work & Progress Phase */}
-        <Animated.View style={{ opacity: textFadeAnim, alignItems: 'center', minHeight: 90, paddingHorizontal: 12 }}>
+        {/* Dynamic Aspirant Work & Progress Phase Carousel */}
+        <Animated.View style={{ opacity: textFadeAnim, alignItems: 'center', minHeight: 95, paddingHorizontal: 16 }}>
           <View 
             style={{ 
               backgroundColor: 'rgba(37, 99, 235, 0.12)', 
-              paddingHorizontal: 12, 
-              paddingVertical: 4, 
+              paddingHorizontal: 14, 
+              paddingVertical: 5, 
               borderRadius: 12, 
               marginBottom: 10,
               flexDirection: 'row',
               alignItems: 'center'
             }}
           >
-            <Ionicons name={currentPhase.icon as any} size={13} color="#2563eb" style={{ marginRight: 6 }} />
+            <Ionicons name={currentPhase.icon as any} size={14} color="#2563eb" style={{ marginRight: 6 }} />
             <Text style={{ color: '#2563eb', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 }}>
               {currentPhase.badge}
             </Text>
           </View>
 
-          <Text style={{ color: isDark ? '#f3f4f6' : '#1f2937', fontSize: 16, fontWeight: 'bold', textAlign: 'center', marginBottom: 4 }}>
+          <Text style={{ color: isDark ? '#f3f4f6' : '#1f2937', fontSize: 17, fontWeight: 'bold', textAlign: 'center', marginBottom: 4 }}>
             {currentPhase.title}
           </Text>
 
-          <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 13, textAlign: 'center' }}>
+          <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 13, textAlign: 'center', lineHeight: 18 }}>
             {currentPhase.subtitle}
           </Text>
         </Animated.View>
       </Animated.View>
 
-      {/* Bottom Bar: 5-Second Progress Indicator */}
+      {/* Bottom Bar: 10-Second Progress Indicator */}
       <View style={{ width: '85%', alignItems: 'center' }}>
-        <View style={{ width: '100%', height: 4, backgroundColor: isDark ? '#1f2937' : '#e5e7eb', borderRadius: 2, overflow: 'hidden', marginBottom: 8 }}>
+        <View style={{ width: '100%', height: 5, backgroundColor: isDark ? '#1f2937' : '#e5e7eb', borderRadius: 3, overflow: 'hidden', marginBottom: 8 }}>
           <Animated.View 
             style={{ 
               width: progressWidth, 
               height: '100%', 
               backgroundColor: '#2563eb',
-              borderRadius: 2 
+              borderRadius: 3 
             }} 
           />
         </View>
-        <Text style={{ color: isDark ? '#4b5563' : '#9ca3af', fontSize: 11 }}>
-          Initializing Aspirant Environment...
+        <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11, fontWeight: '500' }}>
+          Preparing Aspirant Workspace...
         </Text>
       </View>
     </View>

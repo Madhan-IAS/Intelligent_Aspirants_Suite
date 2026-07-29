@@ -39,11 +39,6 @@ export default function WelcomeScreen() {
   const textFadeAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    if (user) {
-      router.replace('/');
-      return;
-    }
-
     // 1. Initial Fade In
     Animated.timing(fadeAnim, {
       toValue: 1,
@@ -86,9 +81,13 @@ export default function WelcomeScreen() {
       animateTextChange(2);
     }, 3400);
 
-    // 5. Final Redirect to Login at 5.0 seconds
+    // 5. Final Redirect after 5.0 seconds
     const timerFinal = setTimeout(() => {
-      router.replace('/login');
+      if (user) {
+        router.replace('/');
+      } else {
+        router.replace('/login');
+      }
     }, 5000);
 
     return () => {
@@ -97,6 +96,14 @@ export default function WelcomeScreen() {
       clearTimeout(timerFinal);
     };
   }, [user]);
+
+  const handleNext = () => {
+    if (user) {
+      router.replace('/');
+    } else {
+      router.replace('/login');
+    }
+  };
 
   const animateTextChange = (nextIndex: number) => {
     Animated.timing(textFadeAnim, {

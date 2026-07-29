@@ -30,8 +30,6 @@ function AppContent() {
     if (!loading) {
       if (!user && !isAuthPage) {
         router.replace('/welcome');
-      } else if (user && isAuthPage) {
-        router.replace('/');
       }
     }
   }, [user, loading, pathname]);

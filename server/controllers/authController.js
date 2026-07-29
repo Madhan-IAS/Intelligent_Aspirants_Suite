@@ -149,6 +149,35 @@ exports.login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
+    // Auto-seed user profile values if missing
+    if (!user.targetAttempt || !user.dailyTargetHours || !user.optionalSubject) {
+      user.targetAttempt = user.targetAttempt || 2027;
+      user.dailyTargetHours = user.dailyTargetHours || 14;
+      user.optionalSubject = user.optionalSubject || 'Sociology';
+      await user.save();
+    }
+
+    // Auto-seed user-specific timetable/checklists if missing (for older accounts like shashi@upsc.kms)
+    const slotCount = await TimetableSlot.countDocuments({ userId: user._id });
+    if (slotCount === 0) {
+      const slotsWithUser = MASTER_TIMETABLE.map((s, i) => ({ ...s, userId: user._id, order: i }));
+      await TimetableSlot.insertMany(slotsWithUser);
+
+      const checklistCount = await ChecklistItem.countDocuments({ userId: user._id });
+      if (checklistCount === 0) {
+        const allChecklist = [...DAILY_TARGETS, ...END_OF_DAY_CHECKLIST].map((item, i) => ({
+          ...item, userId: user._id, order: i
+        }));
+        await ChecklistItem.insertMany(allChecklist);
+      }
+
+      const weeklyCount = await WeeklySchedule.countDocuments({ userId: user._id });
+      if (weeklyCount === 0) {
+        const weeklyWithUser = WEEKLY_SCHEDULE.map((w, i) => ({ ...w, userId: user._id, order: i }));
+        await WeeklySchedule.insertMany(weeklyWithUser);
+      }
+    }
+
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '30d' });
     res.json({ token, user });
   } catch (error) {

@@ -6,7 +6,7 @@ import MobileNavigation from '../src/components/MobileNavigation';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { ThemeProvider, useTheme } from '../src/context/ThemeContext';
 import { registerForPushNotificationsAsync } from '../src/services/notifications';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 function AppContent() {
   const { mode } = useTheme();
@@ -19,6 +19,8 @@ function AppContent() {
 
   const isAuthPage = pathname === '/login' || pathname === '/welcome';
 
+  const [welcomeCompleted, setWelcomeCompleted] = useState(false);
+
   useEffect(() => {
     registerForPushNotificationsAsync();
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
@@ -27,12 +29,13 @@ function AppContent() {
   }, []);
 
   useEffect(() => {
-    if (!loading) {
-      if (!user && !isAuthPage) {
+    if (!loading && !welcomeCompleted) {
+      setWelcomeCompleted(true);
+      if (pathname !== '/welcome') {
         router.replace('/welcome');
       }
     }
-  }, [user, loading, pathname]);
+  }, [loading]);
 
   if (loading) {
     return (

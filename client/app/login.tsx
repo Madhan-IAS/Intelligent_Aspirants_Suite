@@ -56,7 +56,7 @@ export default function Login() {
         <View style={{ alignItems: 'center', marginBottom: 32 }}>
           <Image 
             source={require('../assets/ias_logo.png')} 
-            style={{ width: 64, height: 64, borderRadius: 16, marginBottom: 16 }} 
+            style={{ width: 120, height: 120, borderRadius: 24, marginBottom: 16 }} 
           />
           <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 24, fontWeight: 'bold' }}>IAS</Text>
           <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 14, marginTop: 4 }}>Intelligent Aspirant's Suite</Text>

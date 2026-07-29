@@ -1,9 +1,9 @@
 import "../global.css";
-import { Slot } from 'expo-router';
-import { View, StyleSheet, Platform, useWindowDimensions } from 'react-native';
+import { Slot, usePathname, useRouter } from 'expo-router';
+import { View, StyleSheet, Platform, useWindowDimensions, ActivityIndicator } from 'react-native';
 import Sidebar from '../src/components/Sidebar';
 import MobileNavigation from '../src/components/MobileNavigation';
-import { AuthProvider } from '../src/context/AuthContext';
+import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { ThemeProvider, useTheme } from '../src/context/ThemeContext';
 import { registerForPushNotificationsAsync } from '../src/services/notifications';
 import { useEffect } from 'react';
@@ -13,6 +13,11 @@ function AppContent() {
   const isDark = mode === 'dark';
   const { width } = useWindowDimensions();
   const isMobile = Platform.OS !== 'web' || width < 768;
+  const pathname = usePathname();
+  const router = useRouter();
+  const { user, loading } = useAuth();
+
+  const isAuthPage = pathname === '/login' || pathname === '/welcome';
 
   useEffect(() => {
     registerForPushNotificationsAsync();
@@ -20,6 +25,33 @@ function AppContent() {
       document.title = "IAS — Intelligent Aspirant's Suite";
     }
   }, []);
+
+  useEffect(() => {
+    if (!loading) {
+      if (!user && !isAuthPage) {
+        router.replace('/welcome');
+      } else if (user && isAuthPage) {
+        router.replace('/');
+      }
+    }
+  }, [user, loading, pathname]);
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: isDark ? '#111827' : '#ffffff', justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#2563eb" />
+      </View>
+    );
+  }
+
+  // Hide navigation bar completely on Welcome and Login pages or when logged out
+  if (isAuthPage || !user) {
+    return (
+      <View style={{ flex: 1, backgroundColor: isDark ? '#111827' : '#ffffff' }}>
+        <Slot />
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: isDark ? '#111827' : '#f9fafb' }]}>

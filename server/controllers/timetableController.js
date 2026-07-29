@@ -69,20 +69,20 @@ const ensureUserSeeded = async (userId) => {
   if (slotCount === 0) {
     const slotsWithUser = MASTER_TIMETABLE.map((s, i) => ({ ...s, userId, order: i }));
     await TimetableSlot.insertMany(slotsWithUser);
+  }
 
-    const checklistCount = await ChecklistItem.countDocuments({ userId });
-    if (checklistCount === 0) {
-      const allChecklist = [...DAILY_TARGETS, ...END_OF_DAY_CHECKLIST].map((item, i) => ({
-        ...item, userId, order: i
-      }));
-      await ChecklistItem.insertMany(allChecklist);
-    }
+  const checklistCount = await ChecklistItem.countDocuments({ userId });
+  if (checklistCount === 0) {
+    const allChecklist = [...DAILY_TARGETS, ...END_OF_DAY_CHECKLIST].map((item, i) => ({
+      ...item, userId, order: i
+    }));
+    await ChecklistItem.insertMany(allChecklist);
+  }
 
-    const weeklyCount = await WeeklySchedule.countDocuments({ userId });
-    if (weeklyCount === 0) {
-      const weeklyWithUser = WEEKLY_SCHEDULE.map((w, i) => ({ ...w, userId, order: i }));
-      await WeeklySchedule.insertMany(weeklyWithUser);
-    }
+  const weeklyCount = await WeeklySchedule.countDocuments({ userId });
+  if (weeklyCount === 0) {
+    const weeklyWithUser = WEEKLY_SCHEDULE.map((w, i) => ({ ...w, userId, order: i }));
+    await WeeklySchedule.insertMany(weeklyWithUser);
   }
 };
 

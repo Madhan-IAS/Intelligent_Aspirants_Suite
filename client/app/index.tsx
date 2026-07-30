@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Platform, StatusBar, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Platform, StatusBar, TouchableOpacity, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -14,7 +14,10 @@ export default function Dashboard() {
   const params = useLocalSearchParams();
   const { focusSlotId, focusActivity, focusDuration, focusCategory } = params;
   const { user, loading: authLoading } = useAuth();
-  const [stats, setStats] = useState({ topics: 0, pyqs: 0, revisions: 0, currentAffairs: 0, answers: 0 });
+  const { width } = useWindowDimensions();
+  const isDesktop = width > 768;
+
+  const [stats, setStats] = useState({ topics: 0, totalTopics: 0, pyqs: 0, revisions: 0, currentAffairs: 0, answers: 0 });
   const [recentTopics, setRecentTopics] = useState<any[]>([]);
   const [pendingRevisions, setPendingRevisions] = useState<any[]>([]);
   const [subjectProgress, setSubjectProgress] = useState<{ name: string; total: number; completed: number; color: string }[]>([]);
@@ -72,15 +75,17 @@ export default function Dashboard() {
       const prog = subjects.map(s => ({
         name: s.name,
         total: s.data.length,
-        completed: s.data.filter((t: any) => t.status === 'Completed').length,
+        completed: s.data.filter((t: any) => t.completed || t.status === 'Completed').length,
         color: s.color
       }));
       setSubjectProgress(prog);
 
       const allTopics = [...gs1Res.data, ...gs2Res.data, ...gs3Res.data, ...gs4Res.data, ...socioRes.data];
+      const completedCount = allTopics.filter((t: any) => t.completed || t.status === 'Completed').length;
       
       setStats({
-        topics: allTopics.length,
+        topics: completedCount,
+        totalTopics: allTopics.length,
         pyqs: pyqsRes.data.length,
         revisions: revisionsRes.data.length,
         currentAffairs: caRes.data.length,
@@ -118,6 +123,8 @@ export default function Dashboard() {
   }
 
   if (!user) return null;
+
+  const overallPct = stats.totalTopics > 0 ? ((stats.topics / stats.totalTopics) * 100).toFixed(1) : '0.0';
 
   return (
     <View style={{ flex: 1, backgroundColor: isDark ? '#111827' : '#f9fafb' }}>
@@ -163,16 +170,16 @@ export default function Dashboard() {
             <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 12, marginTop: 4 }}>3-5-7 System</Text>
           </TouchableOpacity>
 
-          <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', borderRadius: 16, padding: 20, flex: 1, minWidth: 140, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
+          <TouchableOpacity onPress={() => router.push('/gs/GS I' as any)} style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', borderRadius: 16, padding: 20, flex: 1, minWidth: 140, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontWeight: '500', fontSize: 14 }}>Topics Covered</Text>
+              <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontWeight: '500', fontSize: 14 }}>Syllabus Covered</Text>
               <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(16, 185, 129, 0.2)', alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="book" size={20} color="#10b981" />
               </View>
             </View>
-            <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 30, fontWeight: 'bold' }}>{stats.topics}</Text>
-            <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 12, marginTop: 4 }}>Across all GS papers</Text>
-          </View>
+            <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 24, fontWeight: 'bold' }}>{stats.topics} / {stats.totalTopics}</Text>
+            <Text style={{ color: '#10b981', fontSize: 12, fontWeight: '600', marginTop: 4 }}>{overallPct}% Completed</Text>
+          </TouchableOpacity>
 
           <TouchableOpacity onPress={() => router.push('/current-affairs')} style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', borderRadius: 16, padding: 20, flex: 1, minWidth: 140, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
@@ -187,8 +194,8 @@ export default function Dashboard() {
         </View>
 
         {/* Pomodoro & Heatmap Row */}
-        <View style={{ flexDirection: Platform.OS === 'web' && window.innerWidth > 768 ? 'row' : 'column', gap: 24, marginBottom: 32 }}>
-          <View style={{ flex: 1 }}>
+        <View style={{ flexDirection: isDesktop ? 'row' : 'column', gap: 24, marginBottom: 32 }}>
+          <View style={{ flex: isDesktop ? 1 : undefined, width: '100%' }}>
             <PomodoroTimer 
               activeSlot={focusSlotId ? {
                 _id: focusSlotId as string,
@@ -221,7 +228,7 @@ export default function Dashboard() {
               }}
             />
           </View>
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: isDesktop ? 1 : undefined, width: '100%' }}>
             <Heatmap />
           </View>
         </View>
@@ -253,9 +260,9 @@ export default function Dashboard() {
           </View>
 
           {/* Recent Topics + Pending Revisions */}
-          <View style={{ flexDirection: Platform.OS === 'web' && window.innerWidth > 768 ? 'row' : 'column', gap: 24 }}>
+          <View style={{ flexDirection: isDesktop ? 'row' : 'column', gap: 24 }}>
             {/* Recent Topics */}
-            <View style={{ flex: 1, backgroundColor: isDark ? '#1f2937' : '#ffffff', borderRadius: 16, padding: 24, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
+            <View style={{ flex: isDesktop ? 1 : undefined, width: '100%', backgroundColor: isDark ? '#1f2937' : '#ffffff', borderRadius: 16, padding: 24, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 18, fontWeight: 'bold' }}>Recent Topics</Text>
                 <TouchableOpacity onPress={() => router.push('/gs/GS I' as any)}>
@@ -283,7 +290,7 @@ export default function Dashboard() {
             </View>
 
             {/* Pending Revisions */}
-            <View style={{ flex: 1, backgroundColor: isDark ? '#1f2937' : '#ffffff', borderRadius: 16, padding: 24, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
+            <View style={{ flex: isDesktop ? 1 : undefined, width: '100%', backgroundColor: isDark ? '#1f2937' : '#ffffff', borderRadius: 16, padding: 24, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 18, fontWeight: 'bold' }}>Pending Revisions</Text>
                 <TouchableOpacity onPress={() => router.push('/revision')}>
@@ -315,6 +322,20 @@ export default function Dashboard() {
           {/* Syllabus Completion Breakdown */}
           <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', borderRadius: 16, padding: 24, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
             <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 18, fontWeight: 'bold', marginBottom: 16 }}>Syllabus Completion Breakdown</Text>
+            
+            {/* Master Overall Progress Bar */}
+            <View style={{ marginBottom: 20, paddingBottom: 16, borderBottomWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold', fontSize: 15 }}>Master Mastery Progress</Text>
+                <Text style={{ color: '#10b981', fontWeight: 'bold', fontSize: 14 }}>
+                  {stats.topics} / {stats.totalTopics} Topics ({overallPct}%)
+                </Text>
+              </View>
+              <View style={{ height: 10, backgroundColor: isDark ? '#374151' : '#e5e7eb', borderRadius: 5, overflow: 'hidden' }}>
+                <View style={{ width: `${stats.totalTopics > 0 ? (stats.topics / stats.totalTopics) * 100 : 0}%`, height: '100%', backgroundColor: '#10b981', borderRadius: 5 }} />
+              </View>
+            </View>
+
             <View style={{ gap: 16 }}>
               {subjectProgress.map(subj => {
                 const pct = subj.total > 0 ? Math.round((subj.completed / subj.total) * 100) : 0;

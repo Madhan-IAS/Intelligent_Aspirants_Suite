@@ -17,7 +17,7 @@ exports.evaluateAnswer = async (req, res) => {
 
     if (!process.env.GEMINI_API_KEY) {
       return res.status(500).json({ 
-        message: 'GEMINI_API_KEY is not set in the server/.env file. Please add your key to enable AI evaluation.' 
+        message: 'GEMINI_API_KEY is not set. Please add it to your server/.env file (locally) or as an Environment Variable in the Render Dashboard.' 
       });
     }
 

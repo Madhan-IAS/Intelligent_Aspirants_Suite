@@ -15,6 +15,7 @@ export default function GSModule() {
   const [topics, setTopics] = useState<any[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<string>('All');
   const [expandedChapters, setExpandedChapters] = useState<{ [key: string]: boolean }>({});
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -117,9 +118,21 @@ export default function GSModule() {
 
   const activeSubjectName = selectedSubject === 'All' && subjectsList.length > 0 ? subjectsList[0] : selectedSubject;
 
-  const filteredTopics = activeSubjectName === 'All' 
-    ? topics 
-    : topics.filter(t => (t.subjectName || 'General') === activeSubjectName);
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+
+  const filteredTopics = topics.filter(t => {
+    const matchesSubject = activeSubjectName === 'All' || (t.subjectName || 'General') === activeSubjectName;
+    if (!matchesSubject) return false;
+
+    if (!normalizedQuery) return true;
+
+    const titleMatch = (t.title || '').toLowerCase().includes(normalizedQuery);
+    const codeMatch = (t.topicCode || '').toLowerCase().includes(normalizedQuery);
+    const chapterMatch = (t.chapter || '').toLowerCase().includes(normalizedQuery);
+    const subjectMatch = (t.subjectName || '').toLowerCase().includes(normalizedQuery);
+
+    return titleMatch || codeMatch || chapterMatch || subjectMatch;
+  });
 
   // Level 2 Chapters Map: { ChapterName: Topic[] }
   const chaptersMap: { [chapter: string]: any[] } = {};
@@ -177,6 +190,51 @@ export default function GSModule() {
           <View style={{ width: `${overallProgress}%`, height: '100%', backgroundColor: progressColor, borderRadius: 5 }} />
         </View>
       </View>
+
+      {/* Real-Time Topic Search Bar */}
+      <View style={{ 
+        backgroundColor: isDark ? '#1f2937' : '#ffffff', 
+        borderRadius: 16, 
+        borderWidth: 1.5, 
+        borderColor: searchQuery ? '#3b82f6' : (isDark ? '#374151' : '#e5e7eb'), 
+        paddingHorizontal: 16, 
+        paddingVertical: 12, 
+        marginBottom: 20, 
+        flexDirection: 'row', 
+        alignItems: 'center' 
+      }}>
+        <Ionicons name="search" size={20} color={searchQuery ? '#3b82f6' : (isDark ? '#9ca3af' : '#6b7280')} style={{ marginRight: 12 }} />
+        <TextInput 
+          placeholder="Search subtopics by title, topic code (e.g. GS1-ART-001), or chapter..."
+          placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          style={{ 
+            flex: 1, 
+            color: isDark ? 'white' : '#111827', 
+            fontSize: 15, 
+            fontWeight: '500', 
+            outlineStyle: 'none' 
+          } as any}
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery('')} style={{ padding: 4 }}>
+            <Ionicons name="close-circle" size={20} color={isDark ? '#9ca3af' : '#6b7280'} />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Search Result Summary Badge */}
+      {normalizedQuery.length > 0 && (
+        <View style={{ marginBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#eff6ff', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(59, 130, 246, 0.3)' }}>
+          <Text style={{ color: '#3b82f6', fontWeight: 'bold', fontSize: 13 }}>
+            Found {filteredTopics.length} matching subtopic{filteredTopics.length === 1 ? '' : 's'} for "{searchQuery}"
+          </Text>
+          <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <Text style={{ color: '#ef4444', fontSize: 12, fontWeight: 'bold' }}>Clear Search</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Level 1: Subject Tabs (Horizontal Scrollable, Scrollbar Hidden) */}
       {subjectsList.length > 0 && (
@@ -258,7 +316,7 @@ export default function GSModule() {
       <View style={{ gap: 16 }}>
         {Object.keys(chaptersMap).map((chapterName, chapIdx) => {
           const topicList = chaptersMap[chapterName];
-          const isChapExpanded = expandedChapters[chapterName] !== false; // default expanded
+          const isChapExpanded = normalizedQuery.length > 0 ? true : expandedChapters[chapterName] !== false;
 
           const chapCompleted = topicList.filter(t => t.completed || t.status === 'Completed').length;
           const chapPercent = topicList.length > 0 ? Math.round((chapCompleted / topicList.length) * 100) : 0;

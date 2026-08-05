@@ -5,6 +5,7 @@ const caController = require('../controllers/currentAffairsController');
 router.get('/', caController.getAllCurrentAffairs);
 router.get('/topic/:topicId', caController.getArticlesByTopic);
 router.post('/', caController.createArticle);
+router.patch('/:id/toggle-save', caController.toggleSaveArticle);
 router.delete('/:id', caController.deleteArticle);
 
 module.exports = router;

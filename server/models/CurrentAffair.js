@@ -7,6 +7,7 @@ const currentAffairSchema = new mongoose.Schema({
   relatedTopicIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Topic' }],
   tags: [{ type: String }],
   source: { type: String }, // e.g. "The Hindu", "Indian Express"
+  isSaved: { type: Boolean, default: false },
   date: { type: Date, default: Date.now }
 }, { timestamps: true });
 

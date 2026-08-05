@@ -39,3 +39,18 @@ exports.deleteArticle = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+exports.toggleSaveArticle = async (req, res) => {
+  try {
+    const article = await CurrentAffair.findById(req.params.id);
+    if (!article) {
+      return res.status(404).json({ message: 'Article not found' });
+    }
+    article.isSaved = !article.isSaved;
+    await article.save();
+    res.json(article);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+

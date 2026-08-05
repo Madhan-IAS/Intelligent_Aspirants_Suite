@@ -10,7 +10,7 @@ export default function CurrentAffairs() {
   const { mode } = useTheme();
   const isDark = mode === 'dark';
   
-  const [articles, setArticles] = useState([]);
+  const [articles, setArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -23,6 +23,10 @@ export default function CurrentAffairs() {
   const [selectedTopicId, setSelectedTopicId] = useState('');
   const [topicSearch, setTopicSearch] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState('');
+
+  // Tabs & Search
+  const [activeTab, setActiveTab] = useState<'all' | 'saved'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchArticles();
@@ -100,6 +104,15 @@ export default function CurrentAffairs() {
     }
   };
 
+  const handleToggleSave = async (id: string) => {
+    try {
+      const res = await api.patch(`/current-affairs/${id}/toggle-save`);
+      setArticles(prev => prev.map(a => a._id === id ? { ...a, isSaved: res.data.isSaved } : a));
+    } catch (error) {
+      console.error('Error toggling saved state:', error);
+    }
+  };
+
   const handleOpenArticle = (link: string) => {
     if (link) {
       Linking.openURL(link).catch(err => {
@@ -111,12 +124,30 @@ export default function CurrentAffairs() {
     }
   };
 
+  const savedCount = articles.filter(a => a.isSaved).length;
+
+  const filteredArticles = articles.filter(article => {
+    // Tab filter
+    if (activeTab === 'saved' && !article.isSaved) return false;
+
+    // Search query filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const titleMatch = article.title?.toLowerCase().includes(q);
+      const sourceMatch = article.source?.toLowerCase().includes(q);
+      const tagMatch = article.tags?.some((t: string) => t.toLowerCase().includes(q));
+      return titleMatch || sourceMatch || tagMatch;
+    }
+
+    return true;
+  });
+
   return (
     <View style={{ flex: 1, backgroundColor: isDark ? '#111827' : '#f9fafb', paddingHorizontal: 24, paddingVertical: 24 }}>
       
-      {/* Header & Search */}
-      <View style={{ marginBottom: 32 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+      {/* Header & Controls */}
+      <View style={{ marginBottom: 24 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16, width: 40, height: 40, backgroundColor: isDark ? '#1f2937' : '#e5e7eb', borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="arrow-back" size={20} color={isDark ? 'white' : '#111827'} />
@@ -136,6 +167,49 @@ export default function CurrentAffairs() {
                 {showAddForm ? 'Cancel' : 'Log Article'}
               </Text>
             )}
+          </TouchableOpacity>
+        </View>
+
+        {/* Tab Switcher: All vs Saved */}
+        <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
+          <TouchableOpacity
+            onPress={() => setActiveTab('all')}
+            style={{
+              paddingHorizontal: 16,
+              paddingVertical: 10,
+              borderRadius: 12,
+              backgroundColor: activeTab === 'all' ? '#2563eb' : (isDark ? '#1f2937' : '#ffffff'),
+              borderWidth: 1,
+              borderColor: activeTab === 'all' ? '#2563eb' : (isDark ? '#374151' : '#e5e7eb'),
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 8
+            }}
+          >
+            <Ionicons name="newspaper-outline" size={16} color={activeTab === 'all' ? 'white' : (isDark ? '#9ca3af' : '#6b7280')} />
+            <Text style={{ color: activeTab === 'all' ? 'white' : (isDark ? '#d1d5db' : '#374151'), fontWeight: 'bold', fontSize: 14 }}>
+              All Feed ({articles.length})
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setActiveTab('saved')}
+            style={{
+              paddingHorizontal: 16,
+              paddingVertical: 10,
+              borderRadius: 12,
+              backgroundColor: activeTab === 'saved' ? '#f59e0b' : (isDark ? '#1f2937' : '#ffffff'),
+              borderWidth: 1,
+              borderColor: activeTab === 'saved' ? '#f59e0b' : (isDark ? '#374151' : '#e5e7eb'),
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 8
+            }}
+          >
+            <Ionicons name="bookmark" size={16} color={activeTab === 'saved' ? 'white' : '#f59e0b'} />
+            <Text style={{ color: activeTab === 'saved' ? 'white' : (isDark ? '#d1d5db' : '#374151'), fontWeight: 'bold', fontSize: 14 }}>
+              Saved Articles ({savedCount})
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -240,13 +314,21 @@ export default function CurrentAffairs() {
           </View>
         )}
 
+        {/* Search Bar */}
         <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
           <Ionicons name="search" size={20} color={isDark ? '#9ca3af' : '#6b7280'} style={{ marginRight: 12 }} />
           <TextInput 
-            placeholder="Search articles, tags, or linked topics..."
+            placeholder="Search articles, tags, or sources..."
             placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
             style={{ flex: 1, color: isDark ? 'white' : '#111827', fontSize: 16, outlineStyle: 'none' } as any}
           />
+          {searchQuery ? (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Ionicons name="close-circle" size={20} color={isDark ? '#9ca3af' : '#6b7280'} />
+            </TouchableOpacity>
+          ) : null}
         </View>
       </View>
 
@@ -254,20 +336,68 @@ export default function CurrentAffairs() {
       <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
         {loading ? (
           <ActivityIndicator size="large" color="#60a5fa" style={{ marginTop: 40 }} />
-        ) : articles.length === 0 ? (
-          <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', textAlign: 'center', marginTop: 40 }}>No articles logged yet.</Text>
+        ) : filteredArticles.length === 0 ? (
+          <View style={{ alignItems: 'center', marginTop: 60, paddingHorizontal: 32 }}>
+            <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: isDark ? '#1f2937' : '#f3f4f6', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+              <Ionicons 
+                name={activeTab === 'saved' ? "bookmark-outline" : "newspaper-outline"} 
+                size={32} 
+                color={isDark ? '#6b7280' : '#9ca3af'} 
+              />
+            </View>
+            <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 18, fontWeight: 'bold', marginBottom: 8, textAlign: 'center' }}>
+              {activeTab === 'saved' ? 'No Saved Articles Yet' : 'No Articles Found'}
+            </Text>
+            <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', textAlign: 'center', fontSize: 14, lineHeight: 20 }}>
+              {activeTab === 'saved'
+                ? 'Tap the bookmark icon on any article in your feed to save it here for later revision!'
+                : searchQuery
+                ? `No articles match "${searchQuery}". Try a different term.`
+                : 'No articles logged yet.'}
+            </Text>
+          </View>
         ) : (
           <View style={{ gap: 16, paddingBottom: 40 }}>
-            {articles.map((article: any) => (
+            {filteredArticles.map((article: any) => (
               <TouchableOpacity 
                 key={article._id}
                 onPress={() => handleOpenArticle(article.link)}
-                style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}
+                style={{
+                  backgroundColor: isDark ? '#1f2937' : '#ffffff',
+                  padding: 20,
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  borderColor: article.isSaved ? '#f59e0b' : (isDark ? '#374151' : '#e5e7eb'),
+                  position: 'relative'
+                }}
               >
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                   <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 18, fontWeight: 'bold', flex: 1, paddingRight: 16, lineHeight: 24 }}>{article.title}</Text>
+                  
+                  {/* Action Controls: Bookmark & Delete */}
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 12 }}>{new Date(article.date).toLocaleDateString()}</Text>
+                    
+                    {/* Bookmark Toggle */}
+                    <TouchableOpacity
+                      onPress={(e) => { e.stopPropagation(); handleToggleSave(article._id); }}
+                      style={{
+                        width: 30,
+                        height: 30,
+                        borderRadius: 8,
+                        backgroundColor: article.isSaved ? 'rgba(245, 158, 11, 0.15)' : (isDark ? 'rgba(55, 65, 81, 0.5)' : '#f3f4f6'),
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <Ionicons 
+                        name={article.isSaved ? "bookmark" : "bookmark-outline"} 
+                        size={16} 
+                        color={article.isSaved ? "#f59e0b" : (isDark ? "#9ca3af" : "#6b7280")} 
+                      />
+                    </TouchableOpacity>
+
+                    {/* Delete Toggle */}
                     {deleteConfirmId === article._id ? (
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                         <TouchableOpacity
@@ -286,16 +416,22 @@ export default function CurrentAffairs() {
                     ) : (
                       <TouchableOpacity
                         onPress={(e) => { e.stopPropagation(); setDeleteConfirmId(article._id); }}
-                        style={{ width: 24, height: 24, borderRadius: 6, backgroundColor: 'rgba(239, 68, 68, 0.1)', alignItems: 'center', justifyContent: 'center' }}
+                        style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: 'rgba(239, 68, 68, 0.1)', alignItems: 'center', justifyContent: 'center' }}
                       >
-                        <Ionicons name="trash" size={12} color="#ef4444" />
+                        <Ionicons name="trash" size={14} color="#ef4444" />
                       </TouchableOpacity>
                     )}
                   </View>
                 </View>
                 
+                {/* Source & Tags */}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, flex: 1 }}>
+                    {article.source ? (
+                      <View style={{ backgroundColor: 'rgba(37, 99, 235, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4, borderWidth: 1, borderColor: 'rgba(37, 99, 235, 0.3)' }}>
+                        <Text style={{ color: '#3b82f6', fontSize: 12, fontWeight: 'bold' }}>{article.source}</Text>
+                      </View>
+                    ) : null}
                     {article.tags.map((tag: string) => (
                       <View key={tag} style={{ backgroundColor: isDark ? '#374151' : '#f3f4f6', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4, borderWidth: 1, borderColor: isDark ? '#4b5563' : '#e5e7eb' }}>
                         <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', fontSize: 12 }}>{tag}</Text>

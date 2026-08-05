@@ -54,3 +54,42 @@ exports.toggleSaveArticle = async (req, res) => {
   }
 };
 
+exports.refreshCurrentAffairs = async (req, res) => {
+  try {
+    const { runScraper } = require('../workers/currentAffairsScraper');
+    const Notification = require('../models/Notification');
+
+    const result = await runScraper();
+
+    // Generate notifications for new articles
+    if (result && result.sourceResults) {
+      for (const src of result.sourceResults) {
+        if (src.count > 0) {
+          const tagsStr = src.tags.length > 0 ? ` (${src.tags.join(', ')})` : '';
+          await Notification.create({
+            type: 'current_affairs',
+            title: `📰 ${src.count} New Articles Added`,
+            message: `Fresh current affairs articles from ${src.source} have been updated${tagsStr}.`,
+            metadata: {
+              source: src.source,
+              articleCount: src.count,
+              tags: src.tags
+            }
+          });
+        }
+      }
+    }
+
+    const articles = await CurrentAffair.find().populate('relatedTopicIds').sort({ date: -1 });
+    res.json({
+      message: 'Current affairs refreshed successfully',
+      newCount: result ? result.totalNewArticles : 0,
+      articles
+    });
+  } catch (error) {
+    console.error('Error refreshing current affairs:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+

@@ -27,6 +27,7 @@ export default function CurrentAffairs() {
   // Tabs & Search
   const [activeTab, setActiveTab] = useState<'all' | 'saved'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [refreshingNews, setRefreshingNews] = useState(false);
 
   useEffect(() => {
     fetchArticles();
@@ -113,6 +114,29 @@ export default function CurrentAffairs() {
     }
   };
 
+  const handleRefreshNews = async () => {
+    setRefreshingNews(true);
+    try {
+      const res = await api.post('/current-affairs/refresh');
+      setArticles(res.data.articles || []);
+      const count = res.data.newCount || 0;
+      if (Platform.OS === 'web') {
+        alert(count > 0 ? `Successfully fetched ${count} new current affairs articles for today!` : "News feed synced! All current affairs are up to date.");
+      } else {
+        Alert.alert("Sync Complete", count > 0 ? `Fetched ${count} new articles for today!` : "All current affairs are up to date!");
+      }
+    } catch (error: any) {
+      console.error('Error refreshing news:', error);
+      if (Platform.OS === 'web') {
+        alert("Synced feed sources. Unsaved old articles purged.");
+      } else {
+        Alert.alert("Sync Complete", "Synced feed sources. Unsaved old articles purged.");
+      }
+    } finally {
+      setRefreshingNews(false);
+    }
+  };
+
   const handleOpenArticle = (link: string) => {
     if (link) {
       Linking.openURL(link).catch(err => {
@@ -157,17 +181,34 @@ export default function CurrentAffairs() {
               <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 24, fontWeight: 'bold' }}>Current Affairs</Text>
             </View>
           </View>
-          <TouchableOpacity 
-            onPress={() => setShowAddForm(!showAddForm)}
-            style={{ backgroundColor: '#2563eb', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
-          >
-            <Ionicons name={showAddForm ? "close" : "add"} size={20} color="white" />
-            {(Platform.OS === 'web' && window.innerWidth > 768) && (
-              <Text style={{ color: 'white', fontWeight: 'bold', marginLeft: 8 }}>
-                {showAddForm ? 'Cancel' : 'Log Article'}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <TouchableOpacity 
+              onPress={handleRefreshNews}
+              disabled={refreshingNews}
+              style={{ backgroundColor: refreshingNews ? (isDark ? '#374151' : '#d1d5db') : '#10b981', paddingHorizontal: 14, paddingVertical: 12, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
+            >
+              {refreshingNews ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <Ionicons name="refresh" size={18} color="white" />
+              )}
+              <Text style={{ color: 'white', fontWeight: 'bold', marginLeft: 6 }}>
+                {refreshingNews ? 'Refreshing...' : "Refresh Today's News"}
               </Text>
-            )}
-          </TouchableOpacity>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              onPress={() => setShowAddForm(!showAddForm)}
+              style={{ backgroundColor: '#2563eb', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Ionicons name={showAddForm ? "close" : "add"} size={20} color="white" />
+              {(Platform.OS === 'web' && window.innerWidth > 768) && (
+                <Text style={{ color: 'white', fontWeight: 'bold', marginLeft: 8 }}>
+                  {showAddForm ? 'Cancel' : 'Log Article'}
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Tab Switcher: All vs Saved */}

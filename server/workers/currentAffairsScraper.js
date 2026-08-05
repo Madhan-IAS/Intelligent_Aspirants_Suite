@@ -68,8 +68,24 @@ const RSS_FEEDS = [
   { name: 'RBI Press Releases', url: 'https://www.rbi.org.in/home.aspx' }
 ];
 
+const purgeOldUnsavedArticles = async () => {
+  try {
+    const cutoffDate = new Date(Date.now() - 48 * 60 * 60 * 1000);
+    const result = await CurrentAffair.deleteMany({
+      isSaved: { $ne: true },
+      date: { $lt: cutoffDate }
+    });
+    console.log(`[Auto-Purge] Cleaned up ${result.deletedCount} old unsaved articles.`);
+    return result.deletedCount;
+  } catch (err) {
+    console.error('[Auto-Purge] Failed to purge old articles:', err.message);
+    return 0;
+  }
+};
+
 const runScraper = async () => {
   console.log('--- Starting Secure Daily Current Affairs Scraper ---');
+  await purgeOldUnsavedArticles();
   let totalNewArticles = 0;
   const sourceResults = []; // Track per-source results for notifications
 
@@ -170,4 +186,4 @@ const runScraper = async () => {
   };
 };
 
-module.exports = { runScraper };
+module.exports = { runScraper, purgeOldUnsavedArticles };

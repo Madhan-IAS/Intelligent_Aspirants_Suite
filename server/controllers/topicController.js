@@ -29,9 +29,24 @@ exports.getTopicById = async (req, res) => {
     const topic = await Topic.findById(req.params.id).populate('relatedTopics');
     if (!topic) return res.status(404).json({ message: 'Topic not found' });
 
-    // Fetch related entities for the Knowledge Hub
-    const relatedPYQs = await PYQ.find({ topicId: topic._id });
-    const relatedCurrentAffairs = await CurrentAffair.find({ relatedTopicIds: topic._id });
+    // Fetch related entities for the 360° Knowledge Hub
+    // 1. PYQs linked by topicId OR matching topic title text
+    const relatedPYQs = await PYQ.find({
+      $or: [
+        { topicId: topic._id },
+        { question: { $regex: topic.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' } }
+      ]
+    }).sort({ year: -1 });
+
+    // 2. Current Affairs linked by relatedTopicIds OR matching tags/title
+    const titleKeywords = topic.title.split(' ').filter(w => w.length > 3).join('|');
+    const relatedCurrentAffairs = await CurrentAffair.find({
+      $or: [
+        { relatedTopicIds: topic._id },
+        { tags: { $in: [topic.paper, topic.subjectName, topic.title].filter(Boolean) } },
+        ...(titleKeywords ? [{ title: { $regex: titleKeywords, $options: 'i' } }] : [])
+      ]
+    }).sort({ date: -1 });
 
     res.json({
       topic,

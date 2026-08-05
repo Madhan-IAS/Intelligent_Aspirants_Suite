@@ -9,12 +9,12 @@ import PomodoroTimer from '../../src/components/Dashboard/PomodoroTimer';
 const TABS = [
   { key: 'knowledge', label: 'Knowledge', icon: 'book' },
   { key: 'pyqs', label: 'PYQs', icon: 'document-text' },
+  { key: 'currentAffairs', label: 'Current Affairs', icon: 'newspaper' },
   { key: 'mcqs', label: 'MCQs', icon: 'help-circle' },
   { key: 'notes', label: 'Notes', icon: 'create' },
   { key: 'mindMaps', label: 'Mind Maps', icon: 'git-network' },
   { key: 'revision', label: 'Revision', icon: 'repeat' },
   { key: 'tests', label: 'Tests', icon: 'shield-checkmark' },
-  { key: 'currentAffairs', label: 'Current Affairs', icon: 'newspaper' },
   { key: 'analytics', label: 'Analytics', icon: 'bar-chart' }
 ];
 
@@ -166,7 +166,7 @@ export default function TopicKnowledgeHub() {
       <View style={{ flex: 1, paddingHorizontal: 24, paddingVertical: 24 }}>
         
         {/* Header Breadcrumbs & Title */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 16 }}>
             <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16, width: 40, height: 40, backgroundColor: isDark ? '#1f2937' : '#e5e7eb', borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="arrow-back" size={20} color={isDark ? 'white' : '#111827'} />
@@ -202,11 +202,40 @@ export default function TopicKnowledgeHub() {
           </View>
         </View>
 
-        {/* The 9 Knowledge Hub Tabs Header */}
+        {/* 360° Topic Hub Integration Banner */}
+        <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 16, borderRadius: 14, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', marginBottom: 20, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(59, 130, 246, 0.15)', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="compass" size={18} color="#3b82f6" />
+            </View>
+            <View>
+              <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold', fontSize: 14 }}>360° Topic Intelligence Hub</Text>
+              <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12 }}>Unified Syllabus, PYQs, and Daily Current Affairs linkage</Text>
+            </View>
+          </View>
+
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <TouchableOpacity onPress={() => setActiveTab('pyqs')} style={{ backgroundColor: isDark ? '#111827' : '#f3f4f6', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
+              <Ionicons name="document-text" size={14} color="#3b82f6" />
+              <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 12, fontWeight: 'bold' }}>{relatedPYQs.length} PYQs</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => setActiveTab('currentAffairs')} style={{ backgroundColor: isDark ? '#111827' : '#f3f4f6', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
+              <Ionicons name="newspaper" size={14} color="#8b5cf6" />
+              <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 12, fontWeight: 'bold' }}>{relatedCurrentAffairs.length} Current Affairs</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Knowledge Hub Tabs Header */}
         <View style={{ borderBottomWidth: 1, borderBottomColor: isDark ? '#374151' : '#e5e7eb', marginBottom: 20 }}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexDirection: 'row' }}>
             {TABS.map((tab) => {
               const isActive = activeTab === tab.key;
+              let badgeCount: number | null = null;
+              if (tab.key === 'pyqs') badgeCount = relatedPYQs.length;
+              if (tab.key === 'currentAffairs') badgeCount = relatedCurrentAffairs.length;
+
               return (
                 <TouchableOpacity 
                   key={tab.key}
@@ -228,6 +257,11 @@ export default function TopicKnowledgeHub() {
                   <Text style={{ fontWeight: isActive ? 'bold' : '500', color: isActive ? '#3b82f6' : (isDark ? '#d1d5db' : '#374151'), fontSize: 14 }}>
                     {tab.label}
                   </Text>
+                  {badgeCount !== null && badgeCount > 0 && (
+                    <View style={{ backgroundColor: isActive ? '#3b82f6' : (isDark ? '#374151' : '#e5e7eb'), paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10 }}>
+                      <Text style={{ color: isActive ? 'white' : (isDark ? '#9ca3af' : '#4b5563'), fontSize: 10, fontWeight: 'bold' }}>{badgeCount}</Text>
+                    </View>
+                  )}
                 </TouchableOpacity>
               );
             })}
@@ -258,24 +292,105 @@ export default function TopicKnowledgeHub() {
             {/* Tab 2: PYQs */}
             {activeTab === 'pyqs' && (
               <ScrollView style={{ flex: 1 }}>
-                <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 18, fontWeight: 'bold', marginBottom: 12 }}>Previous Year Questions (PYQs)</Text>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 18, fontWeight: 'bold' }}>Linked Previous Year Questions (PYQs)</Text>
+                  <Text style={{ color: '#3b82f6', fontWeight: 'bold', fontSize: 13 }}>{relatedPYQs.length} Questions Found</Text>
+                </View>
+
                 {relatedPYQs.length > 0 ? (
                   relatedPYQs.map((pyq, idx) => (
-                    <View key={idx} style={{ backgroundColor: isDark ? '#111827' : '#f9fafb', padding: 14, borderRadius: 10, marginBottom: 10, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
-                      <Text style={{ color: '#3b82f6', fontWeight: 'bold', fontSize: 12 }}>{pyq.year || 'UPSC Mains'} • {pyq.marks || 15} Marks</Text>
-                      <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 15, marginTop: 4, fontWeight: '500' }}>{pyq.question}</Text>
+                    <View key={idx} style={{ backgroundColor: isDark ? '#111827' : '#f9fafb', padding: 16, borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <View style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 }}>
+                          <Text style={{ color: '#3b82f6', fontWeight: 'bold', fontSize: 12 }}>UPSC Mains {pyq.year || 'Practice'} • {pyq.marks || 15} Marks</Text>
+                        </View>
+                        {pyq.directive && (
+                          <View style={{ backgroundColor: isDark ? '#374151' : '#e5e7eb', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4 }}>
+                            <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', fontSize: 11, fontWeight: 'bold' }}>{pyq.directive}</Text>
+                          </View>
+                        )}
+                      </View>
+
+                      <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 16, fontWeight: 'bold', lineHeight: 24, marginBottom: 12 }}>{pyq.question}</Text>
+
+                      <TouchableOpacity 
+                        onPress={() => router.push(`/answers?pyqId=${pyq._id}` as any)} 
+                        style={{ backgroundColor: '#2563eb', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6 }}
+                      >
+                        <Ionicons name="create-outline" size={16} color="white" />
+                        <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 13 }}>Write Answer in Workspace →</Text>
+                      </TouchableOpacity>
                     </View>
                   ))
                 ) : (
-                  <View style={{ padding: 20, alignItems: 'center' }}>
-                    <Ionicons name="document-text-outline" size={40} color={isDark ? '#4b5563' : '#9ca3af'} />
-                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', marginTop: 8 }}>No direct PYQ links yet for this subtopic.</Text>
+                  <View style={{ padding: 32, alignItems: 'center' }}>
+                    <Ionicons name="document-text-outline" size={44} color={isDark ? '#4b5563' : '#9ca3af'} />
+                    <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold', marginTop: 12, fontSize: 16 }}>No Direct PYQs Tagged Yet</Text>
+                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', marginTop: 4, textAlign: 'center', fontSize: 13 }}>
+                      You can add PYQs from the PYQ Bank module and link them to "{topic.title}".
+                    </Text>
                   </View>
                 )}
               </ScrollView>
             )}
 
-            {/* Tab 3: MCQs */}
+            {/* Tab 3: Current Affairs */}
+            {activeTab === 'currentAffairs' && (
+              <ScrollView style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 18, fontWeight: 'bold' }}>Linked Current Affairs Articles</Text>
+                  <Text style={{ color: '#8b5cf6', fontWeight: 'bold', fontSize: 13 }}>{relatedCurrentAffairs.length} News Articles</Text>
+                </View>
+
+                {relatedCurrentAffairs.length > 0 ? (
+                  relatedCurrentAffairs.map((ca, idx) => (
+                    <View key={idx} style={{ backgroundColor: isDark ? '#111827' : '#f9fafb', padding: 16, borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <View style={{ backgroundColor: 'rgba(139, 92, 246, 0.15)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 }}>
+                          <Text style={{ color: '#8b5cf6', fontWeight: 'bold', fontSize: 12 }}>{ca.source || 'Daily News'}</Text>
+                        </View>
+                        <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 12 }}>{new Date(ca.date).toLocaleDateString()}</Text>
+                      </View>
+
+                      <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 16, fontWeight: 'bold', lineHeight: 24, marginBottom: 8 }}>{ca.title}</Text>
+
+                      {ca.content ? (
+                        <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 13, lineHeight: 20, marginBottom: 12 }} numberOfLines={3}>
+                          {ca.content}
+                        </Text>
+                      ) : null}
+
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                          {ca.tags?.map((t: string) => (
+                            <View key={t} style={{ backgroundColor: isDark ? '#1f2937' : '#e5e7eb', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                              <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', fontSize: 11 }}>{t}</Text>
+                            </View>
+                          ))}
+                        </View>
+
+                        {ca.link ? (
+                          <TouchableOpacity onPress={() => Linking.openURL(ca.link)} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                            <Text style={{ color: '#3b82f6', fontSize: 12, fontWeight: 'bold' }}>Read Article</Text>
+                            <Ionicons name="open-outline" size={14} color="#3b82f6" />
+                          </TouchableOpacity>
+                        ) : null}
+                      </View>
+                    </View>
+                  ))
+                ) : (
+                  <View style={{ padding: 32, alignItems: 'center' }}>
+                    <Ionicons name="newspaper-outline" size={44} color={isDark ? '#4b5563' : '#9ca3af'} />
+                    <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold', marginTop: 12, fontSize: 16 }}>No Related News Articles Yet</Text>
+                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', marginTop: 4, textAlign: 'center', fontSize: 13 }}>
+                      Articles matching "{topic.title}" or paper "{topic.paper}" will automatically appear here as daily news is scraped.
+                    </Text>
+                  </View>
+                )}
+              </ScrollView>
+            )}
+
+            {/* Tab 4: MCQs */}
             {activeTab === 'mcqs' && (
               <ScrollView style={{ flex: 1 }}>
                 <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 18, fontWeight: 'bold', marginBottom: 12 }}>Topic MCQs Practice</Text>
@@ -310,7 +425,7 @@ export default function TopicKnowledgeHub() {
               </ScrollView>
             )}
 
-            {/* Tab 4: Notes */}
+            {/* Tab 5: Notes */}
             {activeTab === 'notes' && (
               <View style={{ flex: 1 }}>
                 <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 18, fontWeight: 'bold', marginBottom: 12 }}>Personal & AI Notes</Text>
@@ -325,7 +440,7 @@ export default function TopicKnowledgeHub() {
               </View>
             )}
 
-            {/* Tab 5: Mind Maps */}
+            {/* Tab 6: Mind Maps */}
             {activeTab === 'mindMaps' && (
               <View style={{ flex: 1 }}>
                 <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 18, fontWeight: 'bold', marginBottom: 12 }}>Mind Maps & Flowcharts</Text>
@@ -340,7 +455,7 @@ export default function TopicKnowledgeHub() {
               </View>
             )}
 
-            {/* Tab 6: Revision */}
+            {/* Tab 7: Revision */}
             {activeTab === 'revision' && (
               <ScrollView style={{ flex: 1 }}>
                 <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 18, fontWeight: 'bold', marginBottom: 12 }}>Spaced Repetition Flashcards</Text>
@@ -369,7 +484,7 @@ export default function TopicKnowledgeHub() {
               </ScrollView>
             )}
 
-            {/* Tab 7: Tests */}
+            {/* Tab 8: Tests */}
             {activeTab === 'tests' && (
               <ScrollView style={{ flex: 1 }}>
                 <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 18, fontWeight: 'bold', marginBottom: 12 }}>Topic Mock Tests & Score Log</Text>
@@ -378,24 +493,6 @@ export default function TopicKnowledgeHub() {
                   <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 16, fontWeight: 'bold', marginTop: 4 }}>Mains Speed Test #1</Text>
                   <Text style={{ color: '#10b981', fontWeight: 'bold', marginTop: 6 }}>Score: 12.5 / 15 Marks (High Yield Answer)</Text>
                 </View>
-              </ScrollView>
-            )}
-
-            {/* Tab 8: Current Affairs */}
-            {activeTab === 'currentAffairs' && (
-              <ScrollView style={{ flex: 1 }}>
-                <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 18, fontWeight: 'bold', marginBottom: 12 }}>Linked Current Affairs Articles</Text>
-                {relatedCurrentAffairs.length > 0 ? (
-                  relatedCurrentAffairs.map((ca, idx) => (
-                    <TouchableOpacity key={idx} onPress={() => Linking.openURL(ca.link)} style={{ backgroundColor: isDark ? '#111827' : '#f9fafb', padding: 14, borderRadius: 10, marginBottom: 10, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
-                      <Text style={{ color: '#8b5cf6', fontWeight: 'bold', fontSize: 12 }}>{ca.source || 'The Hindu'}</Text>
-                      <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 15, fontWeight: 'bold', marginTop: 2 }}>{ca.title}</Text>
-                      <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 13, marginTop: 4 }}>{ca.summary}</Text>
-                    </TouchableOpacity>
-                  ))
-                ) : (
-                  <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', marginTop: 10 }}>No current affairs articles automatically tagged yet.</Text>
-                )}
               </ScrollView>
             )}
 

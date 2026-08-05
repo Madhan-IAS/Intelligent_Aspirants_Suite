@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const cron = require('node-cron');
 const { runScraper } = require('./workers/currentAffairsScraper');
+const Notification = require('./models/Notification');
 require('dotenv').config();
 
 const app = express();
@@ -52,6 +53,7 @@ const analyticsRoutes = require('./routes/analytics');
 const timetableRoutes = require('./routes/timetable');
 const directivesRoutes = require('./routes/directives');
 const quotesRoutes = require('./routes/quotes');
+const notificationsRoutes = require('./routes/notifications');
 
 app.use('/api/subjects', subjectsRoutes);
 app.use('/api/topics', topicsRoutes);
@@ -71,6 +73,7 @@ app.use('/api/timetable', timetableRoutes);
 app.use('/api/directives', directivesRoutes);
 app.use('/api/quotes', quotesRoutes);
 app.use('/api/backup', require('./routes/backup'));
+app.use('/api/notifications', notificationsRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
@@ -81,10 +84,33 @@ if (MONGO_URI) {
     .then(() => {
       console.log('Connected to MongoDB');
       
-      // Schedule Scraper at 6:00 AM every day
-      cron.schedule('0 6 * * *', () => {
-        console.log('Running daily Current Affairs scraper...');
-        runScraper();
+      // Schedule Scraper at 6:00 AM IST (= 00:30 UTC) every day
+      cron.schedule('30 0 * * *', async () => {
+        console.log('[CRON] Running daily Current Affairs scraper at 6:00 AM IST...');
+        try {
+          const result = await runScraper();
+          
+          // Create notifications from scraper results
+          if (result && result.sourceResults && result.sourceResults.length > 0) {
+            for (const sr of result.sourceResults) {
+              if (sr.count > 0) {
+                await Notification.create({
+                  type: 'current_affairs',
+                  title: `📰 ${sr.count} new article${sr.count > 1 ? 's' : ''} from ${sr.source}`,
+                  message: `Topics: ${sr.tags.slice(0, 5).join(', ')}`,
+                  metadata: {
+                    source: sr.source,
+                    articleCount: sr.count,
+                    tags: sr.tags
+                  }
+                });
+              }
+            }
+            console.log(`[CRON] Created ${result.sourceResults.filter(s => s.count > 0).length} notification(s).`);
+          }
+        } catch (err) {
+          console.error('[CRON] Scraper failed:', err.message);
+        }
       });
     })
     .catch((err) => {

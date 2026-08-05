@@ -26,6 +26,7 @@ export default function Dashboard() {
     author: "Arnold H. Glasow"
   });
   const [loading, setLoading] = useState(true);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -35,6 +36,7 @@ export default function Dashboard() {
     if (user) {
       fetchDashboardData();
       fetchRandomQuote();
+      fetchUnreadCount();
     }
   }, [user, authLoading]);
 
@@ -101,6 +103,15 @@ export default function Dashboard() {
     }
   };
 
+  const fetchUnreadCount = async () => {
+    try {
+      const res = await api.get('/notifications/unread-count');
+      setUnreadNotifications(res.data.count || 0);
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+    }
+  };
+
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good Morning';
@@ -139,8 +150,10 @@ export default function Dashboard() {
           <View style={{ flexDirection: 'row', gap: 12 }}>
             <TouchableOpacity onPress={() => router.push('/notifications')} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#2563eb', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
               <Ionicons name="notifications" size={20} color="white" />
-              {stats.revisions > 0 && (
-                <View style={{ position: 'absolute', top: 0, right: 0, width: 12, height: 12, backgroundColor: '#ef4444', borderRadius: 6, borderWidth: 2, borderColor: isDark ? '#111827' : '#f9fafb' }} />
+              {unreadNotifications > 0 && (
+                <View style={{ position: 'absolute', top: -4, right: -4, minWidth: 18, height: 18, backgroundColor: '#ef4444', borderRadius: 9, borderWidth: 2, borderColor: isDark ? '#111827' : '#f9fafb', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 }}>
+                  <Text style={{ color: 'white', fontSize: 9, fontWeight: 'bold' }}>{unreadNotifications > 9 ? '9+' : unreadNotifications}</Text>
+                </View>
               )}
             </TouchableOpacity>
           </View>

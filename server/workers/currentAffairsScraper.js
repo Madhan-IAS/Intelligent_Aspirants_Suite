@@ -65,15 +65,19 @@ const RSS_FEEDS = [
   { name: 'The Hindu - National', url: 'https://www.thehindu.com/news/national/feeder/default.rss' },
   { name: 'PIB Delhi', url: 'https://pib.gov.in/newsite/rssenglish.aspx' },
   { name: 'Indian Express', url: 'https://indianexpress.com/feed/' },
-  { name: 'RBI Press Releases', url: 'https://www.rbi.org.in/home.aspx' } // RBI often provides a direct feed or we scrape
+  { name: 'RBI Press Releases', url: 'https://www.rbi.org.in/home.aspx' }
 ];
 
 const runScraper = async () => {
   console.log('--- Starting Secure Daily Current Affairs Scraper ---');
-  let newArticlesCount = 0;
+  let totalNewArticles = 0;
+  const sourceResults = []; // Track per-source results for notifications
 
   // 1. Process Official RSS Feeds (Safest)
   for (const feed of RSS_FEEDS) {
+    let feedNewCount = 0;
+    const feedTags = new Set();
+    
     try {
       console.log(`Fetching RSS: ${feed.name}`);
       const feedData = await parser.parseURL(feed.url);
@@ -93,7 +97,9 @@ const runScraper = async () => {
               tags: tags,
               date: new Date(item.pubDate || Date.now())
             });
-            newArticlesCount++;
+            feedNewCount++;
+            totalNewArticles++;
+            tags.forEach(t => feedTags.add(t));
           }
           await sleep(2000); // Polite delay between AI calls
         }
@@ -101,9 +107,19 @@ const runScraper = async () => {
     } catch (err) {
       console.error(`Error processing feed ${feed.name}:`, err.message);
     }
+    
+    // Record this source's results
+    sourceResults.push({
+      source: feed.name,
+      count: feedNewCount,
+      tags: Array.from(feedTags)
+    });
   }
 
-  // 2. Custom HTML Scraping Example (Ministry of External Affairs - Press Releases)
+  // 2. Custom HTML Scraping (Ministry of External Affairs - Press Releases)
+  let meaNewCount = 0;
+  const meaTags = new Set();
+  
   console.log('Scraping HTML: Ministry of External Affairs');
   const meaHtml = await secureFetch('https://mea.gov.in/press-releases.htm');
   if (meaHtml) {
@@ -127,15 +143,31 @@ const runScraper = async () => {
           content: `Link: ${item.link}`,
           source: 'Ministry of External Affairs',
           tags: [...tags, 'IR', 'GS II'],
-          date: new Date() // Fallback date parsing can be complex, using Date.now()
+          date: new Date()
         });
-        newArticlesCount++;
+        meaNewCount++;
+        totalNewArticles++;
+        tags.forEach(t => meaTags.add(t));
+        meaTags.add('IR');
+        meaTags.add('GS II');
         await sleep(2000);
       }
     }
   }
+  
+  sourceResults.push({
+    source: 'Ministry of External Affairs',
+    count: meaNewCount,
+    tags: Array.from(meaTags)
+  });
 
-  console.log(`--- Scraper Finished. Added ${newArticlesCount} new articles. ---`);
+  console.log(`--- Scraper Finished. Added ${totalNewArticles} new articles. ---`);
+  
+  // Return structured results for notification creation
+  return {
+    totalNewArticles,
+    sourceResults
+  };
 };
 
 module.exports = { runScraper };

@@ -44,9 +44,9 @@ exports.getTodayPlan = async (req, res) => {
 
     // Check if plan already exists for today
     let plan = await DailyPlan.findOne({ userId, date: today })
-      .populate('gsTopicIds', 'title chapter subjectName paper completed status _id')
-      .populate('optTopicIds', 'title chapter subjectName paper completed status _id')
-      .populate('revisionTopicId', 'title chapter subjectName paper completed status _id');
+      .populate('gsTopicIds', 'title chapter subjectName paper completed status completedAt _id')
+      .populate('optTopicIds', 'title chapter subjectName paper completed status completedAt _id')
+      .populate('revisionTopicId', 'title chapter subjectName paper completed status completedAt _id');
 
     if (plan) {
       return res.json(plan);
@@ -91,9 +91,9 @@ exports.getTodayPlan = async (req, res) => {
 
     // Re-fetch with populated fields
     plan = await DailyPlan.findById(plan._id)
-      .populate('gsTopicIds', 'title chapter subjectName paper completed status _id')
-      .populate('optTopicIds', 'title chapter subjectName paper completed status _id')
-      .populate('revisionTopicId', 'title chapter subjectName paper completed status _id');
+      .populate('gsTopicIds', 'title chapter subjectName paper completed status completedAt _id')
+      .populate('optTopicIds', 'title chapter subjectName paper completed status completedAt _id')
+      .populate('revisionTopicId', 'title chapter subjectName paper completed status completedAt _id');
 
     res.json(plan);
   } catch (error) {
@@ -115,6 +115,7 @@ exports.toggleTopic = async (req, res) => {
 
     topic.completed = !topic.completed;
     topic.status = topic.completed ? 'Completed' : 'Pending';
+    topic.completedAt = topic.completed ? new Date() : null;
     if (topic.completed) {
       topic.revisionDates = [...(topic.revisionDates || []), new Date()];
     }

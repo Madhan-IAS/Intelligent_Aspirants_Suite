@@ -12,6 +12,7 @@ const topicSchema = new mongoose.Schema({
   difficulty: { type: String, enum: ['Easy', 'Medium', 'Hard'], default: 'Medium' },
   status: { type: String, enum: ['Pending', 'In Progress', 'Completed'], default: 'Pending' },
   completed: { type: Boolean, default: false },
+  completedAt: { type: Date },
   revisionDates: [{ type: Date }],
   relatedTopics: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Topic' }],
   hubData: {

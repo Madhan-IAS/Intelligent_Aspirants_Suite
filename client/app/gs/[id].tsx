@@ -425,6 +425,17 @@ export default function GSModule() {
                             }}>
                               {t.title}
                             </Text>
+                            {isDone && (t.completedAt || t.updatedAt) && (
+                              <Text style={{ color: '#10b981', fontSize: 11, fontWeight: '500', marginTop: 2 }}>
+                                🕒 {(() => {
+                                  const d = new Date(t.completedAt || t.updatedAt);
+                                  if (isNaN(d.getTime())) return '';
+                                  const isToday = d.toDateString() === new Date().toDateString();
+                                  const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                  return isToday ? `Checked today at ${timeStr}` : `Checked on ${d.toLocaleDateString([], { day: 'numeric', month: 'short' })} at ${timeStr}`;
+                                })()}
+                              </Text>
+                            )}
                           </TouchableOpacity>
                         </View>
 

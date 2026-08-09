@@ -84,6 +84,7 @@ exports.toggleTopicCheckbox = async (req, res) => {
 
     topic.completed = !topic.completed;
     topic.status = topic.completed ? 'Completed' : 'Pending';
+    topic.completedAt = topic.completed ? new Date() : null;
     await topic.save();
 
     res.json(topic);
@@ -94,9 +95,14 @@ exports.toggleTopicCheckbox = async (req, res) => {
 
 exports.updateTopicStatus = async (req, res) => {
   try {
+    const isCompleted = req.body.status === 'Completed';
     const topic = await Topic.findByIdAndUpdate(
       req.params.id, 
-      { status: req.body.status, completed: req.body.status === 'Completed' }, 
+      { 
+        status: req.body.status, 
+        completed: isCompleted,
+        completedAt: isCompleted ? new Date() : null
+      }, 
       { new: true }
     );
     res.json(topic);

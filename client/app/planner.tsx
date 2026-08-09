@@ -130,6 +130,21 @@ export default function Planner() {
     }
   };
 
+  const formatCompletionTime = (dateInput: string | Date | undefined) => {
+    if (!dateInput) return '';
+    const date = new Date(dateInput);
+    if (isNaN(date.getTime())) return '';
+    const today = new Date();
+    const isToday = date.toDateString() === today.toDateString();
+    const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (isToday) {
+      return `Checked today at ${timeStr}`;
+    } else {
+      const dateStr = date.toLocaleDateString([], { day: 'numeric', month: 'short' });
+      return `Checked on ${dateStr} at ${timeStr}`;
+    }
+  };
+
   const handleToggleMissionTopic = async (topicId: string) => {
     try {
       const res = await api.patch(`/daily-plan/toggle-topic/${topicId}`);
@@ -138,14 +153,14 @@ export default function Planner() {
       setTodayMission((prev: any) => {
         if (!prev) return prev;
         const updateList = (list: any[]) => list.map((t: any) => 
-          t._id === topicId ? { ...t, completed: res.data.completed, status: res.data.status } : t
+          t._id === topicId ? { ...t, completed: res.data.completed, status: res.data.status, completedAt: res.data.completedAt } : t
         );
         return {
           ...prev,
           gsTopicIds: updateList(prev.gsTopicIds || []),
           optTopicIds: updateList(prev.optTopicIds || []),
           revisionTopicId: prev.revisionTopicId?._id === topicId 
-            ? { ...prev.revisionTopicId, completed: res.data.completed, status: res.data.status }
+            ? { ...prev.revisionTopicId, completed: res.data.completed, status: res.data.status, completedAt: res.data.completedAt }
             : prev.revisionTopicId
         };
       });
@@ -358,7 +373,12 @@ export default function Planner() {
                         color: isDark ? 'white' : '#111827', fontWeight: '600', fontSize: 14,
                         textDecorationLine: topic.completed ? 'line-through' : 'none'
                       }}>{topic.title}</Text>
-                      <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11, marginTop: 2 }}>{topic.chapter}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2, flexWrap: 'wrap' }}>
+                        <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11 }}>{topic.chapter}</Text>
+                        {topic.completed && topic.completedAt && (
+                          <Text style={{ color: '#10b981', fontSize: 11, fontWeight: '500' }}>• 🕒 {formatCompletionTime(topic.completedAt)}</Text>
+                        )}
+                      </View>
                     </View>
                     <TouchableOpacity
                       onPress={(e) => { e.stopPropagation(); router.push(`/topic/${topic._id}` as any); }}
@@ -400,7 +420,12 @@ export default function Planner() {
                         color: isDark ? 'white' : '#111827', fontWeight: '600', fontSize: 14,
                         textDecorationLine: topic.completed ? 'line-through' : 'none'
                       }}>{topic.title}</Text>
-                      <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11, marginTop: 2 }}>{topic.chapter}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2, flexWrap: 'wrap' }}>
+                        <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11 }}>{topic.chapter}</Text>
+                        {topic.completed && topic.completedAt && (
+                          <Text style={{ color: '#10b981', fontSize: 11, fontWeight: '500' }}>• 🕒 {formatCompletionTime(topic.completedAt)}</Text>
+                        )}
+                      </View>
                     </View>
                     <TouchableOpacity
                       onPress={(e) => { e.stopPropagation(); router.push(`/topic/${topic._id}` as any); }}
@@ -441,7 +466,12 @@ export default function Planner() {
                         color: isDark ? 'white' : '#111827', fontWeight: '600', fontSize: 14,
                         textDecorationLine: todayMission.revisionTopicId.completed ? 'line-through' : 'none'
                       }}>{todayMission.revisionTopicId.title}</Text>
-                      <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11, marginTop: 2 }}>{todayMission.revisionTopicId.paper} • {todayMission.revisionTopicId.chapter}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2, flexWrap: 'wrap' }}>
+                        <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11 }}>{todayMission.revisionTopicId.paper} • {todayMission.revisionTopicId.chapter}</Text>
+                        {todayMission.revisionTopicId.completed && todayMission.revisionTopicId.completedAt && (
+                          <Text style={{ color: '#10b981', fontSize: 11, fontWeight: '500' }}>• 🕒 {formatCompletionTime(todayMission.revisionTopicId.completedAt)}</Text>
+                        )}
+                      </View>
                     </View>
                     <TouchableOpacity
                       onPress={(e) => { e.stopPropagation(); router.push(`/topic/${todayMission.revisionTopicId._id}` as any); }}

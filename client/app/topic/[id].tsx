@@ -178,6 +178,17 @@ export default function TopicKnowledgeHub() {
               <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 22, fontWeight: 'bold', marginTop: 2 }} numberOfLines={1}>
                 {topic.title}
               </Text>
+              {topic.completed && (topic.completedAt || topic.updatedAt) && (
+                <Text style={{ color: '#10b981', fontSize: 12, fontWeight: 'bold', marginTop: 4 }}>
+                  ✅ Checked on {(() => {
+                    const d = new Date(topic.completedAt || topic.updatedAt);
+                    if (isNaN(d.getTime())) return '';
+                    const isToday = d.toDateString() === new Date().toDateString();
+                    const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    return isToday ? `Today at ${timeStr}` : `${d.toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })} at ${timeStr}`;
+                  })()}
+                </Text>
+              )}
             </View>
           </View>
 

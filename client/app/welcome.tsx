@@ -9,7 +9,7 @@ const ASPIRANT_PHASES = [
   // --- Original Foundation Stages ---
   {
     icon: 'school',
-    title: 'UPSC CSE',
+    title: 'UPSC CSE — Your Journey Begins',
     subtitle: 'Building Unbreakable Discipline & The LBSNAA Dream',
     badge: 'STAGE 1: FOUNDATION'
   },
@@ -128,6 +128,12 @@ export default function WelcomeScreen() {
       duration: 800,
       useNativeDriver: false,
     }).start();
+
+    // 1b. Badge and Title spring entrance on mount to avoid layout overlap
+    Animated.parallel([
+      Animated.spring(badgeSlideAnim, { toValue: 0, friction: 8, tension: 60, useNativeDriver: false }),
+      Animated.spring(titleSlideAnim, { toValue: 0, friction: 8, tension: 60, useNativeDriver: false }),
+    ]).start();
 
     // 2. Emblem pulse
     Animated.loop(

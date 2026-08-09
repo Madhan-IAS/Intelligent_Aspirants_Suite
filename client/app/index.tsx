@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Platform, StatusBar, TouchableOpacity, ActivityIndicator, useWindowDimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, SafeAreaView, useWindowDimensions, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import api from '../src/services/api';
 import { useAuth } from '../src/context/AuthContext';
 import { useTheme } from '../src/context/ThemeContext';
@@ -12,26 +11,32 @@ import Heatmap from '../src/components/Dashboard/Heatmap';
 export default function Dashboard() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { focusSlotId, focusActivity, focusDuration, focusCategory } = params;
   const { user, loading: authLoading } = useAuth();
   const { width } = useWindowDimensions();
-  const isDesktop = width > 768;
+  const isDesktop = Platform.OS === 'web' && width > 768;
 
-  const [stats, setStats] = useState({ topics: 0, totalTopics: 0, pyqs: 0, revisions: 0, currentAffairs: 0, answers: 0 });
+  const { focusSlotId, focusActivity, focusDuration, focusCategory } = params;
+
+  const [quote, setQuote] = useState({ text: 'Consistency is the key to mastering the Civil Services Examination.', author: 'UPSC Aspirant Mantra' });
+  const [stats, setStats] = useState({
+    topics: 0,
+    totalTopics: 0,
+    pyqs: 0,
+    revisions: 0,
+    currentAffairs: 0,
+    answers: 0
+  });
+  const [subjectProgress, setSubjectProgress] = useState<any[]>([]);
   const [recentTopics, setRecentTopics] = useState<any[]>([]);
   const [pendingRevisions, setPendingRevisions] = useState<any[]>([]);
-  const [subjectProgress, setSubjectProgress] = useState<{ name: string; total: number; completed: number; color: string }[]>([]);
-  const [quote, setQuote] = useState({
-    text: "Success is not the result of spontaneous combustion. You must set yourself on fire.",
-    author: "Arnold H. Glasow"
-  });
   const [loading, setLoading] = useState(true);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [dashMission, setDashMission] = useState<any>(null);
+  const [studyStats, setStudyStats] = useState<any>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
-      router.replace('/welcome');
+      router.replace('/(auth)/login');
       return;
     }
     if (user) {
@@ -44,11 +49,48 @@ export default function Dashboard() {
 
   const fetchDashMission = async () => {
     try {
-      const res = await api.get('/daily-plan/today');
-      setDashMission(res.data);
+      const [planRes, statsRes] = await Promise.all([
+        api.get('/daily-plan/today'),
+        api.get('/daily-plan/stats').catch(() => ({ data: null }))
+      ]);
+      setDashMission(planRes.data);
+      setStudyStats(statsRes.data);
     } catch (error) {
       console.error('Error fetching dashboard mission:', error);
     }
+  };
+
+  const handleToggleMissionTopic = async (topicId: string) => {
+    try {
+      const res = await api.patch(`/daily-plan/toggle-topic/${topicId}`);
+      setDashMission((prev: any) => {
+        if (!prev) return prev;
+        const updateList = (list: any[]) => list.map((t: any) => 
+          t._id === topicId ? { ...t, completed: res.data.completed, status: res.data.status, completedAt: res.data.completedAt } : t
+        );
+        return {
+          ...prev,
+          gsTopicIds: updateList(prev.gsTopicIds || []),
+          optTopicIds: updateList(prev.optTopicIds || []),
+          revisionTopicId: prev.revisionTopicId?._id === topicId 
+            ? { ...prev.revisionTopicId, completed: res.data.completed, status: res.data.status, completedAt: res.data.completedAt }
+            : prev.revisionTopicId
+        };
+      });
+      fetchDashboardData();
+    } catch (error) {
+      console.error('Error toggling mission topic from dashboard:', error);
+    }
+  };
+
+  const formatCompletionTime = (dateInput: string | Date | undefined) => {
+    if (!dateInput) return '';
+    const date = new Date(dateInput);
+    if (isNaN(date.getTime())) return '';
+    const today = new Date();
+    const isToday = date.toDateString() === today.toDateString();
+    const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return isToday ? `Checked today at ${timeStr}` : `Checked on ${date.toLocaleDateString([], { day: 'numeric', month: 'short' })} at ${timeStr}`;
   };
 
   const fetchRandomQuote = async () => {
@@ -65,16 +107,17 @@ export default function Dashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const [gs1Res, gs2Res, gs3Res, gs4Res, socioRes, pyqsRes, revisionsRes, caRes, answersRes] = await Promise.all([
+      const [gs1Res, gs2Res, gs3Res, gs4Res, socioRes, pyqsRes, revisionsRes, caRes, answersRes, recentTopicsRes] = await Promise.all([
         api.get('/topics/subject/GS I').catch(() => ({ data: [] })),
         api.get('/topics/subject/GS II').catch(() => ({ data: [] })),
         api.get('/topics/subject/GS III').catch(() => ({ data: [] })),
         api.get('/topics/subject/GS IV').catch(() => ({ data: [] })),
         api.get('/topics/subject/Sociology').catch(() => ({ data: [] })),
         api.get('/pyqs').catch(() => ({ data: [] })),
-        api.get('/revisions').catch(() => ({ data: [] })),
+        api.get('/revisions/pending').catch(() => ({ data: [] })),
         api.get('/current-affairs').catch(() => ({ data: [] })),
-        api.get('/answers').catch(() => ({ data: [] }))
+        api.get('/answers').catch(() => ({ data: [] })),
+        api.get('/topics/recent').catch(() => ({ data: [] }))
       ]);
 
       const subjects = [
@@ -105,8 +148,8 @@ export default function Dashboard() {
         answers: answersRes.data?.length || 0
       });
 
-      setRecentTopics(allTopics.slice(-5).reverse());
-      setPendingRevisions(revisionsRes.data.slice(0, 5));
+      setRecentTopics(recentTopicsRes.data || []);
+      setPendingRevisions(revisionsRes.data || []);
     } catch (error) {
       console.error('Dashboard fetch error:', error);
     } finally {
@@ -148,12 +191,19 @@ export default function Dashboard() {
 
   const overallPct = stats.totalTopics > 0 ? ((stats.topics / stats.totalTopics) * 100).toFixed(1) : '0.0';
 
+  // Calculate days remaining to Dec 31, 2026 and May 23, 2027
+  const now = new Date();
+  const dec31 = new Date(2026, 11, 31);
+  const prelimsDate = new Date(2027, 4, 23);
+  const dec31Days = Math.max(0, Math.ceil((dec31.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+  const prelimsDays = Math.max(0, Math.ceil((prelimsDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+
   return (
     <View style={{ flex: 1, backgroundColor: isDark ? '#111827' : '#f9fafb' }}>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 24, paddingBottom: 64 }} showsVerticalScrollIndicator={false}>
         
         {/* Header Section */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <View>
             <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 18, fontWeight: '500', marginBottom: 4 }}>{getGreeting()}</Text>
             <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 32, fontWeight: 'bold' }}>{user.name?.split(' ')[0] || 'Aspirant'}</Text>
@@ -170,40 +220,198 @@ export default function Dashboard() {
           </View>
         </View>
 
-        {/* Today's Mission Preview */}
-        {dashMission && (
-          <TouchableOpacity onPress={() => router.push('/planner')} style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 16, borderRadius: 16, borderWidth: 2, borderColor: '#3b82f6', marginBottom: 24 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        {/* Target Milestone Countdown Banners */}
+        <View style={{ flexDirection: isDesktop ? 'row' : 'column', gap: 12, marginBottom: 24 }}>
+          <View style={{ flex: 1, backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 14, borderRadius: 12, borderWidth: 1, borderColor: '#3b82f6', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(59, 130, 246, 0.15)', alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ fontSize: 18 }}>🎯</Text>
-                <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 16, fontWeight: 'bold' }}>Today's Mission</Text>
               </View>
-              <View style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 }}>
-                <Text style={{ color: '#3b82f6', fontSize: 12, fontWeight: 'bold' }}>{dashMission.gsPaper} Day</Text>
+              <View>
+                <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold', fontSize: 13 }}>Dec 31, 2026 Target</Text>
+                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11 }}>100% Syllabus + 2x Revision</Text>
               </View>
             </View>
+            <View style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}>
+              <Text style={{ color: '#3b82f6', fontWeight: 'bold', fontSize: 13 }}>{dec31Days} Days Left</Text>
+            </View>
+          </View>
+
+          <View style={{ flex: 1, backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 14, borderRadius: 12, borderWidth: 1, borderColor: '#8b5cf6', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(139, 92, 246, 0.15)', alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontSize: 18 }}>🏛️</Text>
+              </View>
+              <View>
+                <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold', fontSize: 13 }}>UPSC Prelims 2027</Text>
+                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11 }}>May 23, 2027 Exam Date</Text>
+              </View>
+            </View>
+            <View style={{ backgroundColor: 'rgba(139, 92, 246, 0.15)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}>
+              <Text style={{ color: '#8b5cf6', fontWeight: 'bold', fontSize: 13 }}>{prelimsDays} Days Left</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* SECTION 1: TODAY'S MISSION (HERO SECTION) */}
+        {dashMission && (
+          <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 20, borderRadius: 18, borderWidth: 2, borderColor: '#3b82f6', marginBottom: 32 }}>
+            {/* Header */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Text style={{ fontSize: 24 }}>🎯</Text>
+                <View>
+                  <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 20, fontWeight: 'bold' }}>Today's Mission</Text>
+                  <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12 }}>
+                    {dashMission.gsPaper} Day • Rotation {(dashMission.rotationDay || 0) + 1}/8
+                  </Text>
+                </View>
+              </View>
+              {studyStats && studyStats.streak > 0 && (
+                <View style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Text style={{ fontSize: 14 }}>🔥</Text>
+                  <Text style={{ color: '#ef4444', fontWeight: 'bold', fontSize: 13 }}>{studyStats.streak} Day Streak</Text>
+                </View>
+              )}
+            </View>
+
+            {/* Mission Progress Bar */}
             {(() => {
-              const allTopics = [...(dashMission.gsTopicIds || []), ...(dashMission.optTopicIds || [])];
+              const allTopics = [...(dashMission.gsTopicIds || []), ...(dashMission.optTopicIds || []), ...(dashMission.revisionTopicId ? [dashMission.revisionTopicId] : [])];
               const doneCount = allTopics.filter((t: any) => t.completed).length;
               const totalCount = allTopics.length;
               const pct = totalCount > 0 ? (doneCount / totalCount) * 100 : 0;
               return (
-                <View>
+                <View style={{ marginBottom: 16 }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12 }}>{doneCount} of {totalCount} topics done</Text>
-                    <Text style={{ color: pct === 100 ? '#10b981' : '#3b82f6', fontSize: 12, fontWeight: 'bold' }}>{pct.toFixed(0)}%</Text>
+                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12, fontWeight: '600' }}>Daily Mission Progress</Text>
+                    <Text style={{ color: pct === 100 ? '#10b981' : '#3b82f6', fontSize: 12, fontWeight: 'bold' }}>{doneCount}/{totalCount} Topics Completed {pct === 100 ? '✅' : ''}</Text>
                   </View>
-                  <View style={{ height: 6, backgroundColor: isDark ? '#374151' : '#e5e7eb', borderRadius: 3, overflow: 'hidden' }}>
-                    <View style={{ height: '100%', width: `${pct}%`, backgroundColor: pct === 100 ? '#10b981' : '#3b82f6', borderRadius: 3 }} />
+                  <View style={{ height: 8, backgroundColor: isDark ? '#374151' : '#e5e7eb', borderRadius: 4, overflow: 'hidden' }}>
+                    <View style={{ height: '100%', width: `${pct}%`, backgroundColor: pct === 100 ? '#10b981' : '#3b82f6', borderRadius: 4 }} />
                   </View>
-                  <Text style={{ color: '#3b82f6', fontSize: 12, fontWeight: 'bold', marginTop: 8, textAlign: 'right' }}>Open Planner →</Text>
                 </View>
               );
             })()}
-          </TouchableOpacity>
+
+            {/* GS Topics Section */}
+            <View style={{ marginBottom: 16 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#3b82f6' }} />
+                <Text style={{ color: '#3b82f6', fontWeight: 'bold', fontSize: 13 }}>{dashMission.gsPaper} — General Studies ({(dashMission.gsTopicIds || []).length} Topics)</Text>
+              </View>
+              {(dashMission.gsTopicIds || []).map((topic: any) => (
+                <TouchableOpacity
+                  key={topic._id}
+                  onPress={() => handleToggleMissionTopic(topic._id)}
+                  style={{
+                    flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10, marginBottom: 6,
+                    backgroundColor: topic.completed ? (isDark ? 'rgba(16, 185, 129, 0.1)' : '#f0fdf4') : (isDark ? '#111827' : '#f9fafb'),
+                    borderWidth: 1, borderColor: topic.completed ? '#10b981' : (isDark ? '#374151' : '#e5e7eb'),
+                    opacity: topic.completed ? 0.7 : 1
+                  }}
+                >
+                  <View style={{
+                    width: 22, height: 22, borderRadius: 6, borderWidth: 2, marginRight: 12,
+                    borderColor: topic.completed ? '#10b981' : (isDark ? '#4b5563' : '#d1d5db'),
+                    backgroundColor: topic.completed ? '#10b981' : 'transparent',
+                    alignItems: 'center', justifyContent: 'center'
+                  }}>
+                    {topic.completed && <Ionicons name="checkmark" size={14} color="white" />}
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{
+                      color: isDark ? 'white' : '#111827', fontWeight: '600', fontSize: 14,
+                      textDecorationLine: topic.completed ? 'line-through' : 'none'
+                    }}>{topic.title}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2, flexWrap: 'wrap' }}>
+                      <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11 }}>{topic.chapter}</Text>
+                      {topic.completed && topic.completedAt && (
+                        <Text style={{ color: '#10b981', fontSize: 11, fontWeight: '500' }}>• 🕒 {formatCompletionTime(topic.completedAt)}</Text>
+                      )}
+                    </View>
+                  </View>
+                  <View style={{ flexDirection: 'row', gap: 6 }}>
+                    <TouchableOpacity
+                      onPress={(e) => { e.stopPropagation(); router.push(`/answers?topicId=${topic._id}&topicTitle=${encodeURIComponent(topic.title)}&paper=${encodeURIComponent(dashMission.gsPaper)}` as any); }}
+                      style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
+                    >
+                      <Text style={{ color: '#10b981', fontSize: 11, fontWeight: 'bold' }}>Write Answer ✍️</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={(e) => { e.stopPropagation(); router.push(`/topic/${topic._id}` as any); }}
+                      style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
+                    >
+                      <Text style={{ color: '#3b82f6', fontSize: 11, fontWeight: 'bold' }}>Open Hub →</Text>
+                    </TouchableOpacity>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Sociology Topics Section */}
+            <View style={{ marginBottom: 12 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#8b5cf6' }} />
+                <Text style={{ color: '#8b5cf6', fontWeight: 'bold', fontSize: 13 }}>{dashMission.optionalPaper} — Optional ({(dashMission.optTopicIds || []).length} Topics)</Text>
+              </View>
+              {(dashMission.optTopicIds || []).map((topic: any) => (
+                <TouchableOpacity
+                  key={topic._id}
+                  onPress={() => handleToggleMissionTopic(topic._id)}
+                  style={{
+                    flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10, marginBottom: 6,
+                    backgroundColor: topic.completed ? (isDark ? 'rgba(16, 185, 129, 0.1)' : '#f0fdf4') : (isDark ? '#111827' : '#f9fafb'),
+                    borderWidth: 1, borderColor: topic.completed ? '#10b981' : (isDark ? '#374151' : '#e5e7eb'),
+                    opacity: topic.completed ? 0.7 : 1
+                  }}
+                >
+                  <View style={{
+                    width: 22, height: 22, borderRadius: 6, borderWidth: 2, marginRight: 12,
+                    borderColor: topic.completed ? '#10b981' : (isDark ? '#4b5563' : '#d1d5db'),
+                    backgroundColor: topic.completed ? '#10b981' : 'transparent',
+                    alignItems: 'center', justifyContent: 'center'
+                  }}>
+                    {topic.completed && <Ionicons name="checkmark" size={14} color="white" />}
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{
+                      color: isDark ? 'white' : '#111827', fontWeight: '600', fontSize: 14,
+                      textDecorationLine: topic.completed ? 'line-through' : 'none'
+                    }}>{topic.title}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2, flexWrap: 'wrap' }}>
+                      <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11 }}>{topic.chapter}</Text>
+                      {topic.completed && topic.completedAt && (
+                        <Text style={{ color: '#10b981', fontSize: 11, fontWeight: '500' }}>• 🕒 {formatCompletionTime(topic.completedAt)}</Text>
+                      )}
+                    </View>
+                  </View>
+                  <View style={{ flexDirection: 'row', gap: 6 }}>
+                    <TouchableOpacity
+                      onPress={(e) => { e.stopPropagation(); router.push(`/answers?topicId=${topic._id}&topicTitle=${encodeURIComponent(topic.title)}&paper=${encodeURIComponent(dashMission.optionalPaper)}` as any); }}
+                      style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
+                    >
+                      <Text style={{ color: '#10b981', fontSize: 11, fontWeight: 'bold' }}>Write Answer ✍️</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={(e) => { e.stopPropagation(); router.push(`/topic/${topic._id}` as any); }}
+                      style={{ backgroundColor: 'rgba(139, 92, 246, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
+                    >
+                      <Text style={{ color: '#8b5cf6', fontSize: 11, fontWeight: 'bold' }}>Open Hub →</Text>
+                    </TouchableOpacity>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Planner Link */}
+            <TouchableOpacity onPress={() => router.push('/planner')} style={{ alignItems: 'flex-end', marginTop: 4 }}>
+              <Text style={{ color: '#3b82f6', fontSize: 13, fontWeight: 'bold' }}>View Full Schedule & Planner →</Text>
+            </TouchableOpacity>
+          </View>
         )}
 
-        {/* Live Stats Cards */}
+        {/* SECTION 2: LIVE STATS CARDS */}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginBottom: 32 }}>
           <TouchableOpacity onPress={() => router.push('/pyqs')} style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', borderRadius: 16, padding: 20, flex: 1, minWidth: 140, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
@@ -250,7 +458,7 @@ export default function Dashboard() {
           </TouchableOpacity>
         </View>
 
-        {/* Pomodoro & Heatmap Row */}
+        {/* SECTION 3: DEEP WORK TIMER & HEATMAP */}
         <View style={{ flexDirection: isDesktop ? 'row' : 'column', gap: 24, marginBottom: 32 }}>
           <View style={{ flex: isDesktop ? 1 : undefined, width: '100%' }}>
             <PomodoroTimer 
@@ -261,7 +469,7 @@ export default function Dashboard() {
                 category: (focusCategory as string) || 'Study',
                 session: 'Planner Session'
               } : null}
-              onSlotComplete={async (slotId) => {
+              onSlotComplete={async (slotId: string) => {
                 try {
                   await api.post(`/timetable/progress/${slotId}`);
                   fetchDashboardData();
@@ -290,7 +498,7 @@ export default function Dashboard() {
           </View>
         </View>
 
-        {/* Main Grid */}
+        {/* SECTION 4: QUICK ACTIONS & RECENT ACTIVITY */}
         <View style={{ gap: 24, marginBottom: 32 }}>
           
           {/* Quick Actions */}
@@ -327,7 +535,7 @@ export default function Dashboard() {
                 </TouchableOpacity>
               </View>
               {recentTopics.length === 0 ? (
-                <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontStyle: 'italic' }}>No topics added yet. Start building your syllabus!</Text>
+                <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontStyle: 'italic' }}>No recent topics found. Complete a topic to see it here!</Text>
               ) : (
                 recentTopics.map((topic: any) => (
                   <TouchableOpacity 
@@ -335,10 +543,12 @@ export default function Dashboard() {
                     onPress={() => router.push(`/topic/${topic._id}`)}
                     style={{ flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 12, marginBottom: 8, backgroundColor: isDark ? 'rgba(55, 65, 81, 0.3)' : '#f3f4f6', borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}
                   >
-                    <View style={{ width: 8, height: 8, borderRadius: 4, marginRight: 12, backgroundColor: topic.status === 'Completed' ? '#10b981' : topic.status === 'In Progress' ? '#3b82f6' : '#6b7280' }} />
+                    <View style={{ width: 8, height: 8, borderRadius: 4, marginRight: 12, backgroundColor: topic.completed ? '#10b981' : topic.status === 'In Progress' ? '#3b82f6' : '#6b7280' }} />
                     <View style={{ flex: 1 }}>
                       <Text style={{ color: isDark ? '#e5e7eb' : '#374151', fontWeight: '500' }}>{topic.title}</Text>
-                      <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 12 }}>{topic.difficulty || 'Medium'} • {topic.status}</Text>
+                      <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 12 }}>
+                        {topic.paper || 'GS'} • {topic.completed && topic.completedAt ? formatCompletionTime(topic.completedAt) : topic.status}
+                      </Text>
                     </View>
                     <Ionicons name="chevron-forward" size={16} color={isDark ? '#6b7280' : '#9ca3af'} />
                   </TouchableOpacity>
@@ -355,7 +565,7 @@ export default function Dashboard() {
                 </TouchableOpacity>
               </View>
               {pendingRevisions.length === 0 ? (
-                <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontStyle: 'italic' }}>No pending revisions. You're all caught up! 🎉</Text>
+                <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontStyle: 'italic' }}>No pending revisions due today. You're all caught up! 🎉</Text>
               ) : (
                 pendingRevisions.map((rev: any) => (
                   <TouchableOpacity 
@@ -367,8 +577,8 @@ export default function Dashboard() {
                       <Ionicons name="time" size={16} color="#f97316" />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: isDark ? '#e5e7eb' : '#374151', fontWeight: '500', textDecorationLine: 'underline' }}>{rev.topicId?.title || 'Topic'}</Text>
-                      <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 12 }}>Due: {new Date(rev.nextDate).toLocaleDateString()}</Text>
+                      <Text style={{ color: isDark ? '#e5e7eb' : '#374151', fontWeight: '500', textDecorationLine: 'underline' }}>{rev.topicId?.title || 'Topic Revision'}</Text>
+                      <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 12 }}>Due: {new Date(rev.scheduledDate || rev.nextDate).toLocaleDateString([], { day: 'numeric', month: 'short' })}</Text>
                     </View>
                   </TouchableOpacity>
                 ))
@@ -429,6 +639,7 @@ export default function Dashboard() {
           </View>
 
         </View>
+
       </ScrollView>
     </View>
   );

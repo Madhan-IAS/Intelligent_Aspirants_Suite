@@ -7,7 +7,11 @@ import { useTheme } from '../src/context/ThemeContext';
 
 export default function AnswerWorkspace() {
   const router = useRouter();
-  const { pyqId } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+  const pyqId = params.pyqId as string;
+  const topicId = params.topicId as string;
+  const topicTitle = params.topicTitle as string;
+  const paper = params.paper as string;
   const { mode } = useTheme();
   const isDark = mode === 'dark';
 
@@ -47,11 +51,23 @@ export default function AnswerWorkspace() {
     if (pyqId) {
       fetchPYQ();
       fetchPreviousAttempts();
+    } else if (topicTitle) {
+      setPyq({
+        _id: topicId || 'topic_ans',
+        question: `Practice Answer: ${topicTitle}`,
+        subject: paper || 'GS',
+        topic: topicTitle,
+        year: 2026,
+        marks: 15,
+        wordLimit: 250
+      });
+      setLoading(false);
+      fetchRecommendedQuotes(topicTitle);
     } else {
       setLoading(false);
       fetchRecommendedQuotes('');
     }
-  }, [pyqId]);
+  }, [pyqId, topicTitle]);
 
   useEffect(() => {
     if (pyq) {

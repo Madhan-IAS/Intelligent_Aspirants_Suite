@@ -380,12 +380,20 @@ export default function Planner() {
                         )}
                       </View>
                     </View>
-                    <TouchableOpacity
-                      onPress={(e) => { e.stopPropagation(); router.push(`/topic/${topic._id}` as any); }}
-                      style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
-                    >
-                      <Text style={{ color: '#3b82f6', fontSize: 11, fontWeight: 'bold' }}>Open Hub →</Text>
-                    </TouchableOpacity>
+                    <View style={{ flexDirection: 'row', gap: 6 }}>
+                      <TouchableOpacity
+                        onPress={(e) => { e.stopPropagation(); router.push(`/answers?topicId=${topic._id}&topicTitle=${encodeURIComponent(topic.title)}&paper=${encodeURIComponent(todayMission.gsPaper)}` as any); }}
+                        style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
+                      >
+                        <Text style={{ color: '#10b981', fontSize: 11, fontWeight: 'bold' }}>Write Answer ✍️</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={(e) => { e.stopPropagation(); router.push(`/topic/${topic._id}` as any); }}
+                        style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
+                      >
+                        <Text style={{ color: '#3b82f6', fontSize: 11, fontWeight: 'bold' }}>Open Hub →</Text>
+                      </TouchableOpacity>
+                    </View>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -427,12 +435,20 @@ export default function Planner() {
                         )}
                       </View>
                     </View>
-                    <TouchableOpacity
-                      onPress={(e) => { e.stopPropagation(); router.push(`/topic/${topic._id}` as any); }}
-                      style={{ backgroundColor: 'rgba(139, 92, 246, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
-                    >
-                      <Text style={{ color: '#8b5cf6', fontSize: 11, fontWeight: 'bold' }}>Open Hub →</Text>
-                    </TouchableOpacity>
+                    <View style={{ flexDirection: 'row', gap: 6 }}>
+                      <TouchableOpacity
+                        onPress={(e) => { e.stopPropagation(); router.push(`/answers?topicId=${topic._id}&topicTitle=${encodeURIComponent(topic.title)}&paper=${encodeURIComponent(todayMission.optionalPaper)}` as any); }}
+                        style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
+                      >
+                        <Text style={{ color: '#10b981', fontSize: 11, fontWeight: 'bold' }}>Write Answer ✍️</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={(e) => { e.stopPropagation(); router.push(`/topic/${topic._id}` as any); }}
+                        style={{ backgroundColor: 'rgba(139, 92, 246, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
+                      >
+                        <Text style={{ color: '#8b5cf6', fontSize: 11, fontWeight: 'bold' }}>Open Hub →</Text>
+                      </TouchableOpacity>
+                    </View>
                   </TouchableOpacity>
                 ))}
               </View>

@@ -77,6 +77,58 @@ exports.createTopic = async (req, res) => {
   }
 };
 
+const Revision = require('../models/Revision');
+
+const autoScheduleRevision = async (userId, topicId) => {
+  if (!userId) return;
+  try {
+    const existing = await Revision.findOne({ userId, topicId, status: 'Pending' });
+    if (!existing) {
+      const nextDate = new Date();
+      nextDate.setDate(nextDate.getDate() + 1);
+      await Revision.create({
+        userId,
+        topicId,
+        interval: 1,
+        scheduledDate: nextDate,
+        status: 'Pending'
+      });
+    }
+  } catch (err) {
+    console.error('Error auto-scheduling revision:', err);
+  }
+};
+
+const autoCancelRevision = async (userId, topicId) => {
+  if (!userId) return;
+  try {
+    await Revision.deleteMany({ userId, topicId, status: 'Pending' });
+  } catch (err) {
+    console.error('Error auto-canceling revision:', err);
+  }
+};
+
+exports.getRecentTopics = async (req, res) => {
+  try {
+    const recent = await Topic.find({
+      $or: [{ completed: true }, { status: 'In Progress' }, { completedAt: { $ne: null } }]
+    })
+    .sort({ completedAt: -1, updatedAt: -1 })
+    .limit(5);
+
+    if (recent.length < 5) {
+      const fallback = await Topic.find()
+        .sort({ updatedAt: -1 })
+        .limit(5);
+      return res.json(fallback);
+    }
+
+    res.json(recent);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 exports.toggleTopicCheckbox = async (req, res) => {
   try {
     const topic = await Topic.findById(req.params.id);
@@ -86,6 +138,12 @@ exports.toggleTopicCheckbox = async (req, res) => {
     topic.status = topic.completed ? 'Completed' : 'Pending';
     topic.completedAt = topic.completed ? new Date() : null;
     await topic.save();
+
+    if (topic.completed && req.user) {
+      await autoScheduleRevision(req.user.id, topic._id);
+    } else if (!topic.completed && req.user) {
+      await autoCancelRevision(req.user.id, topic._id);
+    }
 
     res.json(topic);
   } catch (error) {
@@ -105,6 +163,13 @@ exports.updateTopicStatus = async (req, res) => {
       }, 
       { new: true }
     );
+
+    if (isCompleted && req.user) {
+      await autoScheduleRevision(req.user.id, topic._id);
+    } else if (!isCompleted && req.user) {
+      await autoCancelRevision(req.user.id, topic._id);
+    }
+
     res.json(topic);
   } catch (error) {
     res.status(400).json({ message: error.message });

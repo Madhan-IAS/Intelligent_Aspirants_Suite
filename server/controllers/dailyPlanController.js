@@ -1,5 +1,6 @@
 const DailyPlan = require('../models/DailyPlan');
 const Topic = require('../models/Topic');
+const Revision = require('../models/Revision');
 
 // 8-Day Rotation Schedule (mirrors planner.tsx ROTATION_SCHEDULE)
 const ROTATION_SCHEDULE = [
@@ -118,6 +119,21 @@ exports.toggleTopic = async (req, res) => {
     topic.completedAt = topic.completed ? new Date() : null;
     if (topic.completed) {
       topic.revisionDates = [...(topic.revisionDates || []), new Date()];
+      // Auto schedule 1st revision for tomorrow
+      const existingRev = await Revision.findOne({ userId, topicId: topic._id, status: 'Pending' });
+      if (!existingRev) {
+        const nextDate = new Date();
+        nextDate.setDate(nextDate.getDate() + 1);
+        await Revision.create({
+          userId,
+          topicId: topic._id,
+          interval: 1,
+          scheduledDate: nextDate,
+          status: 'Pending'
+        });
+      }
+    } else {
+      await Revision.deleteMany({ userId, topicId: topic._id, status: 'Pending' });
     }
     await topic.save();
 

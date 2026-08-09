@@ -59,13 +59,13 @@ const ASPIRANT_PHASES = [
   {
     icon: 'newspaper',
     title: 'Live Current Affairs Feed',
-    subtitle: 'The Hindu • PIB • Indian Express • RBI — Auto-Scraped Daily',
+    subtitle: 'The Hindu • PIB • Indian Express • RBI etc .... — Auto-Scraped Daily ',
     badge: '📰 CURRENT AFFAIRS'
   },
   {
     icon: 'trophy',
     title: 'The LBSNAA Dream Awaits',
-    subtitle: '100% Syllabus Coverage by Dec 2026 • Prelims May 2027',
+    subtitle: '100% Syllabus Coverage',
     badge: '🏛️ PEAK PERFORMANCE'
   }
 ];

@@ -4,14 +4,14 @@ const Revision = require('../models/Revision');
 
 // 8-Day Rotation Schedule (mirrors planner.tsx ROTATION_SCHEDULE)
 const ROTATION_SCHEDULE = [
-  { gsPaper: 'GS I',   optPaper: 'Sociology Paper I' },
-  { gsPaper: 'GS II',  optPaper: 'Sociology Paper II' },
+  { gsPaper: 'GS I', optPaper: 'Sociology Paper I' },
+  { gsPaper: 'GS II', optPaper: 'Sociology Paper II' },
   { gsPaper: 'GS III', optPaper: 'Sociology Paper I' },
-  { gsPaper: 'GS IV',  optPaper: 'Sociology Paper II' },
-  { gsPaper: 'GS I',   optPaper: 'Sociology Paper I' },
-  { gsPaper: 'GS II',  optPaper: 'Sociology Paper II' },
+  { gsPaper: 'GS IV', optPaper: 'Sociology Paper II' },
+  { gsPaper: 'GS I', optPaper: 'Sociology Paper I' },
+  { gsPaper: 'GS II', optPaper: 'Sociology Paper II' },
   { gsPaper: 'GS III', optPaper: 'Sociology Paper I' },
-  { gsPaper: 'GS IV',  optPaper: 'Sociology Paper II' },
+  { gsPaper: 'GS IV', optPaper: 'Sociology Paper II' },
 ];
 
 // Helper: Get IST date string
@@ -75,7 +75,7 @@ exports.getTodayPlan = async (req, res) => {
 
     // 2. Pick next 8 uncompleted Sociology topics in syllabus order (if Sociology complete, pull GS topics)
     let optTopics = await Topic.find({
-      paper: 'Sociology',
+      tags: rotation.optPaper,
       completed: { $ne: true }
     }).sort({ _id: 1 }).limit(8).select('_id');
 
@@ -172,7 +172,7 @@ exports.toggleTopic = async (req, res) => {
 
       const allTopics = await Topic.find({ _id: { $in: allTopicIds } }).select('completed');
       const allDone = allTopics.every(t => t.completed);
-      
+
       if (plan.completed !== allDone) {
         plan.completed = allDone;
         await plan.save();
@@ -207,9 +207,9 @@ exports.getStats = async (req, res) => {
 
     for (let i = 0; i < 365; i++) {
       const dateStr = `${istCheck.getFullYear()}-${String(istCheck.getMonth() + 1).padStart(2, '0')}-${String(istCheck.getDate()).padStart(2, '0')}`;
-      
+
       const plan = await DailyPlan.findOne({ userId, date: dateStr });
-      
+
       if (i === 0) {
         // Today: count if at least 1 topic was completed
         if (plan) {

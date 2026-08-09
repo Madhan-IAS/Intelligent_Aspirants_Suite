@@ -8,7 +8,7 @@ import { useAuth } from '../src/context/AuthContext';
 const ASPIRANT_PHASES = [
   {
     icon: 'school',
-    title: 'UPSC CSE 2027',
+    title: 'UPSC CSE',
     subtitle: 'Building Unbreakable Discipline & The LBSNAA Dream',
     badge: 'STAGE 1: FOUNDATION'
   },
@@ -134,7 +134,7 @@ export default function WelcomeScreen() {
   });
 
   return (
-    <View 
+    <View
       style={{
         flex: 1,
         backgroundColor: isDark ? '#0b0f17' : '#ffffff',
@@ -146,7 +146,7 @@ export default function WelcomeScreen() {
     >
       {/* Top Bar: Skip Button */}
       <View style={{ width: '100%', flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' }}>
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={handleNext}
           style={{
             backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
@@ -165,16 +165,16 @@ export default function WelcomeScreen() {
       </View>
 
       {/* Main Center Content */}
-      <Animated.View 
-        style={{ 
-          opacity: fadeAnim, 
-          alignItems: 'center', 
+      <Animated.View
+        style={{
+          opacity: fadeAnim,
+          alignItems: 'center',
           justifyContent: 'center',
           width: '100%'
         }}
       >
         {/* Pulsing Emblem Container */}
-        <Animated.View 
+        <Animated.View
           style={{
             transform: [{ scale: pulseAnim }],
             width: 210,
@@ -193,14 +193,14 @@ export default function WelcomeScreen() {
             marginBottom: 36,
           }}
         >
-          <Image 
-            source={require('../assets/ias_logo.png')} 
+          <Image
+            source={require('../assets/ias_logo.png')}
             style={{ width: 160, height: 160, resizeMode: 'contain' }}
           />
         </Animated.View>
 
         {/* Suite Title */}
-        <Text 
+        <Text
           style={{
             color: isDark ? '#ffffff' : '#111827',
             fontSize: 22,
@@ -215,12 +215,12 @@ export default function WelcomeScreen() {
 
         {/* Dynamic Aspirant Work & Progress Phase Carousel */}
         <Animated.View style={{ opacity: textFadeAnim, alignItems: 'center', minHeight: 95, paddingHorizontal: 16 }}>
-          <View 
-            style={{ 
-              backgroundColor: 'rgba(37, 99, 235, 0.12)', 
-              paddingHorizontal: 14, 
-              paddingVertical: 5, 
-              borderRadius: 12, 
+          <View
+            style={{
+              backgroundColor: 'rgba(37, 99, 235, 0.12)',
+              paddingHorizontal: 14,
+              paddingVertical: 5,
+              borderRadius: 12,
               marginBottom: 10,
               flexDirection: 'row',
               alignItems: 'center'
@@ -245,13 +245,13 @@ export default function WelcomeScreen() {
       {/* Bottom Bar: 10-Second Progress Indicator */}
       <View style={{ width: '85%', alignItems: 'center' }}>
         <View style={{ width: '100%', height: 5, backgroundColor: isDark ? '#1f2937' : '#e5e7eb', borderRadius: 3, overflow: 'hidden', marginBottom: 8 }}>
-          <Animated.View 
-            style={{ 
-              width: progressWidth, 
-              height: '100%', 
+          <Animated.View
+            style={{
+              width: progressWidth,
+              height: '100%',
               backgroundColor: '#2563eb',
-              borderRadius: 3 
-            }} 
+              borderRadius: 3
+            }}
           />
         </View>
         <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11, fontWeight: '500' }}>

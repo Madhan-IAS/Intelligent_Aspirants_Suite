@@ -118,6 +118,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
           <SidebarItem icon="document-text" label="GS II" href="/gs/GS II" onNavigate={onNavigate} />
           <SidebarItem icon="trending-up" label="GS III" href="/gs/GS III" onNavigate={onNavigate} />
           <SidebarItem icon="heart" label="GS IV (Ethics)" href="/gs/GS IV" onNavigate={onNavigate} />
+          <SidebarItem icon="calculator" label="CSAT (Paper II)" href="/csat" onNavigate={onNavigate} />
         </View>
 
         <View style={{ marginBottom: 20 }}>

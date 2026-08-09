@@ -20,16 +20,20 @@ function AppContent() {
   const isAuthPage = pathname === '/login' || pathname === '/welcome' || pathname === '/register';
 
   const [welcomeCompleted, setWelcomeCompleted] = useState(false);
+  const [routerReady, setRouterReady] = useState(false);
 
   useEffect(() => {
     registerForPushNotificationsAsync();
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
       document.title = "IAS — Intelligent Aspirant's Suite";
     }
+    // Delay redirect logic to let Expo Router finish mounting its route tree
+    const timer = setTimeout(() => setRouterReady(true), 100);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    if (!loading && !welcomeCompleted) {
+    if (!loading && routerReady && !welcomeCompleted) {
       setWelcomeCompleted(true);
       if (user) {
         if (pathname === '/welcome' || pathname === '/login' || pathname === '/register') {
@@ -41,7 +45,7 @@ function AppContent() {
         }
       }
     }
-  }, [loading, user]);
+  }, [loading, user, routerReady]);
 
   if (loading) {
     return (

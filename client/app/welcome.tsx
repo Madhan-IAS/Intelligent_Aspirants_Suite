@@ -8,7 +8,7 @@ import { useAuth } from '../src/context/AuthContext';
 const ASPIRANT_PHASES = [
   {
     icon: 'school',
-    title: 'UPSC CSE 2027',
+    title: 'UPSC CSE',
     subtitle: 'Building Unbreakable Discipline & The LBSNAA Dream',
     badge: 'STAGE 1: FOUNDATION'
   },

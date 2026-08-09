@@ -66,6 +66,7 @@ export default function Planner() {
   const [todayMission, setTodayMission] = useState<any>(null);
   const [missionLoading, setMissionLoading] = useState(true);
   const [studyStats, setStudyStats] = useState<any>(null);
+  const [isMissionCollapsed, setIsMissionCollapsed] = useState(false);
 
   // Determine which day in the 8-day rotation we are on
   const getRotationDay = () => {
@@ -303,7 +304,10 @@ export default function Planner() {
         {/* ===== TODAY'S MISSION 🎯 ===== */}
         <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 20, borderRadius: 16, borderWidth: 2, borderColor: '#3b82f6', marginBottom: 24 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <TouchableOpacity 
+              onPress={() => setIsMissionCollapsed(!isMissionCollapsed)}
+              style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}
+            >
               <Text style={{ fontSize: 22, marginRight: 8 }}>🎯</Text>
               <View>
                 <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 18, fontWeight: 'bold' }}>Today's Mission</Text>
@@ -311,13 +315,23 @@ export default function Planner() {
                   {todayMission ? `${todayMission.gsPaper} Day • Rotation ${(todayMission.rotationDay || 0) + 1}/8` : 'Loading...'}
                 </Text>
               </View>
+            </TouchableOpacity>
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              {studyStats && studyStats.streak > 0 && (
+                <View style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Text style={{ fontSize: 14 }}>🔥</Text>
+                  <Text style={{ color: '#ef4444', fontWeight: 'bold', fontSize: 13 }}>{studyStats.streak} Day Streak</Text>
+                </View>
+              )}
+
+              <TouchableOpacity 
+                onPress={() => setIsMissionCollapsed(!isMissionCollapsed)}
+                style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: isDark ? 'rgba(55, 65, 81, 0.6)' : '#e5e7eb', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Ionicons name={isMissionCollapsed ? "chevron-down" : "chevron-up"} size={20} color={isDark ? 'white' : '#111827'} />
+              </TouchableOpacity>
             </View>
-            {studyStats && studyStats.streak > 0 && (
-              <View style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <Text style={{ fontSize: 14 }}>🔥</Text>
-                <Text style={{ color: '#ef4444', fontWeight: 'bold', fontSize: 13 }}>{studyStats.streak} Day Streak</Text>
-              </View>
-            )}
           </View>
 
           {missionLoading ? (
@@ -331,7 +345,7 @@ export default function Planner() {
                 const totalCount = allTopics.length;
                 const pct = totalCount > 0 ? (doneCount / totalCount) * 100 : 0;
                 return (
-                  <View style={{ marginBottom: 8 }}>
+                  <View style={{ marginBottom: isMissionCollapsed ? 0 : 8 }}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
                       <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12, fontWeight: '600' }}>Mission Progress</Text>
                       <Text style={{ color: pct === 100 ? '#10b981' : '#3b82f6', fontSize: 12, fontWeight: 'bold' }}>{doneCount}/{totalCount} Topics Done {pct === 100 ? '✅' : ''}</Text>
@@ -343,7 +357,9 @@ export default function Planner() {
                 );
               })()}
 
-              {/* GS Topics Section */}
+              {!isMissionCollapsed && (
+                <View style={{ gap: 12 }}>
+                  {/* GS Topics Section */}
               <View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                   <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#3b82f6' }} />
@@ -518,6 +534,8 @@ export default function Planner() {
                     <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 10 }}>Coverage</Text>
                     <Text style={{ color: '#8b5cf6', fontWeight: 'bold', fontSize: 14 }}>{studyStats.completionPercent}%</Text>
                   </View>
+                </View>
+              )}
                 </View>
               )}
             </View>

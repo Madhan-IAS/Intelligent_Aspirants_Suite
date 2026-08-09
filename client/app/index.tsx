@@ -33,6 +33,7 @@ export default function Dashboard() {
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [dashMission, setDashMission] = useState<any>(null);
   const [studyStats, setStudyStats] = useState<any>(null);
+  const [isMissionCollapsed, setIsMissionCollapsed] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -258,7 +259,10 @@ export default function Dashboard() {
           <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 20, borderRadius: 18, borderWidth: 2, borderColor: '#3b82f6', marginBottom: 32 }}>
             {/* Header */}
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <TouchableOpacity 
+                onPress={() => setIsMissionCollapsed(!isMissionCollapsed)}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}
+              >
                 <Text style={{ fontSize: 24 }}>🎯</Text>
                 <View>
                   <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 20, fontWeight: 'bold' }}>Today's Mission</Text>
@@ -266,13 +270,23 @@ export default function Dashboard() {
                     {dashMission.gsPaper} Day • Rotation {(dashMission.rotationDay || 0) + 1}/8
                   </Text>
                 </View>
+              </TouchableOpacity>
+              
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                {studyStats && studyStats.streak > 0 && (
+                  <View style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <Text style={{ fontSize: 14 }}>🔥</Text>
+                    <Text style={{ color: '#ef4444', fontWeight: 'bold', fontSize: 13 }}>{studyStats.streak} Day Streak</Text>
+                  </View>
+                )}
+
+                <TouchableOpacity 
+                  onPress={() => setIsMissionCollapsed(!isMissionCollapsed)}
+                  style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: isDark ? 'rgba(55, 65, 81, 0.6)' : '#e5e7eb', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Ionicons name={isMissionCollapsed ? "chevron-down" : "chevron-up"} size={20} color={isDark ? 'white' : '#111827'} />
+                </TouchableOpacity>
               </View>
-              {studyStats && studyStats.streak > 0 && (
-                <View style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                  <Text style={{ fontSize: 14 }}>🔥</Text>
-                  <Text style={{ color: '#ef4444', fontWeight: 'bold', fontSize: 13 }}>{studyStats.streak} Day Streak</Text>
-                </View>
-              )}
             </View>
 
             {/* Mission Progress Bar */}
@@ -282,7 +296,7 @@ export default function Dashboard() {
               const totalCount = allTopics.length;
               const pct = totalCount > 0 ? (doneCount / totalCount) * 100 : 0;
               return (
-                <View style={{ marginBottom: 16 }}>
+                <View style={{ marginBottom: isMissionCollapsed ? 0 : 16 }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
                     <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12, fontWeight: '600' }}>Daily Mission Progress</Text>
                     <Text style={{ color: pct === 100 ? '#10b981' : '#3b82f6', fontSize: 12, fontWeight: 'bold' }}>{doneCount}/{totalCount} Topics Completed {pct === 100 ? '✅' : ''}</Text>
@@ -294,8 +308,11 @@ export default function Dashboard() {
               );
             })()}
 
-            {/* GS Topics Section */}
-            <View style={{ marginBottom: 16 }}>
+            {/* Collapsible Topics Body */}
+            {!isMissionCollapsed && (
+              <View style={{ marginTop: 12 }}>
+                {/* GS Topics Section */}
+                <View style={{ marginBottom: 16 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                 <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#3b82f6' }} />
                 <Text style={{ color: '#3b82f6', fontWeight: 'bold', fontSize: 13 }}>{dashMission.gsPaper} — General Studies ({(dashMission.gsTopicIds || []).length} Topics)</Text>
@@ -408,6 +425,8 @@ export default function Dashboard() {
             <TouchableOpacity onPress={() => router.push('/planner')} style={{ alignItems: 'flex-end', marginTop: 4 }}>
               <Text style={{ color: '#3b82f6', fontSize: 13, fontWeight: 'bold' }}>View Full Schedule & Planner →</Text>
             </TouchableOpacity>
+              </View>
+            )}
           </View>
         )}
 

@@ -49,26 +49,26 @@ exports.getTodayPlan = async (req, res) => {
       .populate('optTopicIds', 'title chapter subjectName paper completed status completedAt _id')
       .populate('revisionTopicId', 'title chapter subjectName paper completed status completedAt _id');
 
-    if (plan) {
+    // If plan exists with old limit (< 12 GS topics), upgrade it to 12 GS + 8 Optional
+    if (plan && (plan.gsTopicIds || []).length >= 12) {
       return res.json(plan);
     }
 
-    // Generate new plan for today
     const rotationIndex = getRotationDay();
     const rotation = ROTATION_SCHEDULE[rotationIndex];
 
-    // 1. Pick next 4 uncompleted GS topics in syllabus order
+    // 1. Pick next 12 uncompleted GS topics in syllabus order for 20-subtopics/day pace
     const gsTopics = await Topic.find({
       paper: rotation.gsPaper,
       completed: { $ne: true }
-    }).sort({ _id: 1 }).limit(4).select('_id');
+    }).sort({ _id: 1 }).limit(12).select('_id');
 
-    // 2. Pick next 3 uncompleted Sociology topics in syllabus order
+    // 2. Pick next 8 uncompleted Sociology topics in syllabus order
     const optTopics = await Topic.find({
       paper: 'Sociology',
       subjectName: rotation.optPaper,
       completed: { $ne: true }
-    }).sort({ _id: 1 }).limit(3).select('_id');
+    }).sort({ _id: 1 }).limit(8).select('_id');
 
     // 3. Pick 1 oldest completed topic needing revision (>14 days since last update)
     const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
@@ -77,18 +77,26 @@ exports.getTodayPlan = async (req, res) => {
       updatedAt: { $lt: fourteenDaysAgo }
     }).sort({ updatedAt: 1 }).select('_id');
 
-    // Create and save the plan
-    plan = await DailyPlan.create({
-      userId,
-      date: today,
-      gsPaper: rotation.gsPaper,
-      optionalPaper: rotation.optPaper,
-      gsTopicIds: gsTopics.map(t => t._id),
-      optTopicIds: optTopics.map(t => t._id),
-      revisionTopicId: revisionTopic ? revisionTopic._id : undefined,
-      rotationDay: rotationIndex,
-      completed: false
-    });
+    if (plan) {
+      // Upgrade existing plan
+      plan.gsTopicIds = gsTopics.map(t => t._id);
+      plan.optTopicIds = optTopics.map(t => t._id);
+      if (revisionTopic) plan.revisionTopicId = revisionTopic._id;
+      await plan.save();
+    } else {
+      // Create new plan
+      plan = await DailyPlan.create({
+        userId,
+        date: today,
+        gsPaper: rotation.gsPaper,
+        optionalPaper: rotation.optPaper,
+        gsTopicIds: gsTopics.map(t => t._id),
+        optTopicIds: optTopics.map(t => t._id),
+        revisionTopicId: revisionTopic ? revisionTopic._id : undefined,
+        rotationDay: rotationIndex,
+        completed: false
+      });
+    }
 
     // Re-fetch with populated fields
     plan = await DailyPlan.findById(plan._id)
@@ -168,7 +176,7 @@ exports.getStats = async (req, res) => {
     const totalTopics = await Topic.countDocuments();
     const completedTopics = await Topic.countDocuments({ completed: true });
     const remainingTopics = totalTopics - completedTopics;
-    const topicsPerDay = 7; // 4 GS + 3 Sociology
+    const topicsPerDay = 20; // 12 GS + 8 Sociology
     const estimatedDays = Math.ceil(remainingTopics / topicsPerDay);
 
     // Study streak: count consecutive days with completed plans (going backwards from today)

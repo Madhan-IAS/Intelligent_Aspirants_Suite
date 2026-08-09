@@ -27,6 +27,7 @@ export default function Dashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [dashMission, setDashMission] = useState<any>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -37,8 +38,18 @@ export default function Dashboard() {
       fetchDashboardData();
       fetchRandomQuote();
       fetchUnreadCount();
+      fetchDashMission();
     }
   }, [user, authLoading]);
+
+  const fetchDashMission = async () => {
+    try {
+      const res = await api.get('/daily-plan/today');
+      setDashMission(res.data);
+    } catch (error) {
+      console.error('Error fetching dashboard mission:', error);
+    }
+  };
 
   const fetchRandomQuote = async () => {
     try {
@@ -158,6 +169,39 @@ export default function Dashboard() {
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Today's Mission Preview */}
+        {dashMission && (
+          <TouchableOpacity onPress={() => router.push('/planner')} style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 16, borderRadius: 16, borderWidth: 2, borderColor: '#3b82f6', marginBottom: 24 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Text style={{ fontSize: 18 }}>🎯</Text>
+                <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 16, fontWeight: 'bold' }}>Today's Mission</Text>
+              </View>
+              <View style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 }}>
+                <Text style={{ color: '#3b82f6', fontSize: 12, fontWeight: 'bold' }}>{dashMission.gsPaper} Day</Text>
+              </View>
+            </View>
+            {(() => {
+              const allTopics = [...(dashMission.gsTopicIds || []), ...(dashMission.optTopicIds || [])];
+              const doneCount = allTopics.filter((t: any) => t.completed).length;
+              const totalCount = allTopics.length;
+              const pct = totalCount > 0 ? (doneCount / totalCount) * 100 : 0;
+              return (
+                <View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12 }}>{doneCount} of {totalCount} topics done</Text>
+                    <Text style={{ color: pct === 100 ? '#10b981' : '#3b82f6', fontSize: 12, fontWeight: 'bold' }}>{pct.toFixed(0)}%</Text>
+                  </View>
+                  <View style={{ height: 6, backgroundColor: isDark ? '#374151' : '#e5e7eb', borderRadius: 3, overflow: 'hidden' }}>
+                    <View style={{ height: '100%', width: `${pct}%`, backgroundColor: pct === 100 ? '#10b981' : '#3b82f6', borderRadius: 3 }} />
+                  </View>
+                  <Text style={{ color: '#3b82f6', fontSize: 12, fontWeight: 'bold', marginTop: 8, textAlign: 'right' }}>Open Planner →</Text>
+                </View>
+              );
+            })()}
+          </TouchableOpacity>
+        )}
 
         {/* Live Stats Cards */}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginBottom: 32 }}>

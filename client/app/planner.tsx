@@ -62,6 +62,11 @@ export default function Planner() {
   const [progress, setProgress] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
 
+  // Today's Mission state
+  const [todayMission, setTodayMission] = useState<any>(null);
+  const [missionLoading, setMissionLoading] = useState(true);
+  const [studyStats, setStudyStats] = useState<any>(null);
+
   // Determine which day in the 8-day rotation we are on
   const getRotationDay = () => {
     // Reference date: July 28, 2026
@@ -87,6 +92,7 @@ export default function Planner() {
 
   useEffect(() => {
     fetchData();
+    fetchTodayMission();
   }, []);
 
   const fetchData = async () => {
@@ -105,6 +111,46 @@ export default function Planner() {
       console.error('Error fetching timetable data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchTodayMission = async () => {
+    setMissionLoading(true);
+    try {
+      const [planRes, statsRes] = await Promise.all([
+        api.get('/daily-plan/today'),
+        api.get('/daily-plan/stats').catch(() => ({ data: null })),
+      ]);
+      setTodayMission(planRes.data);
+      setStudyStats(statsRes.data);
+    } catch (error) {
+      console.error('Error fetching daily plan:', error);
+    } finally {
+      setMissionLoading(false);
+    }
+  };
+
+  const handleToggleMissionTopic = async (topicId: string) => {
+    try {
+      const res = await api.patch(`/daily-plan/toggle-topic/${topicId}`);
+      await playCompletionSound();
+      // Update the mission state locally
+      setTodayMission((prev: any) => {
+        if (!prev) return prev;
+        const updateList = (list: any[]) => list.map((t: any) => 
+          t._id === topicId ? { ...t, completed: res.data.completed, status: res.data.status } : t
+        );
+        return {
+          ...prev,
+          gsTopicIds: updateList(prev.gsTopicIds || []),
+          optTopicIds: updateList(prev.optTopicIds || []),
+          revisionTopicId: prev.revisionTopicId?._id === topicId 
+            ? { ...prev.revisionTopicId, completed: res.data.completed, status: res.data.status }
+            : prev.revisionTopicId
+        };
+      });
+    } catch (error) {
+      console.error('Error toggling mission topic:', error);
     }
   };
 
@@ -239,10 +285,202 @@ export default function Planner() {
           </View>
         </View>
 
-        {/* Daily Timetable Section Header */}
-        <View style={{ marginBottom: 12 }}>
-          <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 18, fontWeight: 'bold' }}>Daily Schedule</Text>
+        {/* ===== TODAY'S MISSION 🎯 ===== */}
+        <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 20, borderRadius: 16, borderWidth: 2, borderColor: '#3b82f6', marginBottom: 24 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={{ fontSize: 22, marginRight: 8 }}>🎯</Text>
+              <View>
+                <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 18, fontWeight: 'bold' }}>Today's Mission</Text>
+                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12 }}>
+                  {todayMission ? `${todayMission.gsPaper} Day • Rotation ${(todayMission.rotationDay || 0) + 1}/8` : 'Loading...'}
+                </Text>
+              </View>
+            </View>
+            {studyStats && studyStats.streak > 0 && (
+              <View style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Text style={{ fontSize: 14 }}>🔥</Text>
+                <Text style={{ color: '#ef4444', fontWeight: 'bold', fontSize: 13 }}>{studyStats.streak} Day Streak</Text>
+              </View>
+            )}
+          </View>
+
+          {missionLoading ? (
+            <ActivityIndicator size="small" color="#3b82f6" style={{ marginVertical: 20 }} />
+          ) : todayMission ? (
+            <View style={{ gap: 12 }}>
+              {/* Mission Progress Bar */}
+              {(() => {
+                const allTopics = [...(todayMission.gsTopicIds || []), ...(todayMission.optTopicIds || []), ...(todayMission.revisionTopicId ? [todayMission.revisionTopicId] : [])];
+                const doneCount = allTopics.filter((t: any) => t.completed).length;
+                const totalCount = allTopics.length;
+                const pct = totalCount > 0 ? (doneCount / totalCount) * 100 : 0;
+                return (
+                  <View style={{ marginBottom: 8 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12, fontWeight: '600' }}>Mission Progress</Text>
+                      <Text style={{ color: pct === 100 ? '#10b981' : '#3b82f6', fontSize: 12, fontWeight: 'bold' }}>{doneCount}/{totalCount} Topics Done {pct === 100 ? '✅' : ''}</Text>
+                    </View>
+                    <View style={{ height: 8, backgroundColor: isDark ? '#374151' : '#e5e7eb', borderRadius: 4, overflow: 'hidden' }}>
+                      <View style={{ height: '100%', width: `${pct}%`, backgroundColor: pct === 100 ? '#10b981' : '#3b82f6', borderRadius: 4 }} />
+                    </View>
+                  </View>
+                );
+              })()}
+
+              {/* GS Topics Section */}
+              <View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#3b82f6' }} />
+                  <Text style={{ color: '#3b82f6', fontWeight: 'bold', fontSize: 13 }}>{todayMission.gsPaper} — General Studies ({(todayMission.gsTopicIds || []).length} Topics)</Text>
+                </View>
+                {(todayMission.gsTopicIds || []).map((topic: any) => (
+                  <TouchableOpacity
+                    key={topic._id}
+                    onPress={() => handleToggleMissionTopic(topic._id)}
+                    style={{
+                      flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10, marginBottom: 6,
+                      backgroundColor: topic.completed ? (isDark ? 'rgba(16, 185, 129, 0.1)' : '#f0fdf4') : (isDark ? '#111827' : '#f9fafb'),
+                      borderWidth: 1, borderColor: topic.completed ? '#10b981' : (isDark ? '#374151' : '#e5e7eb'),
+                      opacity: topic.completed ? 0.7 : 1
+                    }}
+                  >
+                    <View style={{
+                      width: 22, height: 22, borderRadius: 6, borderWidth: 2, marginRight: 12,
+                      borderColor: topic.completed ? '#10b981' : (isDark ? '#4b5563' : '#d1d5db'),
+                      backgroundColor: topic.completed ? '#10b981' : 'transparent',
+                      alignItems: 'center', justifyContent: 'center'
+                    }}>
+                      {topic.completed && <Ionicons name="checkmark" size={14} color="white" />}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{
+                        color: isDark ? 'white' : '#111827', fontWeight: '600', fontSize: 14,
+                        textDecorationLine: topic.completed ? 'line-through' : 'none'
+                      }}>{topic.title}</Text>
+                      <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11, marginTop: 2 }}>{topic.chapter}</Text>
+                    </View>
+                    <TouchableOpacity
+                      onPress={(e) => { e.stopPropagation(); router.push(`/topic/${topic._id}` as any); }}
+                      style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
+                    >
+                      <Text style={{ color: '#3b82f6', fontSize: 11, fontWeight: 'bold' }}>Open Hub →</Text>
+                    </TouchableOpacity>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Sociology Topics Section */}
+              <View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#8b5cf6' }} />
+                  <Text style={{ color: '#8b5cf6', fontWeight: 'bold', fontSize: 13 }}>{todayMission.optionalPaper} — Optional ({(todayMission.optTopicIds || []).length} Topics)</Text>
+                </View>
+                {(todayMission.optTopicIds || []).map((topic: any) => (
+                  <TouchableOpacity
+                    key={topic._id}
+                    onPress={() => handleToggleMissionTopic(topic._id)}
+                    style={{
+                      flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10, marginBottom: 6,
+                      backgroundColor: topic.completed ? (isDark ? 'rgba(16, 185, 129, 0.1)' : '#f0fdf4') : (isDark ? '#111827' : '#f9fafb'),
+                      borderWidth: 1, borderColor: topic.completed ? '#10b981' : (isDark ? '#374151' : '#e5e7eb'),
+                      opacity: topic.completed ? 0.7 : 1
+                    }}
+                  >
+                    <View style={{
+                      width: 22, height: 22, borderRadius: 6, borderWidth: 2, marginRight: 12,
+                      borderColor: topic.completed ? '#10b981' : (isDark ? '#4b5563' : '#d1d5db'),
+                      backgroundColor: topic.completed ? '#10b981' : 'transparent',
+                      alignItems: 'center', justifyContent: 'center'
+                    }}>
+                      {topic.completed && <Ionicons name="checkmark" size={14} color="white" />}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{
+                        color: isDark ? 'white' : '#111827', fontWeight: '600', fontSize: 14,
+                        textDecorationLine: topic.completed ? 'line-through' : 'none'
+                      }}>{topic.title}</Text>
+                      <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11, marginTop: 2 }}>{topic.chapter}</Text>
+                    </View>
+                    <TouchableOpacity
+                      onPress={(e) => { e.stopPropagation(); router.push(`/topic/${topic._id}` as any); }}
+                      style={{ backgroundColor: 'rgba(139, 92, 246, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
+                    >
+                      <Text style={{ color: '#8b5cf6', fontSize: 11, fontWeight: 'bold' }}>Open Hub →</Text>
+                    </TouchableOpacity>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Revision Topic */}
+              {todayMission.revisionTopicId && (
+                <View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#f59e0b' }} />
+                    <Text style={{ color: '#f59e0b', fontWeight: 'bold', fontSize: 13 }}>Revision Slot</Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => handleToggleMissionTopic(todayMission.revisionTopicId._id)}
+                    style={{
+                      flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10,
+                      backgroundColor: todayMission.revisionTopicId.completed ? (isDark ? 'rgba(16, 185, 129, 0.1)' : '#f0fdf4') : (isDark ? '#111827' : '#f9fafb'),
+                      borderWidth: 1, borderColor: todayMission.revisionTopicId.completed ? '#10b981' : (isDark ? '#374151' : '#e5e7eb'),
+                      opacity: todayMission.revisionTopicId.completed ? 0.7 : 1
+                    }}
+                  >
+                    <View style={{
+                      width: 22, height: 22, borderRadius: 6, borderWidth: 2, marginRight: 12,
+                      borderColor: todayMission.revisionTopicId.completed ? '#10b981' : (isDark ? '#4b5563' : '#d1d5db'),
+                      backgroundColor: todayMission.revisionTopicId.completed ? '#10b981' : 'transparent',
+                      alignItems: 'center', justifyContent: 'center'
+                    }}>
+                      {todayMission.revisionTopicId.completed && <Ionicons name="checkmark" size={14} color="white" />}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{
+                        color: isDark ? 'white' : '#111827', fontWeight: '600', fontSize: 14,
+                        textDecorationLine: todayMission.revisionTopicId.completed ? 'line-through' : 'none'
+                      }}>{todayMission.revisionTopicId.title}</Text>
+                      <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11, marginTop: 2 }}>{todayMission.revisionTopicId.paper} • {todayMission.revisionTopicId.chapter}</Text>
+                    </View>
+                    <TouchableOpacity
+                      onPress={(e) => { e.stopPropagation(); router.push(`/topic/${todayMission.revisionTopicId._id}` as any); }}
+                      style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
+                    >
+                      <Text style={{ color: '#f59e0b', fontSize: 11, fontWeight: 'bold' }}>Revise →</Text>
+                    </TouchableOpacity>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* Study Pace Stats */}
+              {studyStats && (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#e5e7eb' }}>
+                  <View style={{ backgroundColor: isDark ? '#111827' : '#f3f4f6', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}>
+                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 10 }}>Completed</Text>
+                    <Text style={{ color: '#10b981', fontWeight: 'bold', fontSize: 14 }}>{studyStats.completedTopics}/{studyStats.totalTopics}</Text>
+                  </View>
+                  <View style={{ backgroundColor: isDark ? '#111827' : '#f3f4f6', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}>
+                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 10 }}>Remaining</Text>
+                    <Text style={{ color: '#f59e0b', fontWeight: 'bold', fontSize: 14 }}>{studyStats.remainingTopics}</Text>
+                  </View>
+                  <View style={{ backgroundColor: isDark ? '#111827' : '#f3f4f6', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}>
+                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 10 }}>Est. Days Left</Text>
+                    <Text style={{ color: '#3b82f6', fontWeight: 'bold', fontSize: 14 }}>{studyStats.estimatedDays}</Text>
+                  </View>
+                  <View style={{ backgroundColor: isDark ? '#111827' : '#f3f4f6', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}>
+                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 10 }}>Coverage</Text>
+                    <Text style={{ color: '#8b5cf6', fontWeight: 'bold', fontSize: 14 }}>{studyStats.completionPercent}%</Text>
+                  </View>
+                </View>
+              )}
+            </View>
+          ) : (
+            <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', textAlign: 'center', marginVertical: 16 }}>Could not load today's mission. Please try again.</Text>
+          )}
         </View>
+
+        {/* Daily Timetable Section Header */}
 
         {/* Timetable Slots */}
         {slots.map((slot, index) => {

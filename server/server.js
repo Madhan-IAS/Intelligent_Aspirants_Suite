@@ -54,6 +54,7 @@ const timetableRoutes = require('./routes/timetable');
 const directivesRoutes = require('./routes/directives');
 const quotesRoutes = require('./routes/quotes');
 const notificationsRoutes = require('./routes/notifications');
+const dailyPlanRoutes = require('./routes/dailyPlan');
 
 app.use('/api/subjects', subjectsRoutes);
 app.use('/api/topics', topicsRoutes);
@@ -74,6 +75,7 @@ app.use('/api/directives', directivesRoutes);
 app.use('/api/quotes', quotesRoutes);
 app.use('/api/backup', require('./routes/backup'));
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/daily-plan', dailyPlanRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

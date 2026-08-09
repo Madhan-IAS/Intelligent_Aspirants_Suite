@@ -49,26 +49,45 @@ exports.getTodayPlan = async (req, res) => {
       .populate('optTopicIds', 'title chapter subjectName paper completed status completedAt _id')
       .populate('revisionTopicId', 'title chapter subjectName paper completed status completedAt _id');
 
-    // If plan exists with old limit (< 12 GS topics), upgrade it to 12 GS + 8 Optional
-    if (plan && (plan.gsTopicIds || []).length >= 12) {
+    // If plan exists with old limit (< 15 GS topics), upgrade it to 15 GS + 8 Optional (23 total)
+    if (plan && (plan.gsTopicIds || []).length >= 15) {
       return res.json(plan);
     }
 
     const rotationIndex = getRotationDay();
     const rotation = ROTATION_SCHEDULE[rotationIndex];
 
-    // 1. Pick next 12 uncompleted GS topics in syllabus order for 20-subtopics/day pace
-    const gsTopics = await Topic.find({
+    // 1. Pick next 15 uncompleted GS topics in syllabus order (15 GS + 8 Sociology = 23/day)
+    let gsTopics = await Topic.find({
       paper: rotation.gsPaper,
       completed: { $ne: true }
-    }).sort({ _id: 1 }).limit(12).select('_id');
+    }).sort({ _id: 1 }).limit(15).select('_id');
 
-    // 2. Pick next 8 uncompleted Sociology topics in syllabus order
-    const optTopics = await Topic.find({
+    // Fallback: If current GS paper has fewer than 15 uncompleted topics left (e.g. GS IV), pull remaining from any GS paper
+    if (gsTopics.length < 15) {
+      const extraGs = await Topic.find({
+        paper: { $in: ['GS I', 'GS II', 'GS III', 'GS IV'] },
+        _id: { $nin: gsTopics.map(t => t._id) },
+        completed: { $ne: true }
+      }).sort({ _id: 1 }).limit(15 - gsTopics.length).select('_id');
+      gsTopics = [...gsTopics, ...extraGs];
+    }
+
+    // 2. Pick next 8 uncompleted Sociology topics in syllabus order (if Sociology complete, pull GS topics)
+    let optTopics = await Topic.find({
       paper: 'Sociology',
-      subjectName: rotation.optPaper,
       completed: { $ne: true }
     }).sort({ _id: 1 }).limit(8).select('_id');
+
+    // Fallback: If Sociology is 100% completed, allocate these 8 slots to remaining GS topics
+    if (optTopics.length < 8) {
+      const extraForOpt = await Topic.find({
+        paper: { $in: ['GS I', 'GS II', 'GS III', 'GS IV'] },
+        _id: { $nin: gsTopics.map(t => t._id) },
+        completed: { $ne: true }
+      }).sort({ _id: 1 }).limit(8 - optTopics.length).select('_id');
+      optTopics = [...optTopics, ...extraForOpt];
+    }
 
     // 3. Pick 1 oldest completed topic needing revision (>14 days since last update)
     const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
@@ -176,7 +195,7 @@ exports.getStats = async (req, res) => {
     const totalTopics = await Topic.countDocuments();
     const completedTopics = await Topic.countDocuments({ completed: true });
     const remainingTopics = totalTopics - completedTopics;
-    const topicsPerDay = 20; // 12 GS + 8 Sociology
+    const topicsPerDay = 23; // 15 GS + 8 Sociology
     const estimatedDays = Math.ceil(remainingTopics / topicsPerDay);
 
     // Study streak: count consecutive days with completed plans (going backwards from today)

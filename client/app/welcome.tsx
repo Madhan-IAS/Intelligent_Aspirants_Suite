@@ -165,10 +165,10 @@ export default function WelcomeScreen() {
       ])
     ).start();
 
-    // 4. Progress bar (16 seconds for 8 phases)
+    // 4. Progress bar (28 seconds for 10 phases — slow & steady)
     Animated.timing(progressAnim, {
       toValue: 1,
-      duration: 16000,
+      duration: 28000,
       easing: Easing.linear,
       useNativeDriver: false,
     }).start();
@@ -176,7 +176,7 @@ export default function WelcomeScreen() {
     // 5. Ring progress around emblem
     Animated.timing(ringAnim, {
       toValue: 1,
-      duration: 16000,
+      duration: 28000,
       easing: Easing.linear,
       useNativeDriver: false,
     }).start();
@@ -193,64 +193,64 @@ export default function WelcomeScreen() {
         Animated.loop(
           Animated.sequence([
             Animated.timing(anim.y, {
-              toValue: -12 - (i % 3) * 4,
-              duration: 2000 + i * 300,
+              toValue: -10 - (i % 3) * 3,
+              duration: 3000 + i * 400,
               easing: Easing.inOut(Easing.ease),
               useNativeDriver: false,
             }),
             Animated.timing(anim.y, {
-              toValue: 12 + (i % 3) * 4,
-              duration: 2000 + i * 300,
+              toValue: 10 + (i % 3) * 3,
+              duration: 3000 + i * 400,
               easing: Easing.inOut(Easing.ease),
               useNativeDriver: false,
             })
           ])
         ).start();
-      }, i * 200);
+      }, i * 300);
     });
 
     // 7. Ticker scroll animation (looping)
     Animated.loop(
       Animated.timing(tickerAnim, {
         toValue: -1200,
-        duration: 18000,
+        duration: 28000,
         easing: Easing.linear,
         useNativeDriver: false,
       })
     ).start();
 
-    // 8. Stat counter animations (count up effect)
+    // 8. Stat counter animations (slow count up over ~3-4 seconds)
     const statInterval1 = setInterval(() => {
       setStatVal1(prev => {
         if (prev >= 3385) { clearInterval(statInterval1); return 3385; }
-        return prev + Math.ceil((3385 - prev) / 15);
+        return prev + Math.ceil((3385 - prev) / 25);
       });
-    }, 80);
+    }, 120);
 
     const statInterval2 = setInterval(() => {
       setStatVal2(prev => {
         if (prev >= 35) { clearInterval(statInterval2); return 35; }
         return prev + 1;
       });
-    }, 120);
+    }, 200);
 
     const statInterval3 = setInterval(() => {
       setStatVal3(prev => {
         if (prev >= 23) { clearInterval(statInterval3); return 23; }
         return prev + 1;
       });
-    }, 150);
+    }, 250);
 
-    // 9. Phase rotations (every 1.6s for 10 phases = 16s total)
+    // 9. Phase rotations (every 2.8s for 10 phases = 28s total — slow & elegant)
     const phaseTimers: ReturnType<typeof setTimeout>[] = [];
     for (let i = 1; i < ASPIRANT_PHASES.length; i++) {
-      phaseTimers.push(setTimeout(() => animateTextChange(i), i * 1600));
+      phaseTimers.push(setTimeout(() => animateTextChange(i), i * 2800));
     }
 
-    // 10. Final redirect after 16.5 seconds
+    // 10. Final redirect after 29 seconds
     const timerFinal = setTimeout(() => {
       handleNext();
-    }, 16500);
+    }, 29000);
 
     return () => {
       phaseTimers.forEach(clearTimeout);
@@ -272,23 +272,23 @@ export default function WelcomeScreen() {
       if (charIndex >= fullText.length) {
         clearInterval(typeInterval);
       }
-    }, 25);
+    }, 40);
     return () => clearInterval(typeInterval);
   }, [phaseIndex]);
 
   const animateTextChange = (nextIndex: number) => {
     // Fade out + slide badge out
     Animated.parallel([
-      Animated.timing(textFadeAnim, { toValue: 0, duration: 250, useNativeDriver: false }),
-      Animated.timing(badgeSlideAnim, { toValue: -60, duration: 250, useNativeDriver: false }),
-      Animated.timing(titleSlideAnim, { toValue: 30, duration: 250, useNativeDriver: false }),
+      Animated.timing(textFadeAnim, { toValue: 0, duration: 400, useNativeDriver: false }),
+      Animated.timing(badgeSlideAnim, { toValue: -60, duration: 400, useNativeDriver: false }),
+      Animated.timing(titleSlideAnim, { toValue: 30, duration: 400, useNativeDriver: false }),
     ]).start(() => {
       setPhaseIndex(nextIndex);
-      // Fade in + slide badge in with spring
+      // Fade in + slide badge in with gentle spring
       Animated.parallel([
-        Animated.timing(textFadeAnim, { toValue: 1, duration: 350, useNativeDriver: false }),
-        Animated.spring(badgeSlideAnim, { toValue: 0, friction: 6, tension: 80, useNativeDriver: false }),
-        Animated.spring(titleSlideAnim, { toValue: 0, friction: 6, tension: 80, useNativeDriver: false }),
+        Animated.timing(textFadeAnim, { toValue: 1, duration: 500, useNativeDriver: false }),
+        Animated.spring(badgeSlideAnim, { toValue: 0, friction: 8, tension: 60, useNativeDriver: false }),
+        Animated.spring(titleSlideAnim, { toValue: 0, friction: 8, tension: 60, useNativeDriver: false }),
       ]).start();
     });
   };

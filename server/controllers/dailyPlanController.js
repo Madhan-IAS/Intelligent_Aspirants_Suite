@@ -246,3 +246,64 @@ exports.getStats = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// GET /api/daily-plan/spectrum-stats — SPECTRUM dimension progress
+exports.getSpectrumStats = async (req, res) => {
+  try {
+    // Map subjectName values to SPECTRUM dimensions
+    const SUBJECT_TO_DIMENSION = {
+      'Society': 'Society', 'Social Issues': 'Society', 'Social Justice': 'Society',
+      'Polity': 'Polity & Governance', 'Governance': 'Polity & Governance', 'Constitution': 'Polity & Governance', 'Internal Security': 'Polity & Governance',
+      'Economy': 'Economy', 'Economic Development': 'Economy', 'Infrastructure': 'Economy',
+      'Art & Culture': 'Culture & History', 'Ancient History': 'Culture & History', 'Medieval History': 'Culture & History', 'Modern History': 'Culture & History', 'Post Independence': 'Culture & History', 'World History': 'Culture & History', 'Indian Culture': 'Culture & History',
+      'Science & Technology': 'Technology & Science',
+      'International Relations': 'International Relations',
+      'Geography': 'Environment & Geography', 'Physical Geography': 'Environment & Geography', 'Human Geography': 'Environment & Geography', 'Indian Geography': 'Environment & Geography', 'Environment': 'Environment & Geography', 'Disaster Management': 'Environment & Geography', 'Ecology': 'Environment & Geography', 'Biodiversity': 'Environment & Geography',
+      'Ethics': 'Ethics & Integrity', 'Aptitude': 'Ethics & Integrity', 'Integrity': 'Ethics & Integrity',
+    };
+
+    const DIMENSION_SHORT = {
+      'Society': 'S', 'Polity & Governance': 'P', 'Economy': 'E',
+      'Culture & History': 'C', 'Technology & Science': 'T',
+      'International Relations': 'R', 'Environment & Geography': 'U',
+      'Ethics & Integrity': 'M'
+    };
+
+    // Aggregate totals per subjectName
+    const agg = await Topic.aggregate([
+      { $group: { _id: '$subjectName', total: { $sum: 1 }, completed: { $sum: { $cond: ['$completed', 1, 0] } } } }
+    ]);
+
+    // Merge into dimensions
+    const dims = {};
+    Object.values(DIMENSION_SHORT).forEach(letter => {
+      const fullName = Object.keys(DIMENSION_SHORT).find(k => DIMENSION_SHORT[k] === letter);
+      dims[fullName] = { total: 0, completed: 0, letter };
+    });
+
+    agg.forEach(item => {
+      const dimension = SUBJECT_TO_DIMENSION[item._id];
+      if (dimension && dims[dimension]) {
+        dims[dimension].total += item.total;
+        dims[dimension].completed += item.completed;
+      }
+    });
+
+    const spectrum = Object.entries(dims).map(([name, data]) => ({
+      dimension: name,
+      letter: data.letter,
+      total: data.total,
+      completed: data.completed,
+      percentage: data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0
+    }));
+
+    // Sort by S-P-E-C-T-R-U-M order
+    const ORDER = ['S', 'P', 'E', 'C', 'T', 'R', 'U', 'M'];
+    spectrum.sort((a, b) => ORDER.indexOf(a.letter) - ORDER.indexOf(b.letter));
+
+    res.json({ spectrum });
+  } catch (error) {
+    console.error('Error getting SPECTRUM stats:', error);
+    res.status(500).json({ message: error.message });
+  }
+};

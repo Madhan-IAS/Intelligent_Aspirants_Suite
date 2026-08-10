@@ -8,11 +8,16 @@ router.use(auth);
 // Log a new focus session
 router.post('/', async (req, res) => {
   try {
-    const { subject, durationMinutes } = req.body;
+    const { subject, durationMinutes, type, startTime, endTime, topicId, subtopicTitle } = req.body;
     const session = new FocusSession({
       userId: req.user.id,
       subject,
-      durationMinutes
+      durationMinutes,
+      type: type || 'Standard',
+      startTime,
+      endTime,
+      topicId: topicId || undefined,
+      subtopicTitle
     });
     await session.save();
     res.status(201).json(session);
@@ -28,21 +33,37 @@ router.get('/stats', async (req, res) => {
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
     const stats = await FocusSession.aggregate([
-      { 
-        $match: { 
+      {
+        $match: {
           userId: req.user.id,
           date: { $gte: sevenDaysAgo }
-        } 
+        }
       },
-      { 
-        $group: { 
-          _id: '$subject', 
-          totalMinutes: { $sum: '$durationMinutes' } 
-        } 
+      {
+        $group: {
+          _id: '$subject',
+          totalMinutes: { $sum: '$durationMinutes' }
+        }
       }
     ]);
 
     res.json(stats);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get deep work session history (for NightOwl type sessions)
+router.get('/history', async (req, res) => {
+  try {
+    const sessions = await FocusSession.find({
+      userId: req.user.id,
+      type: 'NightOwl'
+    })
+      .populate('topicId', 'title topicCode chapter')
+      .sort({ createdAt: -1 });
+
+    res.json(sessions);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

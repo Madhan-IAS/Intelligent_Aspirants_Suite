@@ -3,6 +3,7 @@ const Answer = require('../models/Answer');
 const PYQ = require('../models/PYQ');
 const CurrentAffair = require('../models/CurrentAffair');
 const Topic = require('../models/Topic');
+const Interlinkage = require('../models/Interlinkage');
 
 const ai = new GoogleGenAI({}); // Automatically uses GEMINI_API_KEY from env
 
@@ -16,8 +17,8 @@ exports.evaluateAnswer = async (req, res) => {
     }
 
     if (!process.env.GEMINI_API_KEY) {
-      return res.status(500).json({ 
-        message: 'GEMINI_API_KEY is not set. Please add it to your server/.env file (locally) or as an Environment Variable in the Render Dashboard.' 
+      return res.status(500).json({
+        message: 'GEMINI_API_KEY is not set. Please add it to your server/.env file (locally) or as an Environment Variable in the Render Dashboard.'
       });
     }
 
@@ -94,10 +95,10 @@ exports.generateDailyQuiz = async (req, res) => {
     // Get recent current affairs (last 7 days) to form the context
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    
+
     const recentCA = await CurrentAffair.find({ date: { $gte: sevenDaysAgo } }).limit(10);
     let contextText = recentCA.map(ca => `Title: ${ca.title}\nContent: ${ca.content}`).join('\n\n');
-    
+
     if (!contextText.trim()) {
       contextText = "General UPSC Syllabus (Polity, History, Geography, Economy, Environment)";
     }
@@ -148,12 +149,12 @@ exports.generateDailyQuestion = async (req, res) => {
     const topics = await Topic.find({ status: { $in: ['Pending', 'In Progress'] } }).populate('subjectId');
     let topicName = "Current Affairs";
     let subjectName = "General Studies";
-    
+
     if (topics.length > 0) {
       const randomTopic = topics[Math.floor(Math.random() * topics.length)];
       topicName = randomTopic.title;
       if (randomTopic.subjectId) {
-         subjectName = randomTopic.subjectId.name;
+        subjectName = randomTopic.subjectId.name;
       }
     }
 
@@ -312,7 +313,7 @@ exports.generateTopicNotes = async (req, res) => {
 
     // Merge notes: only populate fields that are currently empty string to preserve user notes
     if (!topic.notes) topic.notes = {};
-    
+
     Object.keys(aiNotes).forEach(key => {
       if (!topic.notes[key] || topic.notes[key].trim() === '') {
         topic.notes[key] = aiNotes[key];
@@ -324,5 +325,75 @@ exports.generateTopicNotes = async (req, res) => {
   } catch (error) {
     console.error('AI Generate Topic Notes Error:', error);
     res.status(500).json({ message: 'Failed to generate topic notes.', error: error.message });
+  }
+};
+
+exports.generateAnalysisPrompts = async (req, res) => {
+  try {
+    const { topicId } = req.body;
+    if (!topicId) {
+      return res.status(400).json({ message: 'topicId is required' });
+    }
+
+    const topic = await Topic.findById(topicId).populate('subjectId');
+    if (!topic) {
+      return res.status(404).json({ message: 'Topic not found' });
+    }
+
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ message: 'GEMINI_API_KEY is not set.' });
+    }
+
+    // Fetch interlinkage dimensions for this topic
+    const links = await Interlinkage.find({
+      $or: [{ sourceTopicId: topicId }, { targetTopicId: topicId }]
+    }).limit(10);
+    const dimensions = [...new Set(links.map(l => l.dimension))];
+
+    const subjectName = topic.subjectId?.name || topic.paper || 'General Studies';
+
+    const prompt = `
+    You are an expert UPSC mentor using the SPECTRUM multi-dimensional analysis approach.
+    Generate 6 deep analytical questions for the following UPSC syllabus topic. These questions should help an aspirant ANALYSE the topic critically, not just recall facts.
+
+    Topic: "${topic.title}"
+    Subject/Paper: "${subjectName}"
+    Chapter: "${topic.chapter || 'General'}"
+    Connected SPECTRUM Dimensions: ${dimensions.length > 0 ? dimensions.join(', ') : 'Multiple GS papers'}
+
+    Generate questions in these categories:
+    1. WHY - Why is this topic important for UPSC? What makes it relevant?
+    2. HOW - How does this topic work/function in the real world?
+    3. CONNECT - How does this topic connect to other dimensions (${dimensions.slice(0, 3).join(', ') || 'other subjects'})?
+    4. CHALLENGE - What are the key challenges, criticisms, or debates around this topic?
+    5. SOLUTION - What are the possible solutions, reforms, or way forward?
+    6. APPLY - How would you use this knowledge in a UPSC Mains answer or Essay?
+
+    Output format: Return ONLY valid JSON:
+    {
+      "prompts": [
+        { "category": "WHY", "question": "...", "hint": "..." },
+        { "category": "HOW", "question": "...", "hint": "..." },
+        { "category": "CONNECT", "question": "...", "hint": "..." },
+        { "category": "CHALLENGE", "question": "...", "hint": "..." },
+        { "category": "SOLUTION", "question": "...", "hint": "..." },
+        { "category": "APPLY", "question": "...", "hint": "..." }
+      ]
+    }
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json"
+      }
+    });
+
+    const analysisData = JSON.parse(response.text);
+    res.json(analysisData);
+  } catch (error) {
+    console.error('AI Analysis Prompts Error:', error);
+    res.status(500).json({ message: 'Failed to generate analysis prompts.', error: error.message });
   }
 };

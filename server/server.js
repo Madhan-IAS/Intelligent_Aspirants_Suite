@@ -55,6 +55,8 @@ const directivesRoutes = require('./routes/directives');
 const quotesRoutes = require('./routes/quotes');
 const notificationsRoutes = require('./routes/notifications');
 const dailyPlanRoutes = require('./routes/dailyPlan');
+const interlinkagesRoutes = require('./routes/interlinkages');
+const essaysRoutes = require('./routes/essays');
 
 app.use('/api/subjects', subjectsRoutes);
 app.use('/api/topics', topicsRoutes);
@@ -76,6 +78,9 @@ app.use('/api/quotes', quotesRoutes);
 app.use('/api/backup', require('./routes/backup'));
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/daily-plan', dailyPlanRoutes);
+app.use('/api/interlinkages', interlinkagesRoutes);
+app.use('/api/essays', essaysRoutes);
+app.use('/api/answers/gallery', require('./routes/answerGallery'));
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
@@ -85,13 +90,13 @@ if (MONGO_URI) {
   mongoose.connect(MONGO_URI)
     .then(() => {
       console.log('Connected to MongoDB');
-      
+
       // Schedule Scraper at 6:00 AM IST (= 00:30 UTC) every day
       cron.schedule('30 0 * * *', async () => {
         console.log('[CRON] Running daily Current Affairs scraper at 6:00 AM IST...');
         try {
           const result = await runScraper();
-          
+
           // Create notifications from scraper results
           if (result && result.sourceResults && result.sourceResults.length > 0) {
             for (const sr of result.sourceResults) {

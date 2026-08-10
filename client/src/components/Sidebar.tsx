@@ -19,14 +19,14 @@ const SidebarItem = ({ icon, label, href, onNavigate }: { icon: any, label: stri
   const isActive = pathname === href || (href !== '/' && pathname.startsWith(href + '/'));
 
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       onPress={() => {
         if (onNavigate) onNavigate();
         router.push(href as any);
       }}
-      style={{ 
+      style={{
         flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 12, marginBottom: 4,
-        backgroundColor: isActive ? '#3b82f6' : 'transparent' 
+        backgroundColor: isActive ? '#3b82f6' : 'transparent'
       }}
     >
       <Ionicons name={icon} size={20} color={isActive ? 'white' : isDark ? '#9ca3af' : '#6b7280'} />
@@ -61,18 +61,24 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
         "When would you like to be reminded?",
         [
           { text: "Cancel", style: "cancel" },
-          { text: "15 Seconds (Test)", onPress: () => {
-            scheduleLocalNotification("Study Time!", "Your study session is starting!", 15);
-            Alert.alert("Success", "Reminder set for 15 seconds.");
-          }},
-          { text: "1 Hour", onPress: () => {
-            scheduleLocalNotification("Study Time!", "Time to hit the books!", 3600);
-            Alert.alert("Success", "Reminder set for 1 hour from now.");
-          }},
-          { text: "4 Hours", onPress: () => {
-            scheduleLocalNotification("Study Time!", "Your deep work session begins now.", 14400);
-            Alert.alert("Success", "Reminder set for 4 hours from now.");
-          }}
+          {
+            text: "15 Seconds (Test)", onPress: () => {
+              scheduleLocalNotification("Study Time!", "Your study session is starting!", 15);
+              Alert.alert("Success", "Reminder set for 15 seconds.");
+            }
+          },
+          {
+            text: "1 Hour", onPress: () => {
+              scheduleLocalNotification("Study Time!", "Time to hit the books!", 3600);
+              Alert.alert("Success", "Reminder set for 1 hour from now.");
+            }
+          },
+          {
+            text: "4 Hours", onPress: () => {
+              scheduleLocalNotification("Study Time!", "Your deep work session begins now.", 14400);
+              Alert.alert("Success", "Reminder set for 4 hours from now.");
+            }
+          }
         ]
       );
     }
@@ -81,19 +87,19 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
   return (
     <View style={{ flex: 1, backgroundColor: isDark ? '#111827' : '#ffffff', padding: 16 }}>
       <CommandPalette visible={searchOpen} onClose={() => setSearchOpen(false)} />
-      
+
       {/* Logo Area */}
       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20, paddingHorizontal: 0, marginTop: 8 }}>
-        <Image 
-          source={require('../../assets/ias_logo.png')} 
-          style={{ width: 56, height: 56, marginRight: -6 }} 
+        <Image
+          source={require('../../assets/ias_logo.png')}
+          style={{ width: 56, height: 56, marginRight: -6 }}
           resizeMode="contain"
         />
         <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 28, fontWeight: 'bold' }}>IAS</Text>
       </View>
 
       {/* Global Search Button */}
-      <TouchableOpacity 
+      <TouchableOpacity
         onPress={() => setSearchOpen(true)}
         style={{ flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 12, marginBottom: 16, backgroundColor: isDark ? '#1f2937' : '#f3f4f6', borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}
       >
@@ -134,11 +140,12 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
           <SidebarItem icon="create" label="Answer Writing" href="/answers" onNavigate={onNavigate} />
           <SidebarItem icon="search" label="PYQs" href="/pyqs" onNavigate={onNavigate} />
           <SidebarItem icon="ribbon" label="Directives & Quotes" href="/directives-quotes" onNavigate={onNavigate} />
+          <SidebarItem icon="pencil" label="Essay Lab" href="/essays" onNavigate={onNavigate} />
         </View>
       </ScrollView>
 
       {/* Global Study Reminder Button */}
-      <TouchableOpacity 
+      <TouchableOpacity
         onPress={handleGlobalReminder}
         style={{ flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 12, backgroundColor: isDark ? 'rgba(139, 92, 246, 0.2)' : '#ede9fe', borderWidth: 1, borderColor: isDark ? '#8b5cf6' : '#c4b5fd', marginTop: 16 }}
       >
@@ -147,7 +154,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
       </TouchableOpacity>
 
       {/* Theme Toggle */}
-      <TouchableOpacity 
+      <TouchableOpacity
         onPress={toggleTheme}
         style={{ flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 12, backgroundColor: isDark ? '#1f2937' : '#f3f4f6', borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', marginTop: 8 }}
       >
@@ -157,7 +164,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
 
       {/* Logout Button */}
       {user && (
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={async () => {
             if (onNavigate) onNavigate();
             await logout();

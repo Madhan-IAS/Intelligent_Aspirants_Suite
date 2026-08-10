@@ -16,6 +16,26 @@ const focusSessionSchema = new mongoose.Schema({
     required: true,
     default: 50 // Standard Pomodoro
   },
+  type: {
+    type: String,
+    enum: ['Standard', 'NightOwl'],
+    default: 'Standard'
+  },
+  startTime: {
+    type: Date
+  },
+  endTime: {
+    type: Date
+  },
+  topicId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Topic',
+    required: false
+  },
+  subtopicTitle: {
+    type: String,
+    required: false
+  },
   date: {
     type: Date,
     default: Date.now

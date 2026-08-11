@@ -16,7 +16,8 @@ const userSchema = new mongoose.Schema({
     answerWriting: { type: String, enum: ['Daily', 'Weekly'], default: 'Daily' },
     mockTest: { type: String, enum: ['Sunday', 'Weekly', 'Monthly'], default: 'Sunday' }
   },
-  streak: { type: Number, default: 0 }
+  streak: { type: Number, default: 0 },
+  reputation: { type: Number, default: 0 }
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);

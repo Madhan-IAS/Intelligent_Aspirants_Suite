@@ -397,3 +397,102 @@ exports.generateAnalysisPrompts = async (req, res) => {
     res.status(500).json({ message: 'Failed to generate analysis prompts.', error: error.message });
   }
 };
+
+exports.autoLinkCurrentAffairs = async (req, res) => {
+  try {
+    const articles = await CurrentAffair.find({ $or: [{ relatedTopicIds: { $exists: false } }, { relatedTopicIds: { $size: 0 } }] }).limit(5);
+
+    let processedCount = 0;
+    for (const article of articles) {
+      if (!article.content && !article.title) continue;
+
+      const prompt = `You are a UPSC expert. Analyze this current affairs article:
+Title: ${article.title}
+Content: ${article.content ? article.content.substring(0, 1000) : ''}
+
+Generate exactly 3 highly specific UPSC syllabus search keyword phrases (comma-separated, no quotes, no extra text) that best map to this article. Example: Anti-Defection Law, Fundamental Rights, Monetary Policy`;
+
+      const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
+      const keywords = response.text.split(',').map(s => s.trim().replace(/['"]/g, ''));
+
+      const foundTopicIds = new Set();
+      for (const kw of keywords) {
+        if (!kw) continue;
+        const topics = await Topic.find({ $text: { $search: kw } }).limit(2).select('_id');
+        topics.forEach(t => foundTopicIds.add(t._id.toString()));
+      }
+
+      const topicIdsArray = Array.from(foundTopicIds);
+      if (topicIdsArray.length > 0) {
+        article.relatedTopicIds = topicIdsArray;
+        await article.save();
+        processedCount++;
+
+        // Auto-create interlinkages between these discovered topics
+        for (let i = 0; i < topicIdsArray.length; ++i) {
+          for (let j = i + 1; j < topicIdsArray.length; ++j) {
+            const exists1 = await Interlinkage.findOne({ sourceTopicId: topicIdsArray[i], targetTopicId: topicIdsArray[j] });
+            const exists2 = await Interlinkage.findOne({ sourceTopicId: topicIdsArray[j], targetTopicId: topicIdsArray[i] });
+            if (!exists1 && !exists2) {
+              await Interlinkage.create({
+                sourceTopicId: topicIdsArray[i],
+                targetTopicId: topicIdsArray[j],
+                dimension: 'Current Affairs Intersect',
+                strength: 'Moderate',
+                note: `Automatically linked via CA: ${article.title}`
+              });
+            }
+          }
+        }
+      }
+    }
+
+    res.json({ message: 'Auto-linking complete', processed: processedCount, totalUnlinkedRemaining: await CurrentAffair.countDocuments({ $or: [{ relatedTopicIds: { $exists: false } }, { relatedTopicIds: { $size: 0 } }] }) });
+  } catch (error) {
+    console.error('Error auto-linking current affairs:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.evaluateEssay = async (req, res) => {
+  try {
+    const { essayId, content } = req.body;
+    const EssayTheme = require('../models/EssayTheme');
+    const theme = await EssayTheme.findById(essayId);
+
+    if (!theme) return res.status(404).json({ message: 'Essay theme not found' });
+    if (!content || content.length < 50) return res.status(400).json({ message: 'Essay is too short to evaluate.' });
+
+    const prompt = `You are a strict UPSC Examiner evaluating a mock essay.
+Title: "${theme.title}"
+Category: ${theme.category}
+Expected SPECTRUM Dimensions: ${theme.spectrumDimensions?.join(', ') || 'Various'}
+
+Student's Essay:
+"""
+${content}
+"""
+
+Evaluate the essay out of 125 marks. Check for multi-dimensional analysis, coherence, structural flow, and depth.
+Output strictly in this exact JSON format:
+{
+  "marks": <integer between 0 and 125>,
+  "strengths": ["...", "..."],
+  "missingDimensions": ["...", "..."],
+  "feedback": "...",
+  "modelParagraph": "A sample high-quality introductory or concluding paragraph for this essay."
+}`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: { responseMimeType: 'application/json' }
+    });
+
+    const evaluation = JSON.parse(response.text);
+    res.json(evaluation);
+  } catch (error) {
+    console.error('AI Essay Evaluation Error:', error);
+    res.status(500).json({ message: 'Failed to evaluate essay.', error: error.message });
+  }
+};

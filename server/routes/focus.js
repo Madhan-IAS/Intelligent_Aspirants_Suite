@@ -69,4 +69,30 @@ router.get('/history', async (req, res) => {
   }
 });
 
+// Get deep work heatmap / time-of-day analytics
+router.get('/heatmap', async (req, res) => {
+  try {
+    const sessions = await FocusSession.find({ userId: req.user.id });
+
+    const dailyMap = {};
+    const hourlyMap = Array(24).fill(0);
+
+    sessions.forEach(session => {
+      const dateStr = session.date.toISOString().split('T')[0];
+      dailyMap[dateStr] = (dailyMap[dateStr] || 0) + session.durationMinutes;
+
+      if (session.startTime) {
+        const hour = new Date(session.startTime).getHours();
+        hourlyMap[hour] += session.durationMinutes;
+      }
+    });
+
+    const heatmap = Object.keys(dailyMap).map(date => ({ date, count: dailyMap[date] }));
+
+    res.json({ heatmap, hourlyData: hourlyMap });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

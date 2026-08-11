@@ -8,5 +8,6 @@ router.use(auth);
 router.get('/', answerController.getAnswers);
 router.get('/pyq/:pyqId', answerController.getAnswersForPYQ);
 router.post('/', answerController.saveAnswer);
+router.post('/:id/upvote', answerController.upvoteAnswer);
 
 module.exports = router;

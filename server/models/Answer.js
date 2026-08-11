@@ -12,7 +12,9 @@ const answerSchema = new mongoose.Schema({
     suggestedPoints: [{ type: String }]
   },
   timeTaken: { type: Number, default: 0 },
-  status: { type: String, enum: ['Draft', 'Submitted', 'Evaluated'], default: 'Draft' }
+  status: { type: String, enum: ['Draft', 'Submitted', 'Evaluated'], default: 'Draft' },
+  upvotes: { type: Number, default: 0 },
+  upvotedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 }, { timestamps: true });
 
 module.exports = mongoose.model('Answer', answerSchema);

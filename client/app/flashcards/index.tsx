@@ -31,13 +31,11 @@ export default function Flashcards() {
     }
   };
 
-  const handleSwipe = async (direction: 'left' | 'right') => {
+  const handleReview = async (quality: number) => {
     if (currentIndex >= cards.length) return;
-    
+
     const card = cards[currentIndex];
-    // Right = 4 (Good), Left = 1 (Forgot)
-    const quality = direction === 'right' ? 4 : 1;
-    
+
     try {
       await api.post(`/flashcards/${card._id}/review`, { quality });
     } catch (err) {
@@ -86,17 +84,17 @@ export default function Flashcards() {
             </Text>
 
             {/* Card UI */}
-            <TouchableOpacity 
-              activeOpacity={0.9} 
+            <TouchableOpacity
+              activeOpacity={0.9}
               onPress={() => setIsFlipped(!isFlipped)}
-              style={{ 
-                backgroundColor: isDark ? '#1f2937' : '#ffffff', 
-                height: 400, 
-                borderRadius: 24, 
-                borderWidth: 1, 
-                borderColor: isDark ? '#374151' : '#e5e7eb', 
-                padding: 32, 
-                alignItems: 'center', 
+              style={{
+                backgroundColor: isDark ? '#1f2937' : '#ffffff',
+                height: 400,
+                borderRadius: 24,
+                borderWidth: 1,
+                borderColor: isDark ? '#374151' : '#e5e7eb',
+                padding: 32,
+                alignItems: 'center',
                 justifyContent: 'center',
                 elevation: 5,
                 shadowColor: '#000',
@@ -108,11 +106,11 @@ export default function Flashcards() {
               <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', position: 'absolute', top: 24, left: 24, fontWeight: 'bold', textTransform: 'uppercase', fontSize: 12 }}>
                 {cards[currentIndex].subject}
               </Text>
-              
+
               <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 24, fontWeight: 'bold', textAlign: 'center', lineHeight: 32 }}>
                 {isFlipped ? cards[currentIndex].back : cards[currentIndex].front}
               </Text>
-              
+
               <Text style={{ color: isDark ? '#4b5563' : '#d1d5db', position: 'absolute', bottom: 24, fontSize: 14 }}>
                 Tap to flip
               </Text>
@@ -120,14 +118,22 @@ export default function Flashcards() {
 
             {/* Action Buttons */}
             {isFlipped && (
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 32 }}>
-                <TouchableOpacity onPress={() => handleSwipe('left')} style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', borderWidth: 1, borderColor: '#ef4444', paddingVertical: 16, paddingHorizontal: 32, borderRadius: 16, alignItems: 'center', flex: 1, marginRight: 8 }}>
-                  <Ionicons name="close" size={24} color="#ef4444" />
-                  <Text style={{ color: '#ef4444', fontWeight: 'bold', marginTop: 4 }}>Forgot</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 32, gap: 10 }}>
+                <TouchableOpacity onPress={() => handleReview(0)} style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', borderWidth: 1, borderColor: '#ef4444', paddingVertical: 12, borderRadius: 12, alignItems: 'center', flex: 1 }}>
+                  <Text style={{ color: '#ef4444', fontWeight: 'bold' }}>Again</Text>
+                  <Text style={{ color: '#ef4444', fontSize: 10 }}>&lt; 1m</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleSwipe('right')} style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', borderWidth: 1, borderColor: '#10b981', paddingVertical: 16, paddingHorizontal: 32, borderRadius: 16, alignItems: 'center', flex: 1, marginLeft: 8 }}>
-                  <Ionicons name="checkmark" size={24} color="#10b981" />
-                  <Text style={{ color: '#10b981', fontWeight: 'bold', marginTop: 4 }}>Remembered</Text>
+                <TouchableOpacity onPress={() => handleReview(2)} style={{ backgroundColor: 'rgba(245, 158, 11, 0.1)', borderWidth: 1, borderColor: '#f59e0b', paddingVertical: 12, borderRadius: 12, alignItems: 'center', flex: 1 }}>
+                  <Text style={{ color: '#f59e0b', fontWeight: 'bold' }}>Hard</Text>
+                  <Text style={{ color: '#f59e0b', fontSize: 10 }}>1d</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleReview(4)} style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', borderWidth: 1, borderColor: '#10b981', paddingVertical: 12, borderRadius: 12, alignItems: 'center', flex: 1 }}>
+                  <Text style={{ color: '#10b981', fontWeight: 'bold' }}>Good</Text>
+                  <Text style={{ color: '#10b981', fontSize: 10 }}>3d</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleReview(5)} style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', borderWidth: 1, borderColor: '#3b82f6', paddingVertical: 12, borderRadius: 12, alignItems: 'center', flex: 1 }}>
+                  <Text style={{ color: '#3b82f6', fontWeight: 'bold' }}>Easy</Text>
+                  <Text style={{ color: '#3b82f6', fontSize: 10 }}>7d</Text>
                 </TouchableOpacity>
               </View>
             )}

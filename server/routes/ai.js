@@ -8,5 +8,7 @@ router.get('/daily-question', aiController.generateDailyQuestion);
 router.post('/generate-outline', aiController.generateModelOutline);
 router.post('/generate-topic-notes', aiController.generateTopicNotes);
 router.post('/generate-analysis-prompts', aiController.generateAnalysisPrompts);
+router.post('/auto-link-current-affairs', aiController.autoLinkCurrentAffairs);
+router.post('/evaluate-essay', aiController.evaluateEssay);
 
 module.exports = router;

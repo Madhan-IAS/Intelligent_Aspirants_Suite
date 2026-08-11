@@ -31,6 +31,11 @@ export default function EssaysPage() {
     const [showGallery, setShowGallery] = useState(false);
     const isDesktop = Platform.OS === 'web' && window.innerWidth > 768;
 
+    const [writingEssayId, setWritingEssayId] = useState<string | null>(null);
+    const [essayContent, setEssayContent] = useState('');
+    const [evaluating, setEvaluating] = useState(false);
+    const [evaluationResult, setEvaluationResult] = useState<any>(null);
+
     useEffect(() => {
         fetchThemes();
         fetchGallery();
@@ -56,6 +61,31 @@ export default function EssaysPage() {
             console.error('Failed to fetch gallery:', err);
         } finally {
             setLoadingGallery(false);
+        }
+    };
+
+    const handleEvaluate = async (themeId: string) => {
+        if (essayContent.length < 50) return alert('Please write a slightly longer essay to get a meaningful evaluation.');
+
+        setEvaluating(true);
+        try {
+            const res = await api.post('/ai/evaluate-essay', { essayId: themeId, content: essayContent });
+            setEvaluationResult({ ...res.data, themeId });
+        } catch (err) {
+            console.error('Evaluation failed:', err);
+            alert('Evaluation failed. Please try again.');
+        } finally {
+            setEvaluating(false);
+        }
+    };
+
+    const handleUpvote = async (answerId: string) => {
+        try {
+            const res = await api.post(`/answers/${answerId}/upvote`);
+            alert('+10 Reputation to Author! Answer upvoted.');
+            fetchGallery();
+        } catch (err: any) {
+            alert(err.response?.data?.message || 'Failed to upvote');
         }
     };
 
@@ -127,6 +157,17 @@ export default function EssaysPage() {
                                         <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 11, lineHeight: 16 }} numberOfLines={2}>{answer.aiEvaluation.feedback}</Text>
                                     </View>
                                 )}
+
+                                {/* Upvote Gamification */}
+                                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12 }}>
+                                    <TouchableOpacity
+                                        onPress={() => handleUpvote(answer._id)}
+                                        style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: isDark ? '#374151' : 'white', borderWidth: 1, borderColor: isDark ? '#4b5563' : '#e5e7eb', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, gap: 6 }}
+                                    >
+                                        <Ionicons name="heart" size={16} color="#ef4444" />
+                                        <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold' }}>{answer.upvotes || 0}</Text>
+                                    </TouchableOpacity>
+                                </View>
                             </View>
                         ))
                     ) : (
@@ -187,6 +228,64 @@ export default function EssaysPage() {
                                             <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 12, lineHeight: 18, flex: 1 }}>{angle}</Text>
                                         </View>
                                     ))}
+                                </View>
+                            )}
+
+                            {/* Write & Evaluate Action */}
+                            <TouchableOpacity onPress={() => { setWritingEssayId(writingEssayId === theme._id ? null : theme._id); setEvaluationResult(null); }} style={{ marginTop: 12, backgroundColor: writingEssayId === theme._id ? (isDark ? '#374151' : '#e5e7eb') : '#10b981', paddingVertical: 10, borderRadius: 8, alignItems: 'center' }}>
+                                <Text style={{ color: writingEssayId === theme._id ? (isDark ? '#d1d5db' : '#374151') : 'white', fontWeight: 'bold' }}>{writingEssayId === theme._id ? 'Cancel Writing' : 'Write & Evaluate AI'}</Text>
+                            </TouchableOpacity>
+
+                            {/* Editor Area */}
+                            {writingEssayId === theme._id && !evaluationResult && (
+                                <View style={{ marginTop: 16 }}>
+                                    <TextInput
+                                        multiline
+                                        numberOfLines={10}
+                                        placeholder="Start typing your essay here... AI will evaluate it out of 125 marks based on the SPECTRUM dimensions above."
+                                        placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
+                                        style={{ height: 250, textAlignVertical: 'top', backgroundColor: isDark ? '#111827' : '#f9fafb', color: isDark ? 'white' : '#111827', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', outlineStyle: 'none' } as any}
+                                        value={essayContent}
+                                        onChangeText={setEssayContent}
+                                    />
+                                    <TouchableOpacity
+                                        onPress={() => handleEvaluate(theme._id)}
+                                        disabled={evaluating}
+                                        style={{ marginTop: 12, backgroundColor: '#8b5cf6', paddingVertical: 12, borderRadius: 8, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}
+                                    >
+                                        {evaluating ? <ActivityIndicator size="small" color="white" /> : <Ionicons name="sparkles" size={16} color="white" />}
+                                        <Text style={{ color: 'white', fontWeight: 'bold' }}>{evaluating ? 'Evaluating...' : 'Submit for AI Evaluation'}</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
+
+                            {/* Evaluation Result */}
+                            {evaluationResult && evaluationResult.themeId === theme._id && (
+                                <View style={{ marginTop: 16, backgroundColor: isDark ? '#111827' : '#f9fafb', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#10b981' }}>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                                        <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 16, fontWeight: 'bold' }}>AI Evaluation Scorecard</Text>
+                                        <View style={{ backgroundColor: 'rgba(16,185,129,0.15)', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8 }}>
+                                            <Text style={{ color: '#10b981', fontWeight: 'bold', fontSize: 16 }}>{evaluationResult.marks}/125</Text>
+                                        </View>
+                                    </View>
+
+                                    <Text style={{ color: '#3b82f6', fontWeight: 'bold', marginBottom: 4, fontSize: 13 }}>Strengths:</Text>
+                                    {evaluationResult.strengths?.map((s: string, i: number) => (
+                                        <Text key={i} style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 12, marginBottom: 2 }}>✓ {s}</Text>
+                                    ))}
+
+                                    <Text style={{ color: '#ef4444', fontWeight: 'bold', marginTop: 12, marginBottom: 4, fontSize: 13 }}>Missing Dimensions:</Text>
+                                    {evaluationResult.missingDimensions?.map((m: string, i: number) => (
+                                        <Text key={i} style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 12, marginBottom: 2 }}>◦ {m}</Text>
+                                    ))}
+
+                                    <Text style={{ color: '#f59e0b', fontWeight: 'bold', marginTop: 12, marginBottom: 4, fontSize: 13 }}>Feedback:</Text>
+                                    <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 12, lineHeight: 18 }}>{evaluationResult.feedback}</Text>
+
+                                    <Text style={{ color: '#8b5cf6', fontWeight: 'bold', marginTop: 12, marginBottom: 4, fontSize: 13 }}>Model Paragraph Example:</Text>
+                                    <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 10, borderRadius: 8, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
+                                        <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontStyle: 'italic', fontSize: 12, lineHeight: 18 }}>"{evaluationResult.modelParagraph}"</Text>
+                                    </View>
                                 </View>
                             )}
                         </View>

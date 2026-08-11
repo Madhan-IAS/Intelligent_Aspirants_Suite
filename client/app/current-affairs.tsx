@@ -9,7 +9,7 @@ export default function CurrentAffairs() {
   const router = useRouter();
   const { mode } = useTheme();
   const isDark = mode === 'dark';
-  
+
   const [articles, setArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -28,6 +28,7 @@ export default function CurrentAffairs() {
   const [activeTab, setActiveTab] = useState<'all' | 'saved'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshingNews, setRefreshingNews] = useState(false);
+  const [autoLinking, setAutoLinking] = useState(false);
 
   useEffect(() => {
     fetchArticles();
@@ -137,6 +138,26 @@ export default function CurrentAffairs() {
     }
   };
 
+  const handleAutoLink = async () => {
+    setAutoLinking(true);
+    try {
+      const res = await api.post('/ai/auto-link-current-affairs');
+      const msg = `Processed: ${res.data.processed}\nRemaining: ${res.data.totalUnlinkedRemaining}`;
+      if (Platform.OS === 'web') {
+        alert(`Auto-linking complete.\n${msg}`);
+      } else {
+        Alert.alert("Auto-Link Complete", msg);
+      }
+      fetchArticles(); // refresh list
+    } catch (error) {
+      console.error('Error auto-linking:', error);
+      if (Platform.OS === 'web') alert("Auto-linking failed.");
+      else Alert.alert("Error", "Auto-linking failed.");
+    } finally {
+      setAutoLinking(false);
+    }
+  };
+
   const handleOpenArticle = (link: string) => {
     if (link) {
       Linking.openURL(link).catch(err => {
@@ -168,7 +189,7 @@ export default function CurrentAffairs() {
 
   return (
     <View style={{ flex: 1, backgroundColor: isDark ? '#111827' : '#f9fafb', paddingHorizontal: 24, paddingVertical: 24 }}>
-      
+
       {/* Header & Controls */}
       <View style={{ marginBottom: 24 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
@@ -182,7 +203,24 @@ export default function CurrentAffairs() {
             </View>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <TouchableOpacity 
+            <TouchableOpacity
+              onPress={handleAutoLink}
+              disabled={autoLinking}
+              style={{ backgroundColor: autoLinking ? (isDark ? '#374151' : '#d1d5db') : '#8b5cf6', paddingHorizontal: 14, paddingVertical: 12, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
+            >
+              {autoLinking ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <Ionicons name="sparkles" size={18} color="white" />
+              )}
+              {Platform.OS === 'web' && window.innerWidth > 768 && (
+                <Text style={{ color: 'white', fontWeight: 'bold', marginLeft: 6 }}>
+                  {autoLinking ? 'Mapping...' : 'Auto-Link AI'}
+                </Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
               onPress={handleRefreshNews}
               disabled={refreshingNews}
               style={{ backgroundColor: refreshingNews ? (isDark ? '#374151' : '#d1d5db') : '#10b981', paddingHorizontal: 14, paddingVertical: 12, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
@@ -197,7 +235,7 @@ export default function CurrentAffairs() {
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => setShowAddForm(!showAddForm)}
               style={{ backgroundColor: '#2563eb', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
             >
@@ -257,7 +295,7 @@ export default function CurrentAffairs() {
         {/* Add Article Form */}
         {showAddForm && (
           <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 24, borderRadius: 16, borderWidth: 1, borderColor: '#3b82f6', marginBottom: 24, gap: 16 }}>
-            <TextInput 
+            <TextInput
               placeholder="Article Title..."
               placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
               style={{ color: isDark ? 'white' : '#111827', fontSize: 18, backgroundColor: isDark ? '#111827' : '#f9fafb', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', outlineStyle: 'none' } as any}
@@ -265,14 +303,14 @@ export default function CurrentAffairs() {
               onChangeText={setNewTitle}
             />
             <View style={{ flexDirection: 'row', gap: 16 }}>
-              <TextInput 
+              <TextInput
                 placeholder="Source (e.g. The Hindu)"
                 placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
                 style={{ flex: 1, color: isDark ? 'white' : '#111827', backgroundColor: isDark ? '#111827' : '#f9fafb', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', outlineStyle: 'none' } as any}
                 value={newSource}
                 onChangeText={setNewSource}
               />
-              <TextInput 
+              <TextInput
                 placeholder="Tags (comma separated)"
                 placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
                 style={{ flex: 1, color: isDark ? 'white' : '#111827', backgroundColor: isDark ? '#111827' : '#f9fafb', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', outlineStyle: 'none' } as any}
@@ -358,7 +396,7 @@ export default function CurrentAffairs() {
         {/* Search Bar */}
         <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
           <Ionicons name="search" size={20} color={isDark ? '#9ca3af' : '#6b7280'} style={{ marginRight: 12 }} />
-          <TextInput 
+          <TextInput
             placeholder="Search articles, tags, or sources..."
             placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
             value={searchQuery}
@@ -380,10 +418,10 @@ export default function CurrentAffairs() {
         ) : filteredArticles.length === 0 ? (
           <View style={{ alignItems: 'center', marginTop: 60, paddingHorizontal: 32 }}>
             <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: isDark ? '#1f2937' : '#f3f4f6', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-              <Ionicons 
-                name={activeTab === 'saved' ? "bookmark-outline" : "newspaper-outline"} 
-                size={32} 
-                color={isDark ? '#6b7280' : '#9ca3af'} 
+              <Ionicons
+                name={activeTab === 'saved' ? "bookmark-outline" : "newspaper-outline"}
+                size={32}
+                color={isDark ? '#6b7280' : '#9ca3af'}
               />
             </View>
             <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 18, fontWeight: 'bold', marginBottom: 8, textAlign: 'center' }}>
@@ -393,14 +431,14 @@ export default function CurrentAffairs() {
               {activeTab === 'saved'
                 ? 'Tap the bookmark icon on any article in your feed to save it here for later revision!'
                 : searchQuery
-                ? `No articles match "${searchQuery}". Try a different term.`
-                : 'No articles logged yet.'}
+                  ? `No articles match "${searchQuery}". Try a different term.`
+                  : 'No articles logged yet.'}
             </Text>
           </View>
         ) : (
           <View style={{ gap: 16, paddingBottom: 40 }}>
             {filteredArticles.map((article: any) => (
-              <TouchableOpacity 
+              <TouchableOpacity
                 key={article._id}
                 onPress={() => handleOpenArticle(article.link)}
                 style={{
@@ -414,11 +452,11 @@ export default function CurrentAffairs() {
               >
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                   <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 18, fontWeight: 'bold', flex: 1, paddingRight: 16, lineHeight: 24 }}>{article.title}</Text>
-                  
+
                   {/* Action Controls: Bookmark & Delete */}
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 12 }}>{new Date(article.date).toLocaleDateString()}</Text>
-                    
+
                     {/* Bookmark Toggle */}
                     <TouchableOpacity
                       onPress={(e) => { e.stopPropagation(); handleToggleSave(article._id); }}
@@ -431,10 +469,10 @@ export default function CurrentAffairs() {
                         justifyContent: 'center'
                       }}
                     >
-                      <Ionicons 
-                        name={article.isSaved ? "bookmark" : "bookmark-outline"} 
-                        size={16} 
-                        color={article.isSaved ? "#f59e0b" : (isDark ? "#9ca3af" : "#6b7280")} 
+                      <Ionicons
+                        name={article.isSaved ? "bookmark" : "bookmark-outline"}
+                        size={16}
+                        color={article.isSaved ? "#f59e0b" : (isDark ? "#9ca3af" : "#6b7280")}
                       />
                     </TouchableOpacity>
 
@@ -464,7 +502,7 @@ export default function CurrentAffairs() {
                     )}
                   </View>
                 </View>
-                
+
                 {/* Source & Tags */}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, flex: 1 }}>

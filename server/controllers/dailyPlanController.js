@@ -211,17 +211,14 @@ exports.getStats = async (req, res) => {
       const plan = await DailyPlan.findOne({ userId, date: dateStr });
 
       if (i === 0) {
-        // Today: count if at least 1 topic was completed
+        // Today: count if at least 1 topic was completed, but DO NOT break if not completed
         if (plan) {
           const topicIds = [...plan.gsTopicIds, ...plan.optTopicIds];
           const anyDone = await Topic.findOne({ _id: { $in: topicIds }, completed: true });
           if (anyDone) streak++;
-          else break;
-        } else {
-          break;
         }
       } else {
-        // Previous days: count if plan existed and was completed
+        // Previous days: count if plan existed and was completed; else break (streak is broken)
         if (plan && plan.completed) {
           streak++;
         } else {

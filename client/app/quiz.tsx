@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Platform, StatusBar } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Platform, StatusBar, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -10,6 +10,8 @@ export default function DailyQuiz() {
   const router = useRouter();
   const { mode } = useTheme();
   const isDark = mode === 'dark';
+  const { width } = useWindowDimensions();
+  const isDesktop = width > 768;
 
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -59,7 +61,7 @@ export default function DailyQuiz() {
   const calculateScore = () => {
     let score = 0;
     quiz.questions.forEach((q: any) => {
-      if (selectedAnswers[q._id] === q.correctAnswer) {
+      if (selectedAnswers[q._id]?.trim() === q.correctAnswer?.trim()) {
         score++;
       }
     });
@@ -74,13 +76,16 @@ export default function DailyQuiz() {
 
     try {
       const score = calculateScore();
-      await api.put(`/quiz/${quiz._id}/submit`, { score });
+      const res = await api.put(`/quiz/${quiz._id}/submit`, { score });
+      setQuiz(res.data); // Update quiz with backend saved score
       setSubmitted(true);
     } catch (error) {
       console.error('Error submitting quiz:', error);
       alert('Failed to submit quiz.');
     }
   };
+
+  const finalScore = quiz?.status === 'Completed' ? quiz.score : calculateScore();
 
   if (loading) {
     return (
@@ -124,137 +129,189 @@ export default function DailyQuiz() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? '#111827' : '#f9fafb', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }}>
-      <ScrollView contentContainerStyle={{ padding: 24, flexGrow: 1 }}>
+      {/* 2-Column Layout */}
+      <View style={{ flex: 1, flexDirection: isDesktop ? 'row' : 'column', padding: 24, gap: 24 }}>
 
-        {/* Header */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16, width: 40, height: 40, backgroundColor: isDark ? '#1f2937' : '#e5e7eb', borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="arrow-back" size={20} color={isDark ? 'white' : '#111827'} />
-            </TouchableOpacity>
-            <View>
-              <Text style={{ color: '#8b5cf6', fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 4 }}>Daily Testing</Text>
-              <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 24, fontWeight: 'bold' }}>AI Quiz Engine</Text>
+        {/* MAIN COLUMN */}
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
+
+          {/* Header */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16, width: 40, height: 40, backgroundColor: isDark ? '#1f2937' : '#e5e7eb', borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="arrow-back" size={20} color={isDark ? 'white' : '#111827'} />
+              </TouchableOpacity>
+              <View>
+                <Text style={{ color: '#8b5cf6', fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 4 }}>Daily Testing</Text>
+                <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 24, fontWeight: 'bold' }}>AI Quiz Engine</Text>
+              </View>
+            </View>
+
+            <View style={{ backgroundColor: isDark ? '#1f2937' : '#e5e7eb', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 }}>
+              <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', fontWeight: 'bold' }}>
+                Question {currentQuestionIndex + 1} of {totalQuestions}
+              </Text>
             </View>
           </View>
 
-          <View style={{ backgroundColor: isDark ? '#1f2937' : '#e5e7eb', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 }}>
-            <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', fontWeight: 'bold' }}>
-              Question {currentQuestionIndex + 1} of {totalQuestions}
-            </Text>
-          </View>
-        </View>
-
-        {/* Results Banner (If Submitted) */}
-        {submitted && (
-          <View style={{ backgroundColor: '#10b98120', borderColor: '#10b981', borderWidth: 1, borderRadius: 12, padding: 20, marginBottom: 24, alignItems: 'center' }}>
-            <Ionicons name="trophy" size={32} color="#10b981" style={{ marginBottom: 8 }} />
-            <Text style={{ color: '#10b981', fontSize: 20, fontWeight: 'bold' }}>Quiz Completed!</Text>
-            <Text style={{ color: isDark ? '#d1d5db' : '#374151', marginTop: 4 }}>
-              You scored <Text style={{ fontWeight: 'bold', fontSize: 18 }}>{quiz.score ?? calculateScore()}</Text> out of {totalQuestions}.
-            </Text>
-          </View>
-        )}
-
-        {/* Question Card */}
-        <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', borderRadius: 20, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', flex: 1, padding: 24 }}>
-
-          <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 18, lineHeight: 28, fontFamily: 'serif', marginBottom: 24, fontWeight: '500' }}>
-            {currentQuestionIndex + 1}. {question.questionText}
-          </Text>
-
-          <View style={{ gap: 12 }}>
-            {question.options.map((option: string, index: number) => {
-              const isSelected = selectedAnswers[question._id] === option;
-              const isCorrect = option === question.correctAnswer;
-
-              let bgColor = isDark ? '#374151' : '#f3f4f6';
-              let borderColor = isDark ? '#4b5563' : '#e5e7eb';
-              let textColor = isDark ? '#d1d5db' : '#374151';
-
-              if (submitted) {
-                if (isCorrect) {
-                  bgColor = '#10b98120';
-                  borderColor = '#10b981';
-                  textColor = '#10b981';
-                } else if (isSelected && !isCorrect) {
-                  bgColor = '#ef444420';
-                  borderColor = '#ef4444';
-                  textColor = '#ef4444';
-                }
-              } else if (isSelected) {
-                bgColor = '#8b5cf620';
-                borderColor = '#8b5cf6';
-                textColor = '#8b5cf6';
-              }
-
-              return (
-                <TouchableOpacity
-                  key={index}
-                  onPress={() => handleOptionSelect(option)}
-                  disabled={submitted}
-                  style={{
-                    backgroundColor: bgColor,
-                    borderWidth: 1,
-                    borderColor: borderColor,
-                    borderRadius: 12,
-                    padding: 16,
-                    flexDirection: 'row',
-                    alignItems: 'center'
-                  }}
-                >
-                  <View style={{ width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-                    {isSelected && !submitted && <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#8b5cf6' }} />}
-                    {submitted && isCorrect && <Ionicons name="checkmark" size={14} color="#10b981" />}
-                    {submitted && isSelected && !isCorrect && <Ionicons name="close" size={14} color="#ef4444" />}
-                  </View>
-                  <Text style={{ color: textColor, fontSize: 16, flex: 1, fontFamily: 'serif' }}>{option}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          {/* Explanation (Shows after submit) */}
+          {/* Results Banner (If Submitted) */}
           {submitted && (
-            <View style={{ marginTop: 24, paddingTop: 24, borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#e5e7eb' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                <Ionicons name="information-circle" size={18} color="#3b82f6" />
-                <Text style={{ color: '#3b82f6', fontWeight: 'bold', marginLeft: 8 }}>Explanation</Text>
-              </View>
-              <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', lineHeight: 24 }}>{question.explanation}</Text>
+            <View style={{ backgroundColor: '#10b98120', borderColor: '#10b981', borderWidth: 1, borderRadius: 12, padding: 20, marginBottom: 24, alignItems: 'center' }}>
+              <Ionicons name="trophy" size={32} color="#10b981" style={{ marginBottom: 8 }} />
+              <Text style={{ color: '#10b981', fontSize: 20, fontWeight: 'bold' }}>Quiz Completed!</Text>
+              <Text style={{ color: isDark ? '#d1d5db' : '#374151', marginTop: 4 }}>
+                You scored <Text style={{ fontWeight: 'bold', fontSize: 18 }}>{finalScore}</Text> out of {totalQuestions}.
+              </Text>
             </View>
           )}
 
+          {/* Question Card */}
+          <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', borderRadius: 20, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', flex: 1, padding: 24 }}>
+
+            <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 18, lineHeight: 28, fontFamily: 'serif', marginBottom: 24, fontWeight: '500' }}>
+              {currentQuestionIndex + 1}. {question.questionText}
+            </Text>
+
+            <View style={{ gap: 12 }}>
+              {question.options.map((option: string, index: number) => {
+                const isSelected = selectedAnswers[question._id] === option;
+                const isCorrect = option === question.correctAnswer;
+
+                let bgColor = isDark ? '#374151' : '#f3f4f6';
+                let borderColor = isDark ? '#4b5563' : '#e5e7eb';
+                let textColor = isDark ? '#d1d5db' : '#374151';
+
+                if (submitted) {
+                  if (isCorrect) {
+                    bgColor = '#10b98120';
+                    borderColor = '#10b981';
+                    textColor = '#10b981';
+                  } else if (isSelected && !isCorrect) {
+                    bgColor = '#ef444420';
+                    borderColor = '#ef4444';
+                    textColor = '#ef4444';
+                  }
+                } else if (isSelected) {
+                  bgColor = '#8b5cf620';
+                  borderColor = '#8b5cf6';
+                  textColor = '#8b5cf6';
+                }
+
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => handleOptionSelect(option)}
+                    disabled={submitted}
+                    style={{
+                      backgroundColor: bgColor,
+                      borderWidth: 1,
+                      borderColor: borderColor,
+                      borderRadius: 12,
+                      padding: 16,
+                      flexDirection: 'row',
+                      alignItems: 'center'
+                    }}
+                  >
+                    <View style={{ width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                      {isSelected && !submitted && <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#8b5cf6' }} />}
+                      {submitted && isCorrect && <Ionicons name="checkmark" size={14} color="#10b981" />}
+                      {submitted && isSelected && !isCorrect && <Ionicons name="close" size={14} color="#ef4444" />}
+                    </View>
+                    <Text style={{ color: textColor, fontSize: 16, flex: 1, fontFamily: 'serif' }}>{option}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {/* Explanation (Shows after submit) */}
+            {submitted && (
+              <View style={{ marginTop: 24, paddingTop: 24, borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#e5e7eb' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                  <Ionicons name="information-circle" size={18} color="#3b82f6" />
+                  <Text style={{ color: '#3b82f6', fontWeight: 'bold', marginLeft: 8 }}>Explanation</Text>
+                </View>
+                <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', lineHeight: 24 }}>{question.explanation}</Text>
+              </View>
+            )}
+
+          </View>
+
+          {/* Footer Navigation */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 24 }}>
+            <TouchableOpacity
+              onPress={() => setCurrentQuestionIndex(prev => prev - 1)}
+              disabled={currentQuestionIndex === 0}
+              style={{ paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, backgroundColor: isDark ? '#1f2937' : '#e5e7eb', opacity: currentQuestionIndex === 0 ? 0.5 : 1 }}
+            >
+              <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold' }}>Previous</Text>
+            </TouchableOpacity>
+
+            {!isLastQuestion ? (
+              <TouchableOpacity
+                onPress={() => setCurrentQuestionIndex(prev => prev + 1)}
+                style={{ paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, backgroundColor: '#8b5cf6' }}
+              >
+                <Text style={{ color: 'white', fontWeight: 'bold' }}>Next Question</Text>
+              </TouchableOpacity>
+            ) : !submitted ? (
+              <TouchableOpacity
+                onPress={handleSubmit}
+                style={{ paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, backgroundColor: '#10b981' }}
+              >
+                <Text style={{ color: 'white', fontWeight: 'bold' }}>Submit Quiz</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        </ScrollView>
+
+        {/* SIDEBAR NAVIGATION GRID */}
+        <View style={{ width: isDesktop ? 300 : '100%', backgroundColor: isDark ? '#1f2937' : '#ffffff', borderRadius: 20, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', padding: 24, height: isDesktop ? '100%' : 'auto' }}>
+          <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 16, fontWeight: 'bold', marginBottom: 16, textAlign: 'center' }}>Question Navigator</Text>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center' }}>
+              {quiz.questions.map((q: any, idx: number) => {
+                const isAnswered = !!selectedAnswers[q._id];
+                const isCurrent = currentQuestionIndex === idx;
+                const isCorrect = q.correctAnswer?.trim() === selectedAnswers[q._id]?.trim();
+
+                let bgColor = isDark ? '#374151' : '#f3f4f6';
+                let textColor = isDark ? '#d1d5db' : '#6b7280';
+                let borderColor = isDark ? '#4b5563' : '#e5e7eb';
+
+                if (isCurrent) {
+                  bgColor = '#8b5cf6';
+                  textColor = 'white';
+                  borderColor = '#8b5cf6';
+                } else if (submitted) {
+                  if (isCorrect) {
+                    bgColor = '#10b98120'; textColor = '#10b981'; borderColor = '#10b981';
+                  } else if (isAnswered) {
+                    bgColor = '#ef444420'; textColor = '#ef4444'; borderColor = '#ef4444';
+                  }
+                } else if (isAnswered) {
+                  bgColor = '#10b98120'; textColor = '#10b981'; borderColor = '#10b981';
+                }
+
+                return (
+                  <TouchableOpacity
+                    key={q._id}
+                    onPress={() => setCurrentQuestionIndex(idx)}
+                    style={{
+                      width: 44, height: 44, borderRadius: 22,
+                      backgroundColor: bgColor,
+                      borderWidth: isCurrent ? 0 : 1.5, borderColor,
+                      alignItems: 'center', justifyContent: 'center'
+                    }}
+                  >
+                    <Text style={{ color: textColor, fontWeight: 'bold', fontSize: 15 }}>{idx + 1}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </ScrollView>
         </View>
 
-        {/* Footer Navigation */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 24 }}>
-          <TouchableOpacity
-            onPress={() => setCurrentQuestionIndex(prev => prev - 1)}
-            disabled={currentQuestionIndex === 0}
-            style={{ paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, backgroundColor: isDark ? '#1f2937' : '#e5e7eb', opacity: currentQuestionIndex === 0 ? 0.5 : 1 }}
-          >
-            <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold' }}>Previous</Text>
-          </TouchableOpacity>
-
-          {!isLastQuestion ? (
-            <TouchableOpacity
-              onPress={() => setCurrentQuestionIndex(prev => prev + 1)}
-              style={{ paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, backgroundColor: '#8b5cf6' }}
-            >
-              <Text style={{ color: 'white', fontWeight: 'bold' }}>Next Question</Text>
-            </TouchableOpacity>
-          ) : !submitted ? (
-            <TouchableOpacity
-              onPress={handleSubmit}
-              style={{ paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, backgroundColor: '#10b981' }}
-            >
-              <Text style={{ color: 'white', fontWeight: 'bold' }}>Submit Quiz</Text>
-            </TouchableOpacity>
-          ) : null}
-        </View>
-
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }

@@ -54,6 +54,10 @@ export default function DailyQuiz() {
       setGenerating(true);
       const res = await api.post('/quiz/generate');
       setQuiz(res.data);
+      setSubmitted(false);
+      setSelectedAnswers({});
+      setCurrentQuestionIndex(0);
+      setVisitedQuestions(new Set([0]));
     } catch (error: any) {
       console.error('Error generating quiz:', error);
       alert(error.response?.data?.message || 'Failed to generate quiz. Is your GEMINI_API_KEY set?');
@@ -266,8 +270,31 @@ export default function DailyQuiz() {
 
           </View>
 
-          {/* Footer Navigation */}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 24 }}>
+          {/* Post-Quiz Actions */}
+          {submitted && (
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 16, marginTop: 40, paddingTop: 32, borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#e5e7eb', paddingBottom: 24 }}>
+              <TouchableOpacity
+                onPress={() => router.push('/')}
+                style={{ flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: isDark ? '#374151' : '#e5e7eb', alignItems: 'center' }}
+              >
+                <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold' }}>Exit to Dashboard</Text>
+              </TouchableOpacity>
+
+              {!quizId && (
+                <TouchableOpacity
+                  onPress={handleGenerate}
+                  disabled={generating}
+                  style={{ flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#8b5cf6', alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}
+                >
+                  {generating ? <ActivityIndicator size="small" color="white" /> : <Ionicons name="refresh" size={18} color="white" style={{ marginRight: 6 }} />}
+                  <Text style={{ color: 'white', fontWeight: 'bold' }}>{generating ? 'Regenerating...' : 'Regenerate Quiz'}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+
+          {/* Footer Navigation (For moving through questions before ending) */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12, paddingBottom: 24 }}>
             <TouchableOpacity
               onPress={() => setCurrentQuestionIndex(prev => prev - 1)}
               disabled={currentQuestionIndex === 0}

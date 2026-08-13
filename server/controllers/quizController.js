@@ -21,7 +21,7 @@ exports.getDailyQuiz = async (req, res) => {
       userId: req.user.id,
       date: today,
       type: 'Daily'
-    });
+    }).sort({ createdAt: -1 });
     res.json(quiz);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching daily quiz', error: error.message });

@@ -479,6 +479,17 @@ export default function Dashboard() {
             <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 30, fontWeight: 'bold' }}>{stats.currentAffairs}</Text>
             <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 12, marginTop: 4 }}>Articles logged</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => router.push('/quiz-history')} style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', borderRadius: 16, padding: 20, flex: 1, minWidth: 140, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontWeight: '500', fontSize: 14 }}>Quiz Archive</Text>
+              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(236, 72, 153, 0.2)', alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="archive" size={20} color="#ec4899" />
+              </View>
+            </View>
+            <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 30, fontWeight: 'bold' }}>History</Text>
+            <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 12, marginTop: 4 }}>View past quizzes</Text>
+          </TouchableOpacity>
         </View>
 
         {/* SECTION 3: DEEP WORK TIMER & HEATMAP */}

@@ -110,12 +110,13 @@ export default function Dashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const [gs1Res, gs2Res, gs3Res, gs4Res, socioRes, pyqsRes, revisionsRes, caRes, answersRes, recentTopicsRes] = await Promise.all([
+      const [gs1Res, gs2Res, gs3Res, gs4Res, socioRes, csatRes, pyqsRes, revisionsRes, caRes, answersRes, recentTopicsRes] = await Promise.all([
         api.get('/topics/subject/GS I').catch(() => ({ data: [] })),
         api.get('/topics/subject/GS II').catch(() => ({ data: [] })),
-        api.get('/topics/subject/GS III').catch(() => ({ data: [] })),
+        api.get(`/topics/subject/${encodeURIComponent('GS III')}`).catch(() => ({ data: [] })),
         api.get('/topics/subject/GS IV').catch(() => ({ data: [] })),
         api.get('/topics/subject/Sociology').catch(() => ({ data: [] })),
+        api.get('/topics/subject/CSAT').catch(() => ({ data: [] })),
         api.get('/pyqs').catch(() => ({ data: [] })),
         api.get('/revisions/pending').catch(() => ({ data: [] })),
         api.get('/current-affairs').catch(() => ({ data: [] })),
@@ -128,7 +129,8 @@ export default function Dashboard() {
         { name: 'GS II', data: gs2Res.data, color: '#10b981' },
         { name: 'GS III', data: gs3Res.data, color: '#f59e0b' },
         { name: 'GS IV', data: gs4Res.data, color: '#ec4899' },
-        { name: 'Sociology', data: socioRes.data, color: '#8b5cf6' }
+        { name: 'Sociology', data: socioRes.data, color: '#8b5cf6' },
+        { name: 'CSAT', data: csatRes.data, color: '#06b6d4' }
       ];
 
       const prog = subjects.map(s => ({
@@ -139,7 +141,7 @@ export default function Dashboard() {
       }));
       setSubjectProgress(prog);
 
-      const allTopics = [...gs1Res.data, ...gs2Res.data, ...gs3Res.data, ...gs4Res.data, ...socioRes.data];
+      const allTopics = [...gs1Res.data, ...gs2Res.data, ...gs3Res.data, ...gs4Res.data, ...socioRes.data, ...csatRes.data];
       const completedCount = allTopics.filter((t: any) => t.completed || t.status === 'Completed').length;
 
       setStats({

@@ -28,6 +28,27 @@ exports.getDailyQuiz = async (req, res) => {
   }
 };
 
+exports.getQuizHistory = async (req, res) => {
+  try {
+    const quizzes = await Quiz.find({ userId: req.user.id, status: 'Completed' })
+      .select('-questions') // Exclude heavy question arrays for the list view
+      .sort({ createdAt: -1 });
+    res.json(quizzes);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching quiz history', error: error.message });
+  }
+};
+
+exports.getQuizById = async (req, res) => {
+  try {
+    const quiz = await Quiz.findOne({ _id: req.params.id, userId: req.user.id });
+    if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
+    res.json(quiz);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching quiz by ID', error: error.message });
+  }
+};
+
 exports.generateDailyQuiz = async (req, res) => {
   try {
     const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;

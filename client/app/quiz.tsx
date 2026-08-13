@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Platform, StatusBar, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import api from '../src/services/api';
 import { useTheme } from '../src/context/ThemeContext';
 
 export default function DailyQuiz() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const quizId = params.id as string;
   const { mode } = useTheme();
   const isDark = mode === 'dark';
   const { width } = useWindowDimensions();
@@ -32,7 +34,7 @@ export default function DailyQuiz() {
   const fetchQuiz = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/quiz/daily');
+      const res = await api.get(quizId ? `/quiz/${quizId}` : '/quiz/daily');
       setQuiz(res.data);
       if (res.data?.status === 'Completed') {
         setSubmitted(true);
@@ -117,11 +119,21 @@ export default function DailyQuiz() {
         <TouchableOpacity
           onPress={handleGenerate}
           disabled={generating}
-          style={{ backgroundColor: '#8b5cf6', paddingHorizontal: 32, paddingVertical: 16, borderRadius: 12, flexDirection: 'row', alignItems: 'center' }}
+          style={{ backgroundColor: '#8b5cf6', paddingHorizontal: 32, paddingVertical: 16, borderRadius: 12, flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}
         >
           {generating ? <ActivityIndicator color="white" /> : <Ionicons name="sparkles" size={20} color="white" />}
           <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16, marginLeft: 8 }}>
             {generating ? 'Generating 25 UPSC Questions...' : 'Generate Today\'s Mission Quiz'}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => router.push('/quiz-history')}
+          style={{ backgroundColor: isDark ? '#374151' : '#e5e7eb', paddingHorizontal: 32, paddingVertical: 16, borderRadius: 12, flexDirection: 'row', alignItems: 'center' }}
+        >
+          <Ionicons name="time" size={20} color={isDark ? 'white' : '#111827'} />
+          <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold', fontSize: 16, marginLeft: 8 }}>
+            View Quiz History
           </Text>
         </TouchableOpacity>
       </View>

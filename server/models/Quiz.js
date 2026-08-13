@@ -10,7 +10,7 @@ const questionSchema = new mongoose.Schema({
 
 const quizSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  date: { type: Date, required: true, default: Date.now },
+  date: { type: String, required: true },  // "2026-08-13" IST date string
   questions: [questionSchema],
   type: { type: String, enum: ['Daily', 'Subject', 'FullLength'], default: 'Daily' },
   status: { type: String, enum: ['Pending', 'Completed'], default: 'Pending' },

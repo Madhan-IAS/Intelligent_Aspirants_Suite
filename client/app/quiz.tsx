@@ -71,7 +71,7 @@ export default function DailyQuiz() {
       alert('Please answer all questions before submitting.');
       return;
     }
-    
+
     try {
       const score = calculateScore();
       await api.put(`/quiz/${quiz._id}/submit`, { score });
@@ -96,21 +96,21 @@ export default function DailyQuiz() {
         <TouchableOpacity onPress={() => router.back()} style={{ position: 'absolute', top: 40, left: 24, width: 40, height: 40, backgroundColor: isDark ? '#1f2937' : '#e5e7eb', borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}>
           <Ionicons name="arrow-back" size={20} color={isDark ? 'white' : '#111827'} />
         </TouchableOpacity>
-        
+
         <Ionicons name="rocket" size={80} color="#8b5cf6" style={{ marginBottom: 24 }} />
-        <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 24, fontWeight: 'bold', marginBottom: 8, textAlign: 'center' }}>No Quiz Available Yet</Text>
+        <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 24, fontWeight: 'bold', marginBottom: 8, textAlign: 'center' }}>Today's Mission Quiz</Text>
         <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', textAlign: 'center', marginBottom: 32, maxWidth: 400 }}>
-          Generate your personalized daily quiz based on your recently studied topics and current affairs using AI.
+          Generate 25 UPSC Prelims-style MCQs from today's GS schedule topics. AI will create statement-based, assertion-reason, and factual questions.
         </Text>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           onPress={handleGenerate}
           disabled={generating}
           style={{ backgroundColor: '#8b5cf6', paddingHorizontal: 32, paddingVertical: 16, borderRadius: 12, flexDirection: 'row', alignItems: 'center' }}
         >
           {generating ? <ActivityIndicator color="white" /> : <Ionicons name="sparkles" size={20} color="white" />}
           <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16, marginLeft: 8 }}>
-            {generating ? 'AI is analyzing your notes...' : 'Generate Daily Quiz'}
+            {generating ? 'Generating 25 UPSC Questions...' : 'Generate Today\'s Mission Quiz'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -125,7 +125,7 @@ export default function DailyQuiz() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? '#111827' : '#f9fafb', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }}>
       <ScrollView contentContainerStyle={{ padding: 24, flexGrow: 1 }}>
-        
+
         {/* Header */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -137,7 +137,7 @@ export default function DailyQuiz() {
               <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 24, fontWeight: 'bold' }}>AI Quiz Engine</Text>
             </View>
           </View>
-          
+
           <View style={{ backgroundColor: isDark ? '#1f2937' : '#e5e7eb', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 }}>
             <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', fontWeight: 'bold' }}>
               Question {currentQuestionIndex + 1} of {totalQuestions}
@@ -158,7 +158,7 @@ export default function DailyQuiz() {
 
         {/* Question Card */}
         <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', borderRadius: 20, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', flex: 1, padding: 24 }}>
-          
+
           <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 18, lineHeight: 28, fontFamily: 'serif', marginBottom: 24, fontWeight: '500' }}>
             {currentQuestionIndex + 1}. {question.questionText}
           </Text>
@@ -167,7 +167,7 @@ export default function DailyQuiz() {
             {question.options.map((option: string, index: number) => {
               const isSelected = selectedAnswers[question._id] === option;
               const isCorrect = option === question.correctAnswer;
-              
+
               let bgColor = isDark ? '#374151' : '#f3f4f6';
               let borderColor = isDark ? '#4b5563' : '#e5e7eb';
               let textColor = isDark ? '#d1d5db' : '#374151';
@@ -229,8 +229,8 @@ export default function DailyQuiz() {
 
         {/* Footer Navigation */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 24 }}>
-          <TouchableOpacity 
-            onPress={() => setCurrentQuestionIndex(prev => prev - 1)} 
+          <TouchableOpacity
+            onPress={() => setCurrentQuestionIndex(prev => prev - 1)}
             disabled={currentQuestionIndex === 0}
             style={{ paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, backgroundColor: isDark ? '#1f2937' : '#e5e7eb', opacity: currentQuestionIndex === 0 ? 0.5 : 1 }}
           >
@@ -238,15 +238,15 @@ export default function DailyQuiz() {
           </TouchableOpacity>
 
           {!isLastQuestion ? (
-            <TouchableOpacity 
-              onPress={() => setCurrentQuestionIndex(prev => prev + 1)} 
+            <TouchableOpacity
+              onPress={() => setCurrentQuestionIndex(prev => prev + 1)}
               style={{ paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, backgroundColor: '#8b5cf6' }}
             >
               <Text style={{ color: 'white', fontWeight: 'bold' }}>Next Question</Text>
             </TouchableOpacity>
           ) : !submitted ? (
-            <TouchableOpacity 
-              onPress={handleSubmit} 
+            <TouchableOpacity
+              onPress={handleSubmit}
               style={{ paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, backgroundColor: '#10b981' }}
             >
               <Text style={{ color: 'white', fontWeight: 'bold' }}>Submit Quiz</Text>

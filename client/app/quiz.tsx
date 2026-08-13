@@ -274,10 +274,10 @@ export default function DailyQuiz() {
           {submitted && (
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 16, marginTop: 40, paddingTop: 32, borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#e5e7eb', paddingBottom: 24 }}>
               <TouchableOpacity
-                onPress={() => router.push('/')}
+                onPress={() => quizId ? router.replace('/quiz-history') : setQuiz(null)}
                 style={{ flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: isDark ? '#374151' : '#e5e7eb', alignItems: 'center' }}
               >
-                <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold' }}>Exit to Dashboard</Text>
+                <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold' }}>{quizId ? 'Back to Archive' : 'Exit Quiz Page'}</Text>
               </TouchableOpacity>
 
               {!quizId && (

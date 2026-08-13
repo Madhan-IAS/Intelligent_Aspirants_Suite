@@ -18,11 +18,16 @@ export default function DailyQuiz() {
   const [quiz, setQuiz] = useState<any>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
+  const [visitedQuestions, setVisitedQuestions] = useState<Set<number>>(new Set([0]));
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
     fetchQuiz();
   }, []);
+
+  useEffect(() => {
+    setVisitedQuestions(prev => new Set(prev).add(currentQuestionIndex));
+  }, [currentQuestionIndex]);
 
   const fetchQuiz = async () => {
     try {
@@ -272,6 +277,7 @@ export default function DailyQuiz() {
               {quiz.questions.map((q: any, idx: number) => {
                 const isAnswered = !!selectedAnswers[q._id];
                 const isCurrent = currentQuestionIndex === idx;
+                const isVisited = visitedQuestions.has(idx);
                 const isCorrect = q.correctAnswer?.trim() === selectedAnswers[q._id]?.trim();
 
                 let bgColor = isDark ? '#374151' : '#f3f4f6';
@@ -290,6 +296,8 @@ export default function DailyQuiz() {
                   }
                 } else if (isAnswered) {
                   bgColor = '#10b98120'; textColor = '#10b981'; borderColor = '#10b981';
+                } else if (isVisited) {
+                  bgColor = '#f59e0b20'; textColor = '#f59e0b'; borderColor = '#f59e0b';
                 }
 
                 return (

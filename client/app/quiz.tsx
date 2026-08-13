@@ -167,10 +167,20 @@ export default function DailyQuiz() {
               </View>
             </View>
 
-            <View style={{ backgroundColor: isDark ? '#1f2937' : '#e5e7eb', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 }}>
-              <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', fontWeight: 'bold' }}>
-                Question {currentQuestionIndex + 1} of {totalQuestions}
-              </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <TouchableOpacity
+                onPress={() => router.push('/quiz-history')}
+                style={{ backgroundColor: isDark ? '#1f2937' : '#e5e7eb', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2 }}
+              >
+                <Ionicons name="time" size={16} color={isDark ? '#d1d5db' : '#4b5563'} style={{ marginRight: 6 }} />
+                <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', fontWeight: 'bold' }}>Archive</Text>
+              </TouchableOpacity>
+
+              <View style={{ backgroundColor: isDark ? '#1f2937' : '#e5e7eb', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2 }}>
+                <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', fontWeight: 'bold' }}>
+                  Question {currentQuestionIndex + 1} of {totalQuestions}
+                </Text>
+              </View>
             </View>
           </View>
 

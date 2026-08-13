@@ -36,6 +36,9 @@ export default function DailyQuiz() {
       setQuiz(res.data);
       if (res.data?.status === 'Completed') {
         setSubmitted(true);
+        if (res.data.selectedAnswers) {
+          setSelectedAnswers(res.data.selectedAnswers);
+        }
       }
     } catch (error) {
       console.error(error);
@@ -81,7 +84,7 @@ export default function DailyQuiz() {
 
     try {
       const score = calculateScore();
-      const res = await api.put(`/quiz/${quiz._id}/submit`, { score });
+      const res = await api.put(`/quiz/${quiz._id}/submit`, { score, selectedAnswers });
       setQuiz(res.data); // Update quiz with backend saved score
       setSubmitted(true);
     } catch (error) {

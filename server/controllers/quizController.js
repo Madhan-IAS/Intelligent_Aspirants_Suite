@@ -132,11 +132,11 @@ Generate output as a JSON array. Do NOT wrap in markdown code blocks. Each objec
 exports.submitQuiz = async (req, res) => {
   try {
     const { id } = req.params;
-    const { score } = req.body;
+    const { score, selectedAnswers } = req.body;
 
     const quiz = await Quiz.findOneAndUpdate(
       { _id: id, userId: req.user.id },
-      { status: 'Completed', score },
+      { status: 'Completed', score, selectedAnswers },
       { new: true }
     );
     if (!quiz) return res.status(404).json({ message: 'Quiz not found' });

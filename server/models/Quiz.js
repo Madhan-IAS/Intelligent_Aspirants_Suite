@@ -14,7 +14,8 @@ const quizSchema = new mongoose.Schema({
   questions: [questionSchema],
   type: { type: String, enum: ['Daily', 'Subject', 'FullLength'], default: 'Daily' },
   status: { type: String, enum: ['Pending', 'Completed'], default: 'Pending' },
-  score: { type: Number, default: 0 }
+  score: { type: Number, default: 0 },
+  selectedAnswers: { type: Map, of: String }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Quiz', quizSchema);

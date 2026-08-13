@@ -85,8 +85,6 @@ export default function DailyQuiz() {
     }
   };
 
-  const finalScore = quiz?.status === 'Completed' ? quiz.score : calculateScore();
-
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: isDark ? '#111827' : '#f9fafb', alignItems: 'center', justifyContent: 'center' }}>
@@ -121,6 +119,8 @@ export default function DailyQuiz() {
       </View>
     );
   }
+
+  const finalScore = quiz?.status === 'Completed' ? quiz.score : calculateScore();
 
   const question = quiz.questions[currentQuestionIndex];
   const totalQuestions = quiz.questions.length;

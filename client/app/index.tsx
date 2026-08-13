@@ -225,14 +225,14 @@ export default function Dashboard() {
 
         {/* Target Milestone Countdown Banners */}
         <View style={{ flexDirection: isDesktop ? 'row' : 'column', gap: 12, marginBottom: 24 }}>
-          <View style={{ flex: 1, backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 14, borderRadius: 12, borderWidth: 1, borderColor: '#3b82f6', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <View style={{ flex: 1, backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 14, borderRadius: 12, borderWidth: 1, borderColor: '#3b82f6', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: isDesktop ? 'nowrap' : 'wrap', gap: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flexShrink: 1 }}>
               <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(59, 130, 246, 0.15)', alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ fontSize: 18 }}>🎯</Text>
               </View>
-              <View>
-                <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold', fontSize: 13 }}>Dec 31, 2026 Target</Text>
-                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11 }}>100% Syllabus + 2x Revision</Text>
+              <View style={{ flexShrink: 1 }}>
+                <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold', fontSize: 13 }} numberOfLines={1}>Dec 31, 2026 Target</Text>
+                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11 }} numberOfLines={1} adjustsFontSizeToFit>100% Syllabus + 2x Revision</Text>
               </View>
             </View>
             <View style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}>
@@ -240,14 +240,14 @@ export default function Dashboard() {
             </View>
           </View>
 
-          <View style={{ flex: 1, backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 14, borderRadius: 12, borderWidth: 1, borderColor: '#8b5cf6', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <View style={{ flex: 1, backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 14, borderRadius: 12, borderWidth: 1, borderColor: '#8b5cf6', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: isDesktop ? 'nowrap' : 'wrap', gap: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flexShrink: 1 }}>
               <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(139, 92, 246, 0.15)', alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ fontSize: 18 }}>🏛️</Text>
               </View>
-              <View>
-                <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold', fontSize: 13 }}>UPSC Prelims 2027</Text>
-                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11 }}>May 23, 2027 Exam Date</Text>
+              <View style={{ flexShrink: 1 }}>
+                <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold', fontSize: 13 }} numberOfLines={1}>UPSC Prelims 2027</Text>
+                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11 }} numberOfLines={1} adjustsFontSizeToFit>May 23, 2027 Exam Date</Text>
               </View>
             </View>
             <View style={{ backgroundColor: 'rgba(139, 92, 246, 0.15)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}>

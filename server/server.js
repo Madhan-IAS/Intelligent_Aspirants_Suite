@@ -8,6 +8,11 @@ require('dotenv').config();
 
 const app = express();
 
+// Startup env check
+console.log('[ENV] GEMINI_API_KEY present:', !!process.env.GEMINI_API_KEY);
+console.log('[ENV] GOOGLE_API_KEY present:', !!process.env.GOOGLE_API_KEY);
+console.log('[ENV] MONGO_URI present:', !!process.env.MONGO_URI);
+
 // Middleware
 app.use(cors());
 app.use(express.json());

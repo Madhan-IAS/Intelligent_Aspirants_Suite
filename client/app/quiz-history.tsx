@@ -84,7 +84,11 @@ export default function QuizHistory() {
                                     </View>
                                     <View>
                                         <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 18, fontWeight: 'bold' }}>{quiz.date}</Text>
-                                        <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 14, marginTop: 4 }}>Mission Quiz</Text>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                                            <View style={{ backgroundColor: quiz.type === 'Subject' ? '#10b98120' : '#8b5cf620', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
+                                                <Text style={{ color: quiz.type === 'Subject' ? '#10b981' : '#8b5cf6', fontSize: 11, fontWeight: 'bold' }}>{quiz.type === 'Subject' ? 'Topic Quiz' : 'Mission Quiz'}</Text>
+                                            </View>
+                                        </View>
                                     </View>
                                 </View>
 

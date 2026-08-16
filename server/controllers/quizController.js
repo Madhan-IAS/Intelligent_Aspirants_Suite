@@ -166,3 +166,103 @@ exports.submitQuiz = async (req, res) => {
     res.status(500).json({ message: 'Error submitting quiz', error: error.message });
   }
 };
+
+exports.generateTopicQuiz = async (req, res) => {
+  try {
+    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ message: 'API Key is not set.' });
+    }
+
+    const userId = req.user.id;
+    const today = getTodayIST();
+    const { topicIds } = req.body;
+
+    if (!topicIds || !Array.isArray(topicIds) || topicIds.length < 5) {
+      return res.status(400).json({ message: 'Please select at least 5 topics to generate a quiz.' });
+    }
+    if (topicIds.length > 20) {
+      return res.status(400).json({ message: 'Please select at most 20 topics.' });
+    }
+
+    const topics = await Topic.find({ _id: { $in: topicIds } })
+      .select('title subjectName chapter notes');
+
+    if (!topics || topics.length === 0) {
+      return res.status(400).json({ message: 'No valid topics found.' });
+    }
+
+    let context = `Custom Topic Quiz — ${topics.length} topics selected\n\n`;
+    topics.forEach((topic, idx) => {
+      context += `--- Topic ${idx + 1}: ${topic.title} (${topic.subjectName}) ---\n`;
+      if (topic.chapter) context += `Chapter: ${topic.chapter}\n`;
+      if (topic.notes?.intro) context += `Intro: ${topic.notes.intro}\n`;
+      if (topic.notes?.body) context += `Body: ${topic.notes.body}\n`;
+      context += '\n';
+    });
+
+    const topicTitles = topics.map(t => t.title).join(', ');
+
+    const prompt = `
+You are UPSC CSE (Civil Services Examination) Senior Paper-Setter for the Preliminary Examination (Paper I – General Studies).
+
+Your task: Generate exactly 25 high-quality, exam-standard MCQs based on the following specific topics chosen by the student.
+
+Topics: ${topicTitles}
+
+Context from student's notes:
+${context}
+
+STRICT RULES FOR QUESTION FORMAT (follow UPSC Prelims pattern exactly):
+1. Use statement-based questions: "Consider the following statements:" followed by numbered statements, then ask "Which of the statements given above is/are correct?" with options like "(a) 1 only (b) 2 and 3 only (c) 1, 2 and 3 (d) None of the above".
+2. Use assertion-reason pattern occasionally: "Statement 1:... Statement 2:..." then ask about correctness and relationship.
+3. Use "With reference to..." pattern for factual questions.
+4. Use "Which of the following..." for list-based elimination questions.
+5. Include negative marking awareness — options should be tricky but fair.
+6. Cover all provided topics proportionally.
+7. Mix difficulty: 8 Easy, 10 Medium, 7 Hard.
+8. Each question MUST have exactly 4 options labeled (a), (b), (c), (d).
+9. The correctAnswer must be the EXACT full string of the correct option.
+
+Generate output as a JSON array. Do NOT wrap in markdown code blocks. Each object must have:
+[
+  {
+    "questionText": "<Full question with statements>",
+    "options": ["(a) ...", "(b) ...", "(c) ...", "(d) ..."],
+    "correctAnswer": "<exact string from options array>",
+    "explanation": "<detailed explanation referencing the topic>"
+  }
+]
+`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: { responseMimeType: 'application/json' }
+    });
+
+    const questionsData = JSON.parse(response.text);
+    if (!Array.isArray(questionsData)) {
+      throw new Error('AI did not return a valid array of questions.');
+    }
+
+    const questions = questionsData.map((q, idx) => ({
+      ...q,
+      topicId: topics[idx % topics.length]._id
+    }));
+
+    const newQuiz = new Quiz({
+      userId,
+      type: 'Subject',
+      date: today,
+      questions,
+      status: 'Pending'
+    });
+
+    await newQuiz.save();
+    res.status(201).json(newQuiz);
+  } catch (error) {
+    console.error('Topic Quiz Generation Error:', error);
+    res.status(500).json({ message: 'Failed to generate topic quiz.', error: error.message });
+  }
+};

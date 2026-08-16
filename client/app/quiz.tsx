@@ -132,6 +132,16 @@ export default function DailyQuiz() {
         </TouchableOpacity>
 
         <TouchableOpacity
+          onPress={() => router.push('/topic-quiz')}
+          style={{ backgroundColor: '#10b981', paddingHorizontal: 32, paddingVertical: 16, borderRadius: 12, flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}
+        >
+          <Ionicons name="list" size={20} color="white" />
+          <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16, marginLeft: 8 }}>
+            Topic Quiz (Custom)
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
           onPress={() => router.push('/quiz-history')}
           style={{ backgroundColor: isDark ? '#374151' : '#e5e7eb', paddingHorizontal: 32, paddingVertical: 16, borderRadius: 12, flexDirection: 'row', alignItems: 'center' }}
         >

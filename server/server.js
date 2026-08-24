@@ -62,6 +62,7 @@ const notificationsRoutes = require('./routes/notifications');
 const dailyPlanRoutes = require('./routes/dailyPlan');
 const interlinkagesRoutes = require('./routes/interlinkages');
 const essaysRoutes = require('./routes/essays');
+const mindMapsRoutes = require('./routes/mindMaps');
 
 app.use('/api/subjects', subjectsRoutes);
 app.use('/api/topics', topicsRoutes);
@@ -85,6 +86,7 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/daily-plan', dailyPlanRoutes);
 app.use('/api/interlinkages', interlinkagesRoutes);
 app.use('/api/essays', essaysRoutes);
+app.use('/api/mind-maps', mindMapsRoutes);
 app.use('/api/answers/gallery', require('./routes/answerGallery'));
 
 app.listen(PORT, () => {

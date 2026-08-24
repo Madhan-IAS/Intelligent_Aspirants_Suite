@@ -300,6 +300,143 @@ export default function MindMapsPage() {
         }
     };
 
+    // ─── Download ALL Mind Maps as single PDF ───
+    const handleDownloadAllPDF = () => {
+        if (Platform.OS !== 'web') return;
+        if (filteredMaps.length === 0) return;
+
+        const pc = PAPER_CONFIG[activePaper]?.color || '#3b82f6';
+        const subjectLabel = activeSubject || 'All Subjects';
+        const dateStr = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+
+        // Group for TOC
+        const groups: Record<string, any[]> = {};
+        filteredMaps.forEach(m => {
+            if (!groups[m.subject]) groups[m.subject] = [];
+            groups[m.subject].push(m);
+        });
+
+        // Build individual map sections
+        const mapSections = filteredMaps.map((mm, idx) => `
+  <div class="map-section">
+    <div class="map-header">
+      <div class="map-number">${idx + 1}</div>
+      <div>
+        <div class="map-badge">${mm.paper} · ${mm.subject}</div>
+        <h2 class="map-title">${mm.title}</h2>
+      </div>
+    </div>
+    ${mm.description ? `<div class="map-desc">${mm.description}</div>` : ''}
+    ${mm.imageUrl ? `<div style="text-align:center;margin-bottom:20px"><img src="${mm.imageUrl}" style="max-width:100%;border-radius:10px;border:1px solid #e5e7eb" /></div>` : ''}
+    ${mm.content ? `<div class="map-content"><pre>${mm.content}</pre></div>` : ''}
+    ${mm.tags && mm.tags.length > 0 ? `<div class="map-tags">${mm.tags.map((t: string) => `<span class="tag">${t}</span>`).join('')}</div>` : ''}
+  </div>`).join('\n');
+
+        // Build TOC
+        const tocItems = Object.keys(groups).map(subj => {
+            const items = groups[subj].map((m: any) => `<li>${m.title}</li>`).join('');
+            return `<div class="toc-group"><h4>${subj} (${groups[subj].length})</h4><ul>${items}</ul></div>`;
+        }).join('');
+
+        const htmlAll = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>${activePaper} Mind Maps — ${subjectLabel}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Inter',-apple-system,sans-serif; background:#fff; color:#111827; }
+  .page { max-width:800px; margin:0 auto; padding:40px 36px; }
+
+  /* Cover */
+  .cover { text-align:center; padding:80px 40px 60px; page-break-after:always; }
+  .cover-icon { font-size:64px; margin-bottom:24px; }
+  .cover-badge { display:inline-block; background:${pc}18; color:${pc}; padding:6px 20px; border-radius:20px; font-size:13px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:20px; border:1px solid ${pc}30; }
+  .cover h1 { font-size:36px; font-weight:800; color:#111827; margin-bottom:8px; }
+  .cover .sub { font-size:16px; color:#6b7280; font-weight:500; margin-bottom:32px; }
+  .cover-stats { display:flex; justify-content:center; gap:40px; margin-top:32px; }
+  .cover-stat { text-align:center; }
+  .cover-stat .num { font-size:32px; font-weight:800; color:${pc}; }
+  .cover-stat .lbl { font-size:12px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:1px; }
+  .cover-line { width:80px; height:4px; background:${pc}; margin:32px auto 0; border-radius:2px; }
+  .cover-footer { margin-top:40px; font-size:12px; color:#9ca3af; }
+
+  /* TOC */
+  .toc { page-break-after:always; }
+  .toc h3 { font-size:22px; font-weight:800; margin-bottom:24px; padding-bottom:12px; border-bottom:3px solid ${pc}; color:#111827; }
+  .toc-group { margin-bottom:20px; }
+  .toc-group h4 { font-size:15px; font-weight:700; color:${pc}; margin-bottom:8px; }
+  .toc-group ul { list-style:none; padding-left:16px; }
+  .toc-group li { font-size:13px; color:#374151; padding:4px 0; border-bottom:1px solid #f3f4f6; }
+  .toc-group li::before { content:'→ '; color:${pc}; font-weight:600; }
+
+  /* Map Sections */
+  .map-section { page-break-inside:avoid; margin-bottom:40px; padding-bottom:32px; border-bottom:2px solid #f3f4f6; }
+  .map-header { display:flex; align-items:flex-start; gap:16px; margin-bottom:16px; }
+  .map-number { width:40px; height:40px; border-radius:12px; background:${pc}15; color:${pc}; font-weight:800; font-size:18px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .map-badge { font-size:11px; color:${pc}; font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+  .map-title { font-size:20px; font-weight:800; color:#111827; }
+  .map-desc { font-size:14px; color:#4b5563; line-height:1.7; margin-bottom:16px; padding:16px 20px; background:${pc}06; border-left:4px solid ${pc}; border-radius:0 10px 10px 0; }
+  .map-content { background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:20px 24px; margin-bottom:16px; }
+  .map-content pre { font-family:'Inter',monospace; font-size:13px; line-height:1.8; color:#374151; white-space:pre-wrap; word-wrap:break-word; }
+  .map-tags { display:flex; gap:6px; flex-wrap:wrap; }
+  .tag { background:${pc}12; color:${pc}; padding:3px 10px; border-radius:16px; font-size:11px; font-weight:600; border:1px solid ${pc}25; }
+
+  /* Footer */
+  .doc-footer { text-align:center; padding-top:24px; border-top:2px solid #f3f4f6; font-size:12px; color:#9ca3af; margin-top:40px; }
+  .doc-footer .brand { color:${pc}; font-weight:700; font-size:13px; }
+
+  @media print {
+    .map-section { page-break-inside:avoid; }
+    .cover { page-break-after:always; }
+    .toc { page-break-after:always; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Cover Page -->
+  <div class="cover">
+    <div class="cover-icon">🧠</div>
+    <div class="cover-badge">${activePaper} — Mind Maps Collection</div>
+    <h1>${subjectLabel}</h1>
+    <div class="sub">${PAPER_CONFIG[activePaper]?.label || ''}</div>
+    <div class="cover-stats">
+      <div class="cover-stat"><div class="num">${filteredMaps.length}</div><div class="lbl">Mind Maps</div></div>
+      <div class="cover-stat"><div class="num">${Object.keys(groups).length}</div><div class="lbl">Subjects</div></div>
+    </div>
+    <div class="cover-line"></div>
+    <div class="cover-footer">IAS — Intelligent Aspirant's Suite<br/>${dateStr}</div>
+  </div>
+
+  <!-- Table of Contents -->
+  <div class="toc">
+    <h3>📋 Table of Contents</h3>
+    ${tocItems}
+  </div>
+
+  <!-- All Mind Maps -->
+  ${mapSections}
+
+  <div class="doc-footer">
+    <div class="brand">IAS — Intelligent Aspirant's Suite</div>
+    <div style="margin-top:6px">${filteredMaps.length} Mind Maps · Generated on ${dateStr}</div>
+  </div>
+
+</div>
+</body>
+</html>`;
+
+        const w = window.open('', '_blank');
+        if (w) {
+            w.document.write(htmlAll);
+            w.document.close();
+            setTimeout(() => { w.print(); }, 800);
+        }
+    };
+
     // ─── Filter logic ───
     const paperMaps = mindMaps.filter(m => m.paper === activePaper);
     const subjects = DEFAULT_SUBJECTS[activePaper] || [];
@@ -373,7 +510,7 @@ export default function MindMapsPage() {
                         <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 13 }}>{PAPER_CONFIG[activePaper]?.label}</Text>
                     </View>
                 </View>
-                <View style={{ flexDirection: 'row', gap: 16 }}>
+                <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}>
                     <View style={{ alignItems: 'center' }}>
                         <Text style={{ color: paperColor, fontSize: 22, fontWeight: 'bold' }}>{totalMaps}</Text>
                         <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11 }}>Total Maps</Text>
@@ -382,6 +519,15 @@ export default function MindMapsPage() {
                         <Text style={{ color: '#10b981', fontSize: 22, fontWeight: 'bold' }}>{Object.keys(subjectGroups).length}</Text>
                         <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11 }}>Subjects</Text>
                     </View>
+                    {Platform.OS === 'web' && filteredMaps.length > 0 && (
+                        <TouchableOpacity
+                            onPress={handleDownloadAllPDF}
+                            style={{ backgroundColor: `${paperColor}15`, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: `${paperColor}30`, marginLeft: 8 }}
+                        >
+                            <Ionicons name="download" size={18} color={paperColor} />
+                            <Text style={{ color: paperColor, fontSize: 13, fontWeight: 'bold' }}>Download All PDF</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
             </View>
 

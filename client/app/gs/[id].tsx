@@ -58,21 +58,32 @@ export default function GSModule() {
           return {
             ...t,
             completed: nextCompleted,
-            status: nextStatus
+            status: nextStatus,
+            completedAt: nextCompleted ? new Date().toISOString() : null
           };
         }
         return t;
       }));
 
+      let res;
       try {
-        await api.put(`/topics/${topicId}`, {
+        res = await api.put(`/topics/${topicId}`, {
           completed: nextCompleted,
           status: nextStatus
         });
       } catch (err) {
-        await api.patch(`/topics/${topicId}/status`, {
+        res = await api.patch(`/topics/${topicId}/status`, {
           status: nextStatus
         });
+      }
+
+      // Update with server response to get accurate completedAt
+      if (res?.data) {
+        setTopics(prev => prev.map(t =>
+          t._id === topicId
+            ? { ...t, completed: res.data.completed, status: res.data.status, completedAt: res.data.completedAt }
+            : t
+        ));
       }
     } catch (error) {
       console.error('Error toggling topic completion:', error);
@@ -149,7 +160,7 @@ export default function GSModule() {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: isDark ? '#111827' : '#f9fafb' }} contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 32, paddingBottom: 80 }}>
-      
+
       {/* Paper Header */}
       <View style={{ marginBottom: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 1 }}>
@@ -162,7 +173,7 @@ export default function GSModule() {
           </View>
         </View>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={() => setShowAddForm(!showAddForm)}
           style={{ backgroundColor: '#2563eb', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, flexDirection: 'row', alignItems: 'center' }}
         >
@@ -192,29 +203,29 @@ export default function GSModule() {
       </View>
 
       {/* Real-Time Topic Search Bar */}
-      <View style={{ 
-        backgroundColor: isDark ? '#1f2937' : '#ffffff', 
-        borderRadius: 16, 
-        borderWidth: 1.5, 
-        borderColor: searchQuery ? '#3b82f6' : (isDark ? '#374151' : '#e5e7eb'), 
-        paddingHorizontal: 16, 
-        paddingVertical: 12, 
-        marginBottom: 20, 
-        flexDirection: 'row', 
-        alignItems: 'center' 
+      <View style={{
+        backgroundColor: isDark ? '#1f2937' : '#ffffff',
+        borderRadius: 16,
+        borderWidth: 1.5,
+        borderColor: searchQuery ? '#3b82f6' : (isDark ? '#374151' : '#e5e7eb'),
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        marginBottom: 20,
+        flexDirection: 'row',
+        alignItems: 'center'
       }}>
         <Ionicons name="search" size={20} color={searchQuery ? '#3b82f6' : (isDark ? '#9ca3af' : '#6b7280')} style={{ marginRight: 12 }} />
-        <TextInput 
+        <TextInput
           placeholder="Search subtopics by title, topic code (e.g. GS1-ART-001), or chapter..."
           placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
           value={searchQuery}
           onChangeText={setSearchQuery}
-          style={{ 
-            flex: 1, 
-            color: isDark ? 'white' : '#111827', 
-            fontSize: 15, 
-            fontWeight: '500', 
-            outlineStyle: 'none' 
+          style={{
+            flex: 1,
+            color: isDark ? 'white' : '#111827',
+            fontSize: 15,
+            fontWeight: '500',
+            outlineStyle: 'none'
           } as any}
         />
         {searchQuery.length > 0 && (
@@ -253,7 +264,7 @@ export default function GSModule() {
               const subjCompleted = subjTopics.filter(t => t.completed || t.status === 'Completed').length;
               const isSel = activeSubjectName === subj;
               return (
-                <TouchableOpacity 
+                <TouchableOpacity
                   key={subj}
                   onPress={() => setSelectedSubject(subj)}
                   style={{
@@ -292,14 +303,14 @@ export default function GSModule() {
       {showAddForm && (
         <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: '#3b82f6', marginBottom: 24, gap: 12 }}>
           <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 16, fontWeight: 'bold' }}>Add Custom Subtopic under {activeSubjectName}</Text>
-          <TextInput 
+          <TextInput
             placeholder="Subtopic Title (e.g. Sources of Pre History)"
             placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
             style={{ color: isDark ? 'white' : '#111827', fontSize: 15, backgroundColor: isDark ? '#111827' : '#f9fafb', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', outlineStyle: 'none' } as any}
             value={newTitle}
             onChangeText={setNewTitle}
           />
-          <TextInput 
+          <TextInput
             placeholder="Chapter Folder (e.g. 1. Pre Historic Cultures in India)"
             placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
             style={{ color: isDark ? 'white' : '#111827', fontSize: 15, backgroundColor: isDark ? '#111827' : '#f9fafb', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', outlineStyle: 'none' } as any}
@@ -322,23 +333,23 @@ export default function GSModule() {
           const chapPercent = topicList.length > 0 ? Math.round((chapCompleted / topicList.length) * 100) : 0;
 
           return (
-            <View 
-              key={chapterName} 
-              style={{ 
-                backgroundColor: isDark ? '#1f2937' : '#ffffff', 
-                borderRadius: 16, 
-                borderWidth: 1, 
+            <View
+              key={chapterName}
+              style={{
+                backgroundColor: isDark ? '#1f2937' : '#ffffff',
+                borderRadius: 16,
+                borderWidth: 1,
                 borderColor: isChapExpanded ? '#3b82f6' : (isDark ? '#374151' : '#e5e7eb'),
                 overflow: 'hidden'
               }}
             >
               {/* Level 2: Chapter Folder Header */}
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => toggleChapter(chapterName)}
-                style={{ 
-                  padding: 18, 
-                  flexDirection: 'row', 
-                  justifyContent: 'space-between', 
+                style={{
+                  padding: 18,
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
                   alignItems: 'center',
                   backgroundColor: isChapExpanded ? (isDark ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.05)') : undefined
                 }}
@@ -362,11 +373,11 @@ export default function GSModule() {
                     </Text>
                   </View>
                 </View>
-                
-                <Ionicons 
-                  name={isChapExpanded ? "chevron-up" : "chevron-down"} 
-                  size={20} 
-                  color={isChapExpanded ? '#3b82f6' : (isDark ? '#9ca3af' : '#6b7280')} 
+
+                <Ionicons
+                  name={isChapExpanded ? "chevron-up" : "chevron-down"}
+                  size={20}
+                  color={isChapExpanded ? '#3b82f6' : (isDark ? '#9ca3af' : '#6b7280')}
                 />
               </TouchableOpacity>
 
@@ -376,7 +387,7 @@ export default function GSModule() {
                   {topicList.map(t => {
                     const isDone = t.completed || t.status === 'Completed';
                     return (
-                      <View 
+                      <View
                         key={t._id}
                         style={{
                           flexDirection: 'row',
@@ -392,14 +403,14 @@ export default function GSModule() {
                       >
                         {/* Checkbox & Permanent Topic Code + Subtopic Title */}
                         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 12 }}>
-                          <TouchableOpacity 
+                          <TouchableOpacity
                             onPress={(e) => handleToggleCheckbox(t._id, e)}
                             style={{ marginRight: 12 }}
                           >
-                            <Ionicons 
-                              name={isDone ? "checkbox" : "square-outline"} 
-                              size={22} 
-                              color={isDone ? "#10b981" : (isDark ? "#6b7280" : "#9ca3af")} 
+                            <Ionicons
+                              name={isDone ? "checkbox" : "square-outline"}
+                              size={22}
+                              color={isDone ? "#10b981" : (isDark ? "#6b7280" : "#9ca3af")}
                             />
                           </TouchableOpacity>
 
@@ -413,11 +424,11 @@ export default function GSModule() {
                           )}
 
                           {/* Topic Title -> Navigate to Level 6 Knowledge Hub */}
-                          <TouchableOpacity 
+                          <TouchableOpacity
                             onPress={() => router.push(`/topic/${t._id}`)}
                             style={{ flex: 1 }}
                           >
-                            <Text style={{ 
+                            <Text style={{
                               color: isDone ? (isDark ? '#9ca3af' : '#6b7280') : (isDark ? 'white' : '#111827'),
                               fontSize: 14,
                               fontWeight: '500',
@@ -440,7 +451,7 @@ export default function GSModule() {
                         </View>
 
                         {/* Open Knowledge Hub Chevron */}
-                        <TouchableOpacity 
+                        <TouchableOpacity
                           onPress={() => router.push(`/topic/${t._id}`)}
                           style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#eff6ff', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6 }}
                         >

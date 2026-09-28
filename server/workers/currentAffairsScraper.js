@@ -38,18 +38,20 @@ const secureFetch = async (url) => {
 // AI Tagger for UPSC Relevance & GS Paper Classification
 const autoTagArticle = async (title, contentSnippet) => {
   try {
-    const prompt = `Analyze this news item from an official Government of India portal for UPSC Civil Services Examination relevance.
+    const prompt = `You are a strict UPSC Civil Services Examination expert faculty. Analyze this news item from official Government portals for UPSC CSE relevance.
     Title: ${title}
     Snippet: ${contentSnippet}
     
-    Task: Output a JSON array of 1 to 3 relevant UPSC tags (e.g. ["GS II", "Polity", "Governance"] or ["GS III", "Economy"] or ["GS III", "Environment"]). If not relevant to UPSC, output ["Not Relevant"].
+    Task: ONLY approve topics that are highly relevant to the UPSC Civil Services Preliminary or Mains examination syllabus.
+    If it is political news, local crime, routine administrative transfers, or trivial matters, YOU MUST output EXACTLY: ["Not Relevant"].
+    Otherwise, output a JSON array of 1 to 3 relevant UPSC tags (e.g. ["GS II", "Polity", "Governance"], ["GS III", "Economy"], etc).
     Output ONLY valid JSON array of strings.`;
-    
+
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
     });
-    
+
     let text = response.text;
     text = text.replace(/```json/g, '').replace(/```/g, '').trim();
     return JSON.parse(text);
@@ -158,6 +160,36 @@ const GOI_HTML_TARGETS = [
     titleSel: '',
     linkSel: '',
     attr: 'href'
+  },
+  {
+    name: 'NITI Aayog (Central)',
+    url: 'https://niti.gov.in/latest-updates',
+    baseUrl: 'https://niti.gov.in',
+    defaultTags: ['NITI Aayog', 'GS III', 'Planning'],
+    selector: '.views-field-title a',
+    titleSel: '',
+    linkSel: '',
+    attr: 'href'
+  },
+  {
+    name: 'State Gov Updates (UP Gov)',
+    url: 'https://up.gov.in/en/news',
+    baseUrl: 'https://up.gov.in',
+    defaultTags: ['State Govt', 'Governance'],
+    selector: '.news-list li a',
+    titleSel: '',
+    linkSel: '',
+    attr: 'href'
+  },
+  {
+    name: 'State Gov Updates (Maharashtra)',
+    url: 'https://maharashtra.gov.in/1125/Home',
+    baseUrl: 'https://maharashtra.gov.in',
+    defaultTags: ['State Govt', 'Governance'],
+    selector: '.whats-new a',
+    titleSel: '',
+    linkSel: '',
+    attr: 'href'
   }
 ];
 
@@ -187,18 +219,18 @@ const runScraper = async () => {
   for (const feed of GOI_SOURCES) {
     let feedNewCount = 0;
     const feedTags = new Set(feed.defaultTags);
-    
+
     try {
       console.log(`Fetching RSS Feed: ${feed.name}`);
       const feedData = await parser.parseURL(feed.url);
-      
+
       const items = feedData.items ? feedData.items.slice(0, 5) : [];
       for (const item of items) {
         if (!item.title) continue;
         const exists = await CurrentAffair.findOne({ title: item.title });
         if (!exists) {
           const aiTags = await autoTagArticle(item.title, item.contentSnippet || item.content || '');
-          
+
           if (!aiTags.includes('Not Relevant')) {
             const combinedTags = Array.from(new Set([...feed.defaultTags, ...aiTags]));
             await CurrentAffair.create({
@@ -219,7 +251,7 @@ const runScraper = async () => {
     } catch (err) {
       console.error(`RSS Error [${feed.name}]:`, err.message);
     }
-    
+
     sourceResults.push({
       source: feed.name,
       count: feedNewCount,
@@ -242,10 +274,10 @@ const runScraper = async () => {
         $(target.selector).slice(0, 4).each((_, el) => {
           const titleEl = target.titleSel ? $(el).find(target.titleSel) : $(el);
           const linkEl = target.linkSel ? $(el).find(target.linkSel) : $(el);
-          
+
           const title = titleEl.text().trim();
           let link = linkEl.attr(target.attr) || '';
-          
+
           if (link && !link.startsWith('http')) {
             link = target.baseUrl + (link.startsWith('/') ? '' : '/') + link;
           }
@@ -289,7 +321,7 @@ const runScraper = async () => {
   }
 
   console.log(`--- GOI Scraper Completed. ${totalNewArticles} fresh articles ingested across 9 official portals. ---`);
-  
+
   return {
     totalNewArticles,
     sourceResults

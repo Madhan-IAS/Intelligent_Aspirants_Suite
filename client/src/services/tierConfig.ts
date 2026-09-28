@@ -5,11 +5,14 @@ export const TIER_LEVELS: Record<string, number> = {
     topper: 3,
 };
 
-export const TIER_INFO: Record<string, { name: string; price: string; priceNum: number; tagline: string; color: string; icon: string }> = {
+export const TIER_INFO: Record<string, { name: string; price: string; priceNum: number; annualPrice: string; annualPriceNum: number; annualSavings: string; tagline: string; color: string; icon: string }> = {
     foundation: {
         name: 'Foundation',
         price: '₹99',
-        priceNum: 99,
+        priceNum: 189,
+        annualPrice: '₹999',
+        annualPriceNum: 999,
+        annualSavings: 'Save ₹810',
         tagline: 'Start your UPSC journey',
         color: '#f59e0b',
         icon: '🥉',
@@ -17,15 +20,21 @@ export const TIER_INFO: Record<string, { name: string; price: string; priceNum: 
     aspirant: {
         name: 'Aspirant',
         price: '₹199',
-        priceNum: 199,
+        priceNum: 389,
+        annualPrice: '₹1999',
+        annualPriceNum: 1999,
+        annualSavings: 'Save ₹1610',
         tagline: 'Deepen your preparation',
         color: '#3b82f6',
         icon: '🥈',
     },
     topper: {
         name: 'Topper',
-        price: '₹299',
+        price: '₹589',
         priceNum: 299,
+        annualPrice: '₹2999',
+        annualPriceNum: 2999,
+        annualSavings: 'Save ₹2410',
         tagline: 'Complete exam mastery',
         color: '#8b5cf6',
         icon: '🥇',

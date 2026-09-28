@@ -119,14 +119,20 @@ exports.register = async (req, res) => {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // Create new user with identical starting values
+    // Create new user with 1-Day Free Trial (Topper Access)
+    const expiry24h = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
+
     user = new User({
       name,
       email,
       passwordHash,
       targetAttempt: 2027,
       dailyTargetHours: 14,
-      optionalSubject: 'Sociology'
+      optionalSubject: 'Sociology',
+      // Grant 24-hour Free Trial
+      subscriptionStatus: 'active',
+      subscriptionTier: 'topper',
+      subscriptionExpiry: expiry24h
     });
     await user.save();
 

@@ -26,6 +26,7 @@ export default function SubscriptionScreen() {
     const { mode } = useTheme();
     const isDark = mode === 'dark';
 
+    const [isAnnual, setIsAnnual] = useState(false);
     const [selectedTier, setSelectedTier] = useState<string>('foundation');
     const [currentQR, setCurrentQR] = useState(0);
     const [utrNumber, setUtrNumber] = useState('');
@@ -77,11 +78,12 @@ export default function SubscriptionScreen() {
         setLoading(true);
         setError('');
         const info = TIER_INFO[selectedTier];
+        const amount = isAnnual ? info?.annualPriceNum : info?.priceNum;
 
         try {
             await api.post('/subscription/submit-proof', {
                 utrNumber: utrNumber.trim(),
-                amount: info?.priceNum || 99,
+                amount: amount || 99,
             });
             setSuccess(true);
             setTimeout(() => router.replace('/pending-approval'), 1500);
@@ -128,6 +130,39 @@ export default function SubscriptionScreen() {
                     <Text style={{ color: '#f87171', fontSize: 13 }}>Reason: {rejectionNote}</Text>
                 </View>
             ) : null}
+
+            {/* Pricing Toggle */}
+            {!showPayment && (
+                <View style={{
+                    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: isDark ? '#1f2937' : '#ffffff',
+                    borderRadius: 30, padding: 4, marginBottom: 24,
+                    borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb',
+                }}>
+                    <TouchableOpacity
+                        onPress={() => setIsAnnual(false)}
+                        style={{
+                            paddingVertical: 10, paddingHorizontal: 24, borderRadius: 26,
+                            backgroundColor: !isAnnual ? '#2563eb' : 'transparent',
+                        }}
+                    >
+                        <Text style={{ color: !isAnnual ? 'white' : (isDark ? '#9ca3af' : '#6b7280'), fontWeight: 'bold' }}>Monthly</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={() => setIsAnnual(true)}
+                        style={{
+                            paddingVertical: 10, paddingHorizontal: 24, borderRadius: 26,
+                            backgroundColor: isAnnual ? '#2563eb' : 'transparent',
+                            flexDirection: 'row', alignItems: 'center', gap: 6
+                        }}
+                    >
+                        <Text style={{ color: isAnnual ? 'white' : (isDark ? '#9ca3af' : '#6b7280'), fontWeight: 'bold' }}>Annually</Text>
+                        <View style={{ backgroundColor: '#10b981', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 }}>
+                            <Text style={{ color: 'white', fontSize: 9, fontWeight: 'bold' }}>SAVE</Text>
+                        </View>
+                    </TouchableOpacity>
+                </View>
+            )}
 
             {/* ====== TIER SELECTION ====== */}
             {!showPayment ? (
@@ -176,14 +211,19 @@ export default function SubscriptionScreen() {
                                             color: isSelected ? 'white' : info.color,
                                             fontSize: 28, fontWeight: 'bold', marginTop: 2,
                                         }}>
-                                            {info.price}
+                                            {isAnnual ? info.annualPrice : info.price}
                                         </Text>
                                         <Text style={{
                                             color: isSelected ? 'rgba(255,255,255,0.7)' : (isDark ? '#9ca3af' : '#6b7280'),
                                             fontSize: 11,
                                         }}>
-                                            per month
+                                            {isAnnual ? 'per year' : 'per month'}
                                         </Text>
+                                        {isAnnual && (
+                                            <View style={{ backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : `${info.color}20`, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, marginTop: 6 }}>
+                                                <Text style={{ color: isSelected ? 'white' : info.color, fontSize: 10, fontWeight: 'bold' }}>{info.annualSavings}</Text>
+                                            </View>
+                                        )}
                                     </View>
 
                                     {/* Features */}
@@ -227,7 +267,7 @@ export default function SubscriptionScreen() {
                     >
                         <Ionicons name="card" size={20} color="white" />
                         <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>
-                            Continue with {TIER_INFO[selectedTier].name} — {TIER_INFO[selectedTier].price}/mo
+                            Continue with {TIER_INFO[selectedTier].name} — {isAnnual ? TIER_INFO[selectedTier].annualPrice : TIER_INFO[selectedTier].price}/{isAnnual ? 'yr' : 'mo'}
                         </Text>
                     </TouchableOpacity>
                 </>
@@ -249,9 +289,9 @@ export default function SubscriptionScreen() {
                             {TIER_INFO[selectedTier].icon} {TIER_INFO[selectedTier].name.toUpperCase()} PLAN
                         </Text>
                         <Text style={{ color: 'white', fontSize: 34, fontWeight: 'bold', marginTop: 4 }}>
-                            {TIER_INFO[selectedTier].price}
+                            {isAnnual ? TIER_INFO[selectedTier].annualPrice : TIER_INFO[selectedTier].price}
                         </Text>
-                        <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 2 }}>per month</Text>
+                        <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 2 }}>{isAnnual ? 'per year' : 'per month'}</Text>
                         <TouchableOpacity onPress={() => setShowPayment(false)} style={{ marginTop: 8 }}>
                             <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, textDecorationLine: 'underline' }}>
                                 ← Change plan

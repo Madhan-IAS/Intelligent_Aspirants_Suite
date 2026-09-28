@@ -1,6 +1,7 @@
 const DailyPlan = require('../models/DailyPlan');
 const Topic = require('../models/Topic');
 const Revision = require('../models/Revision');
+const UserTopicProgress = require('../models/UserTopicProgress');
 
 // 8-Day Rotation Schedule (mirrors planner.tsx ROTATION_SCHEDULE)
 const ROTATION_SCHEDULE = [
@@ -121,7 +122,38 @@ exports.getTodayPlan = async (req, res) => {
     plan = await DailyPlan.findById(plan._id)
       .populate('gsTopicIds', 'title chapter subjectName paper completed status completedAt _id')
       .populate('optTopicIds', 'title chapter subjectName paper completed status completedAt _id')
-      .populate('revisionTopicId', 'title chapter subjectName paper completed status completedAt _id');
+      .populate('revisionTopicId', 'title chapter subjectName paper completed status completedAt _id')
+      .lean();
+
+    // Map user progress to populated topics
+    const allPopulatedTopics = [
+      ...(plan.gsTopicIds || []),
+      ...(plan.optTopicIds || []),
+      ...(plan.revisionTopicId ? [plan.revisionTopicId] : [])
+    ];
+
+    if (allPopulatedTopics.length > 0) {
+      const topicIds = allPopulatedTopics.map(t => t._id);
+      const userProgress = await UserTopicProgress.find({ userId, topicId: { $in: topicIds } });
+      const progressMap = new Map(userProgress.map(p => [p.topicId.toString(), p]));
+
+      const applyProgress = (t) => {
+        if (!t) return t;
+        const p = progressMap.get(t._id.toString());
+        return {
+          ...t,
+          status: p ? p.status : 'Pending',
+          completed: p ? p.completed : false,
+          completedAt: p ? p.completedAt : null
+        };
+      };
+
+      plan.gsTopicIds = (plan.gsTopicIds || []).map(applyProgress);
+      plan.optTopicIds = (plan.optTopicIds || []).map(applyProgress);
+      if (plan.revisionTopicId) {
+        plan.revisionTopicId = applyProgress(plan.revisionTopicId);
+      }
+    }
 
     res.json(plan);
   } catch (error) {

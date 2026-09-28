@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const Subject = require('../models/Subject');
 const PYQ = require('../models/PYQ');
 const CurrentAffair = require('../models/CurrentAffair');
+const UserTopicProgress = require('../models/UserTopicProgress');
 
 exports.getTopicsBySubject = async (req, res) => {
   try {
@@ -17,7 +18,21 @@ exports.getTopicsBySubject = async (req, res) => {
       subjectId = subject._id;
     }
 
-    const topics = await Topic.find({ subjectId });
+    const topics = await Topic.find({ subjectId }).lean();
+
+    if (req.user) {
+      const topicIds = topics.map(t => t._id);
+      const userProgress = await UserTopicProgress.find({ userId: req.user.id, topicId: { $in: topicIds } });
+      const progressMap = new Map(userProgress.map(p => [p.topicId.toString(), p]));
+
+      topics.forEach(t => {
+        const p = progressMap.get(t._id.toString());
+        t.status = p ? p.status : 'Pending';
+        t.completed = p ? p.completed : false;
+        t.completedAt = p ? p.completedAt : null;
+      });
+    }
+
     res.json(topics);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -26,8 +41,16 @@ exports.getTopicsBySubject = async (req, res) => {
 
 exports.getTopicById = async (req, res) => {
   try {
-    const topic = await Topic.findById(req.params.id).populate('relatedTopics');
-    if (!topic) return res.status(404).json({ message: 'Topic not found' });
+    const topicDoc = await Topic.findById(req.params.id).populate('relatedTopics').lean();
+    if (!topicDoc) return res.status(404).json({ message: 'Topic not found' });
+
+    const topic = { ...topicDoc };
+    if (req.user) {
+      const progress = await UserTopicProgress.findOne({ userId: req.user.id, topicId: topic._id });
+      topic.status = progress ? progress.status : 'Pending';
+      topic.completed = progress ? progress.completed : false;
+      topic.completedAt = progress ? progress.completedAt : null;
+    }
 
     // Fetch related entities for the 360° Knowledge Hub
     // 1. PYQs linked by topicId OR matching topic title text
@@ -110,17 +133,43 @@ const autoCancelRevision = async (userId, topicId) => {
 
 exports.getRecentTopics = async (req, res) => {
   try {
-    const recent = await Topic.find({
+    if (!req.user) return res.json([]);
+
+    const recentProgress = await UserTopicProgress.find({
+      userId: req.user.id,
       $or: [{ completed: true }, { status: 'In Progress' }, { completedAt: { $ne: null } }]
     })
       .sort({ completedAt: -1, updatedAt: -1 })
+      .populate('topicId')
       .limit(5);
+
+    let recent = recentProgress.map(p => ({
+      ...p.topicId.toObject(),
+      status: p.status,
+      completed: p.completed,
+      completedAt: p.completedAt
+    }));
 
     if (recent.length < 5) {
       const fallback = await Topic.find()
         .sort({ updatedAt: -1 })
-        .limit(5);
-      return res.json(fallback);
+        .limit(5)
+        .lean();
+
+      const fallbackIds = fallback.map(t => t._id);
+      const fbProgress = await UserTopicProgress.find({ userId: req.user.id, topicId: { $in: fallbackIds } });
+      const pMap = new Map(fbProgress.map(p => [p.topicId.toString(), p]));
+
+      const mergedFallback = fallback.map(t => {
+        const p = pMap.get(t._id.toString());
+        return {
+          ...t,
+          status: p ? p.status : 'Pending',
+          completed: p ? p.completed : false,
+          completedAt: p ? p.completedAt : null
+        };
+      });
+      return res.json(mergedFallback);
     }
 
     res.json(recent);
@@ -133,19 +182,31 @@ exports.toggleTopicCheckbox = async (req, res) => {
   try {
     const topic = await Topic.findById(req.params.id);
     if (!topic) return res.status(404).json({ message: 'Topic not found' });
+    if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
 
-    topic.completed = !topic.completed;
-    topic.status = topic.completed ? 'Completed' : 'Pending';
-    topic.completedAt = topic.completed ? new Date() : null;
-    await topic.save();
+    let progress = await UserTopicProgress.findOne({ userId: req.user.id, topicId: topic._id });
+    const isNowCompleted = progress ? !progress.completed : true;
 
-    if (topic.completed && req.user) {
+    progress = await UserTopicProgress.findOneAndUpdate(
+      { userId: req.user.id, topicId: topic._id },
+      {
+        $set: {
+          completed: isNowCompleted,
+          status: isNowCompleted ? 'Completed' : 'Pending',
+          completedAt: isNowCompleted ? new Date() : null
+        }
+      },
+      { upsert: true, new: true }
+    );
+
+    if (progress.completed) {
       await autoScheduleRevision(req.user.id, topic._id);
-    } else if (!topic.completed && req.user) {
+    } else {
       await autoCancelRevision(req.user.id, topic._id);
     }
 
-    res.json(topic);
+    const mergedTopic = { ...topic.toObject(), status: progress.status, completed: progress.completed, completedAt: progress.completedAt };
+    res.json(mergedTopic);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -153,24 +214,31 @@ exports.toggleTopicCheckbox = async (req, res) => {
 
 exports.updateTopicStatus = async (req, res) => {
   try {
+    if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
+
     const isCompleted = req.body.status === 'Completed';
-    const topic = await Topic.findByIdAndUpdate(
-      req.params.id,
+    const progress = await UserTopicProgress.findOneAndUpdate(
+      { userId: req.user.id, topicId: req.params.id },
       {
-        status: req.body.status,
-        completed: isCompleted,
-        completedAt: isCompleted ? new Date() : null
+        $set: {
+          status: req.body.status,
+          completed: isCompleted,
+          completedAt: isCompleted ? new Date() : null
+        }
       },
-      { new: true }
+      { upsert: true, new: true }
     );
 
-    if (isCompleted && req.user) {
-      await autoScheduleRevision(req.user.id, topic._id);
-    } else if (!isCompleted && req.user) {
-      await autoCancelRevision(req.user.id, topic._id);
+    const topic = await Topic.findById(req.params.id).lean();
+
+    if (isCompleted) {
+      await autoScheduleRevision(req.user.id, req.params.id);
+    } else {
+      await autoCancelRevision(req.user.id, req.params.id);
     }
 
-    res.json(topic);
+    const mergedTopic = { ...topic, status: progress.status, completed: progress.completed, completedAt: progress.completedAt };
+    res.json(mergedTopic);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }

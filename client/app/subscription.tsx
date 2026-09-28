@@ -35,6 +35,7 @@ export default function SubscriptionScreen() {
     const [success, setSuccess] = useState(false);
     const [rejectionNote, setRejectionNote] = useState('');
     const [showPayment, setShowPayment] = useState(false);
+    const [history, setHistory] = useState<any[]>([]);
 
     const fadeAnim = useRef(new Animated.Value(1)).current;
 
@@ -49,6 +50,11 @@ export default function SubscriptionScreen() {
             if (res.data.latestProof?.reviewNote &&
                 (user?.subscriptionStatus === 'rejected' || user?.subscriptionStatus === 'expired')) {
                 setRejectionNote(res.data.latestProof.reviewNote);
+            }
+
+            const histRes = await api.get('/subscription/history');
+            if (histRes.data && Array.isArray(histRes.data)) {
+                setHistory(histRes.data);
             }
         } catch (e) { /* Not critical */ }
     };
@@ -410,6 +416,40 @@ export default function SubscriptionScreen() {
                             </>
                         )}
                     </View>
+                </View>
+            )}
+
+            {/* ====== TRANSACTION HISTORY ====== */}
+            {!showPayment && history.length > 0 && (
+                <View style={{ width: '100%', maxWidth: 800, marginTop: 40, borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#e5e7eb', paddingTop: 20 }}>
+                    <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 18, fontWeight: 'bold', marginBottom: 16 }}>Transaction History</Text>
+                    {history.map((tx, idx) => (
+                        <View key={idx} style={{
+                            flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+                            backgroundColor: isDark ? '#1f2937' : 'white', padding: 16, borderRadius: 12,
+                            marginBottom: 10, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb'
+                        }}>
+                            <View>
+                                <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold' }}>UTR: {tx.utrNumber}</Text>
+                                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12, marginTop: 4 }}>
+                                    {new Date(tx.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                </Text>
+                            </View>
+                            <View style={{ alignItems: 'flex-end' }}>
+                                <View style={{
+                                    backgroundColor: tx.status === 'approved' ? 'rgba(34,197,94,0.1)' : tx.status === 'rejected' ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)',
+                                    paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12
+                                }}>
+                                    <Text style={{
+                                        color: tx.status === 'approved' ? '#22c55e' : tx.status === 'rejected' ? '#ef4444' : '#f59e0b',
+                                        fontSize: 12, fontWeight: 'bold', textTransform: 'capitalize'
+                                    }}>
+                                        {tx.status}
+                                    </Text>
+                                </View>
+                            </View>
+                        </View>
+                    ))}
                 </View>
             )}
 

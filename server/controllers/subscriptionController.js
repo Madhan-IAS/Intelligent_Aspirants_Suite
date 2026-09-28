@@ -57,3 +57,17 @@ exports.getMyStatus = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// GET /api/subscription/history
+// User checks all their past subscription proofs
+exports.getHistory = async (req, res) => {
+    try {
+        const history = await Subscription.find({ userId: req.user.id })
+            .select('-screenshot') // exclude base64 for performance
+            .sort({ createdAt: -1 });
+
+        res.json(history);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

@@ -5,5 +5,6 @@ const auth = require('../middleware/auth');
 
 router.post('/submit-proof', auth, subscriptionController.submitProof);
 router.get('/my-status', auth, subscriptionController.getMyStatus);
+router.get('/history', auth, subscriptionController.getHistory);
 
 module.exports = router;

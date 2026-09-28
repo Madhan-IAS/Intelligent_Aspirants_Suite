@@ -115,6 +115,21 @@ export default function AdminDashboard() {
         }
     };
 
+    const handleDeleteUser = async (userId: string) => {
+        if (Platform.OS === 'web') {
+            if (!window.confirm("CRITICAL WARNING: This will permanently EXTERMINATE this user and all data. Are you absolutely sure?")) return;
+        }
+        setActionLoading(userId);
+        try {
+            await api.delete(`/admin/user/${userId}`);
+            await fetchData();
+        } catch (e: any) {
+            console.error('Delete User failed:', e.response?.data?.message);
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
     const getStatusBadge = (status: string) => {
         const config: Record<string, { bg: string; text: string; label: string }> = {
             active: { bg: 'rgba(34, 197, 94, 0.15)', text: '#22c55e', label: '✅ Active' },
@@ -500,7 +515,20 @@ export default function AdminDashboard() {
                                 <TouchableOpacity
                                     onPress={() => handleRevoke(u._id)}
                                     disabled={actionLoading === u._id}
-                                    style={{ marginLeft: 6, backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: 6, borderRadius: 8 }}
+                                    style={{ marginLeft: 6, backgroundColor: 'rgba(245, 158, 11, 0.1)', padding: 6, borderRadius: 8 }}
+                                >
+                                    {actionLoading === u._id ? (
+                                        <ActivityIndicator size="small" color="#f59e0b" />
+                                    ) : (
+                                        <Ionicons name="close-circle" size={16} color="#f59e0b" />
+                                    )}
+                                </TouchableOpacity>
+                            )}
+                            {u.role !== 'admin' && (
+                                <TouchableOpacity
+                                    onPress={() => handleDeleteUser(u._id)}
+                                    disabled={actionLoading === u._id}
+                                    style={{ marginLeft: 3, backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: 6, borderRadius: 8 }}
                                 >
                                     {actionLoading === u._id ? (
                                         <ActivityIndicator size="small" color="#ef4444" />

@@ -149,3 +149,22 @@ exports.revokeUser = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// DELETE /api/admin/user/:id
+// Hard delete a user entirely (CRUD operation)
+exports.deleteUser = async (req, res) => {
+    try {
+        const user = await User.findByIdAndDelete(req.params.id);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Clean up stray subscriptions
+        await Subscription.deleteMany({ userId: req.params.id });
+
+        res.json({ message: 'User permanently deleted from the platform', deletedUserId: req.params.id });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

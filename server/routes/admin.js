@@ -10,5 +10,6 @@ router.get('/all-users', auth, adminAuth, adminController.getAllUsers);
 router.post('/approve/:id', auth, adminAuth, adminController.approveUser);
 router.post('/reject/:id', auth, adminAuth, adminController.rejectUser);
 router.post('/revoke/:id', auth, adminAuth, adminController.revokeUser);
+router.delete('/user/:id', auth, adminAuth, adminController.deleteUser);
 
 module.exports = router;

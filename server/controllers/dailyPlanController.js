@@ -3,6 +3,10 @@ const Topic = require('../models/Topic');
 const Revision = require('../models/Revision');
 const UserTopicProgress = require('../models/UserTopicProgress');
 
+// Simple In-Memory Cache for expensive stats queries
+const statsCache = new Map();
+const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+
 // 8-Day Rotation Schedule (mirrors planner.tsx ROTATION_SCHEDULE)
 const ROTATION_SCHEDULE = [
   { gsPaper: 'GS I', optPaper: 'Sociology Paper I' },
@@ -50,52 +54,66 @@ exports.getTodayPlan = async (req, res) => {
       .populate('optTopicIds', 'title chapter subjectName paper completed status completedAt _id')
       .populate('revisionTopicId', 'title chapter subjectName paper completed status completedAt _id');
 
-    // If plan exists with old limit (< 15 GS topics), upgrade it to 15 GS + 8 Optional (23 total)
+    // If plan exists with >= 15 GS topics, skip re-generation — just apply progress overlay and return
     if (plan && (plan.gsTopicIds || []).length >= 15) {
+      plan = plan.toObject();
+      // Apply user-specific progress
+      const allPlanTopics = [...(plan.gsTopicIds || []), ...(plan.optTopicIds || []), ...(plan.revisionTopicId ? [plan.revisionTopicId] : [])];
+      if (allPlanTopics.length > 0) {
+        const ptIds = allPlanTopics.map(t => t._id);
+        const uProg = await UserTopicProgress.find({ userId, topicId: { $in: ptIds } });
+        const pMap = new Map(uProg.map(p => [p.topicId.toString(), p]));
+        const apply = (t) => { if (!t) return t; const p = pMap.get(t._id.toString()); return { ...t, status: p ? p.status : 'Pending', completed: p ? p.completed : false, completedAt: p ? p.completedAt : null }; };
+        plan.gsTopicIds = (plan.gsTopicIds || []).map(apply);
+        plan.optTopicIds = (plan.optTopicIds || []).map(apply);
+        if (plan.revisionTopicId) plan.revisionTopicId = apply(plan.revisionTopicId);
+      }
       return res.json(plan);
     }
 
     const rotationIndex = getRotationDay();
     const rotation = ROTATION_SCHEDULE[rotationIndex];
 
-    // 1. Pick next 15 uncompleted GS topics in syllabus order (15 GS + 8 Sociology = 23/day)
+    // Get all topic IDs user has already completed
+    const completedProgress = await UserTopicProgress.find({ userId, completed: true }).select('topicId');
+    const completedTopicIds = completedProgress.map(p => p.topicId);
+
+    // 1. Pick next 15 uncompleted GS topics (per THIS user)
     let gsTopics = await Topic.find({
       paper: rotation.gsPaper,
-      completed: { $ne: true }
+      _id: { $nin: completedTopicIds }
     }).sort({ _id: 1 }).limit(15).select('_id');
 
-    // Fallback: If current GS paper has fewer than 15 uncompleted topics left (e.g. GS IV), pull remaining from any GS paper
     if (gsTopics.length < 15) {
       const extraGs = await Topic.find({
         paper: { $in: ['GS I', 'GS II', 'GS III', 'GS IV'] },
-        _id: { $nin: gsTopics.map(t => t._id) },
-        completed: { $ne: true }
+        _id: { $nin: [...gsTopics.map(t => t._id), ...completedTopicIds] }
       }).sort({ _id: 1 }).limit(15 - gsTopics.length).select('_id');
       gsTopics = [...gsTopics, ...extraGs];
     }
 
-    // 2. Pick next 8 uncompleted Sociology topics in syllabus order (if Sociology complete, pull GS topics)
+    // 2. Pick next 8 uncompleted Sociology topics (per THIS user)
     let optTopics = await Topic.find({
       tags: rotation.optPaper,
-      completed: { $ne: true }
+      _id: { $nin: completedTopicIds }
     }).sort({ _id: 1 }).limit(8).select('_id');
 
-    // Fallback: If Sociology is 100% completed, allocate these 8 slots to remaining GS topics
     if (optTopics.length < 8) {
       const extraForOpt = await Topic.find({
         paper: { $in: ['GS I', 'GS II', 'GS III', 'GS IV'] },
-        _id: { $nin: gsTopics.map(t => t._id) },
-        completed: { $ne: true }
+        _id: { $nin: [...gsTopics.map(t => t._id), ...completedTopicIds] }
       }).sort({ _id: 1 }).limit(8 - optTopics.length).select('_id');
       optTopics = [...optTopics, ...extraForOpt];
     }
 
-    // 3. Pick 1 oldest completed topic needing revision (>14 days since last update)
+    // 3. Pick 1 oldest completed topic needing revision (user-specific)
     const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
-    const revisionTopic = await Topic.findOne({
+    const revisionProgress = await UserTopicProgress.findOne({
+      userId,
       completed: true,
       updatedAt: { $lt: fourteenDaysAgo }
-    }).sort({ updatedAt: 1 }).select('_id');
+    }).sort({ updatedAt: 1 }).select('topicId');
+    const revisionTopic = revisionProgress ? { _id: revisionProgress.topicId } : null;
 
     if (plan) {
       // Upgrade existing plan
@@ -162,75 +180,87 @@ exports.getTodayPlan = async (req, res) => {
   }
 };
 
-// PATCH /api/daily-plan/toggle-topic/:topicId — Toggle topic completion (syncs with GS pages)
+// PATCH /api/daily-plan/toggle-topic/:topicId — Toggle topic completion (user-specific)
 exports.toggleTopic = async (req, res) => {
   try {
     const { topicId } = req.params;
     const today = getTodayIST();
     const userId = req.user.id;
 
-    // Toggle the actual Topic model (same field GS pages read)
     const topic = await Topic.findById(topicId);
     if (!topic) return res.status(404).json({ message: 'Topic not found' });
 
-    topic.completed = !topic.completed;
-    topic.status = topic.completed ? 'Completed' : 'Pending';
-    topic.completedAt = topic.completed ? new Date() : null;
-    if (topic.completed) {
-      topic.revisionDates = [...(topic.revisionDates || []), new Date()];
-      // Auto schedule 1st revision for tomorrow
+    // Toggle user-specific progress
+    let progress = await UserTopicProgress.findOne({ userId, topicId: topic._id });
+    const isNowCompleted = progress ? !progress.completed : true;
+
+    progress = await UserTopicProgress.findOneAndUpdate(
+      { userId, topicId: topic._id },
+      {
+        $set: {
+          completed: isNowCompleted,
+          status: isNowCompleted ? 'Completed' : 'Pending',
+          completedAt: isNowCompleted ? new Date() : null
+        }
+      },
+      { upsert: true, new: true }
+    );
+
+    if (isNowCompleted) {
       const existingRev = await Revision.findOne({ userId, topicId: topic._id, status: 'Pending' });
       if (!existingRev) {
         const nextDate = new Date();
         nextDate.setDate(nextDate.getDate() + 1);
-        await Revision.create({
-          userId,
-          topicId: topic._id,
-          interval: 1,
-          scheduledDate: nextDate,
-          status: 'Pending'
-        });
+        await Revision.create({ userId, topicId: topic._id, interval: 1, scheduledDate: nextDate, status: 'Pending' });
       }
     } else {
       await Revision.deleteMany({ userId, topicId: topic._id, status: 'Pending' });
     }
-    await topic.save();
 
-    // Check if all topics in today's plan are now completed
+    // Check plan completion for this user
     const plan = await DailyPlan.findOne({ userId, date: today });
     if (plan) {
       const allTopicIds = [...plan.gsTopicIds, ...plan.optTopicIds];
       if (plan.revisionTopicId) allTopicIds.push(plan.revisionTopicId);
-
-      const allTopics = await Topic.find({ _id: { $in: allTopicIds } }).select('completed');
-      const allDone = allTopics.every(t => t.completed);
-
+      const userProgressAll = await UserTopicProgress.find({ userId, topicId: { $in: allTopicIds } });
+      const allDone = allTopicIds.length > 0 && allTopicIds.every(tid => userProgressAll.some(p => p.topicId.toString() === tid.toString() && p.completed));
       if (plan.completed !== allDone) {
         plan.completed = allDone;
         await plan.save();
       }
     }
 
-    res.json(topic);
+    // Clear user stats cache across the platform
+    statsCache.delete(userId);
+
+    const mergedTopic = { ...topic.toObject(), status: progress.status, completed: progress.completed, completedAt: progress.completedAt };
+    res.json(mergedTopic);
   } catch (error) {
     console.error('Error toggling topic:', error);
     res.status(500).json({ message: error.message });
   }
 };
 
-// GET /api/daily-plan/stats — Study pace & streak calculator
+// GET /api/daily-plan/stats — Study pace & streak calculator (user-specific)
 exports.getStats = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Topic stats
+    // Check Memory Cache First
+    if (statsCache.has(userId)) {
+      const cached = statsCache.get(userId);
+      if (Date.now() - cached.timestamp < CACHE_TTL_MS) {
+        return res.json(cached.data);
+      }
+    }
+
     const totalTopics = await Topic.countDocuments();
-    const completedTopics = await Topic.countDocuments({ completed: true });
+    const completedTopics = await UserTopicProgress.countDocuments({ userId, completed: true });
     const remainingTopics = totalTopics - completedTopics;
-    const topicsPerDay = 23; // 15 GS + 8 Sociology
+    const topicsPerDay = 23;
     const estimatedDays = Math.ceil(remainingTopics / topicsPerDay);
 
-    // Study streak: count consecutive days with completed plans (going backwards from today)
+    // Study streak
     const today = getTodayIST();
     let streak = 0;
     let checkDate = new Date();
@@ -239,29 +269,25 @@ exports.getStats = async (req, res) => {
 
     for (let i = 0; i < 365; i++) {
       const dateStr = `${istCheck.getFullYear()}-${String(istCheck.getMonth() + 1).padStart(2, '0')}-${String(istCheck.getDate()).padStart(2, '0')}`;
-
       const plan = await DailyPlan.findOne({ userId, date: dateStr });
 
       if (i === 0) {
-        // Today: count if at least 1 topic was completed, but DO NOT break if not completed
         if (plan) {
           const topicIds = [...plan.gsTopicIds, ...plan.optTopicIds];
-          const anyDone = await Topic.findOne({ _id: { $in: topicIds }, completed: true });
+          const anyDone = await UserTopicProgress.findOne({ userId, topicId: { $in: topicIds }, completed: true });
           if (anyDone) streak++;
         }
       } else {
-        // Previous days: count if plan existed and was completed; else break (streak is broken)
         if (plan && plan.completed) {
           streak++;
         } else {
           break;
         }
       }
-
       istCheck.setDate(istCheck.getDate() - 1);
     }
 
-    res.json({
+    const result = {
       totalTopics,
       completedTopics,
       remainingTopics,
@@ -269,17 +295,23 @@ exports.getStats = async (req, res) => {
       estimatedDays,
       streak,
       completionPercent: totalTopics > 0 ? ((completedTopics / totalTopics) * 100).toFixed(1) : '0.0'
-    });
+    };
+
+    // Save to Cache
+    statsCache.set(userId, { timestamp: Date.now(), data: result });
+
+    res.json(result);
   } catch (error) {
     console.error('Error getting stats:', error);
     res.status(500).json({ message: error.message });
   }
 };
 
-// GET /api/daily-plan/spectrum-stats — SPECTRUM dimension progress
+// GET /api/daily-plan/spectrum-stats — SPECTRUM dimension progress (user-specific)
 exports.getSpectrumStats = async (req, res) => {
   try {
-    // Map subjectName values to SPECTRUM dimensions
+    const userId = req.user.id;
+
     const SUBJECT_TO_DIMENSION = {
       'Society': 'Society', 'Social Issues': 'Society', 'Social Justice': 'Society',
       'Polity': 'Polity & Governance', 'Governance': 'Polity & Governance', 'Constitution': 'Polity & Governance', 'Internal Security': 'Polity & Governance',
@@ -298,10 +330,21 @@ exports.getSpectrumStats = async (req, res) => {
       'Ethics & Integrity': 'M'
     };
 
-    // Aggregate totals per subjectName
-    const agg = await Topic.aggregate([
-      { $group: { _id: '$subjectName', total: { $sum: 1 }, completed: { $sum: { $cond: ['$completed', 1, 0] } } } }
+    // Get total topics per subjectName (global)
+    const totalAgg = await Topic.aggregate([
+      { $group: { _id: '$subjectName', total: { $sum: 1 } } }
     ]);
+
+    // Get user's completed topics, joined with Topic to get subjectName
+    const completedByUser = await UserTopicProgress.find({ userId, completed: true }).select('topicId');
+    const completedTopicIds = completedByUser.map(p => p.topicId);
+    const completedTopics = await Topic.find({ _id: { $in: completedTopicIds } }).select('subjectName');
+
+    // Count completions per subjectName
+    const completedCounts = {};
+    completedTopics.forEach(t => {
+      completedCounts[t.subjectName] = (completedCounts[t.subjectName] || 0) + 1;
+    });
 
     // Merge into dimensions
     const dims = {};
@@ -310,11 +353,17 @@ exports.getSpectrumStats = async (req, res) => {
       dims[fullName] = { total: 0, completed: 0, letter };
     });
 
-    agg.forEach(item => {
+    totalAgg.forEach(item => {
       const dimension = SUBJECT_TO_DIMENSION[item._id];
       if (dimension && dims[dimension]) {
         dims[dimension].total += item.total;
-        dims[dimension].completed += item.completed;
+      }
+    });
+
+    Object.entries(completedCounts).forEach(([subjectName, count]) => {
+      const dimension = SUBJECT_TO_DIMENSION[subjectName];
+      if (dimension && dims[dimension]) {
+        dims[dimension].completed += count;
       }
     });
 
@@ -326,7 +375,6 @@ exports.getSpectrumStats = async (req, res) => {
       percentage: data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0
     }));
 
-    // Sort by S-P-E-C-T-R-U-M order
     const ORDER = ['S', 'P', 'E', 'C', 'T', 'R', 'U', 'M'];
     spectrum.sort((a, b) => ORDER.indexOf(a.letter) - ORDER.indexOf(b.letter));
 

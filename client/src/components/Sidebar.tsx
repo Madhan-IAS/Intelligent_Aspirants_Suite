@@ -100,7 +100,22 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
           style={{ width: 56, height: 56, marginRight: -6 }}
           resizeMode="contain"
         />
-        <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 28, fontWeight: 'bold' }}>IAS</Text>
+        <View>
+          <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 24, fontWeight: 'bold' }}>IAS</Text>
+          {user?.subscriptionTier && user.role !== 'admin' && (
+            <View style={{ backgroundColor: user.subscriptionTier === 'topper' ? '#f59e0b' : user.subscriptionTier === 'aspirant' ? '#3b82f6' : '#10b981', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginTop: 2, alignSelf: 'flex-start' }}>
+              <Text style={{ color: 'white', fontSize: 9, fontWeight: 'bold', textTransform: 'uppercase' }}>
+                {user.subscriptionTier}
+              </Text>
+            </View>
+          )}
+          {user?.role === 'admin' && (
+            <View style={{ backgroundColor: '#ef4444', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginTop: 2, alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="shield-checkmark" size={10} color="white" style={{ marginRight: 2 }} />
+              <Text style={{ color: 'white', fontSize: 9, fontWeight: 'bold', textTransform: 'uppercase' }}>ADMIN</Text>
+            </View>
+          )}
+        </View>
       </View>
 
       {/* Global Search Button */}

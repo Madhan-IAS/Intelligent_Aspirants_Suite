@@ -36,6 +36,26 @@ export default function Dashboard() {
   const [dashMission, setDashMission] = useState<any>(null);
   const [studyStats, setStudyStats] = useState<any>(null);
   const [isMissionCollapsed, setIsMissionCollapsed] = useState(false);
+  const [trialTimeLeft, setTrialTimeLeft] = useState('');
+
+  useEffect(() => {
+    if (user?.subscriptionStatus === 'active' && user?.subscriptionExpiry) {
+      const updateTimer = () => {
+        const diff = new Date(user.subscriptionExpiry as string).getTime() - new Date().getTime();
+        if (diff <= 0) {
+          setTrialTimeLeft('Expired');
+        } else {
+          const h = Math.floor(diff / (1000 * 60 * 60));
+          const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          const s = Math.floor((diff % (1000 * 60)) / 1000);
+          setTrialTimeLeft(`${h}h ${m}m ${s}s`);
+        }
+      };
+      updateTimer();
+      const interval = setInterval(updateTimer, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -225,6 +245,40 @@ export default function Dashboard() {
           </View>
         </View>
 
+        {/* Free Trial Banner */}
+        {user?.subscriptionStatus === 'active' && user?.subscriptionExpiry && user?.role !== 'admin' && (
+          <View style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#f59e0b', flexDirection: isDesktop ? 'row' : 'column', alignItems: isDesktop ? 'center' : 'flex-start', justifyContent: 'space-between', marginBottom: 20, gap: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <Text style={{ fontSize: 24 }}>🎁</Text>
+              <View>
+                <Text style={{ color: '#f59e0b', fontWeight: 'bold', fontSize: 16 }}>Premium Free Trial Active</Text>
+                <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', fontSize: 13, marginTop: 2 }}>Enjoy full Topper access. Your trial expires in {trialTimeLeft}</Text>
+              </View>
+            </View>
+            <TouchableOpacity onPress={() => router.push('/subscription')} style={{ backgroundColor: '#f59e0b', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, width: isDesktop ? 'auto' : '100%', alignItems: 'center' }}>
+              <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 13 }}>View Plans</Text>
+            </TouchableOpacity>
+          </View>
+        )
+        }
+
+        {/* New User Onboarding State */}
+        {
+          !loading && stats.topics === 0 && (
+            <View style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: 24, borderRadius: 18, borderWidth: 1, borderColor: '#10b981', marginBottom: 24, alignItems: 'center' }}>
+              <Text style={{ fontSize: 40, marginBottom: 12 }}>🚀</Text>
+              <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 20, fontWeight: 'bold', marginBottom: 8, textAlign: 'center' }}>Welcome to Your UPSC Journey!</Text>
+              <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', fontSize: 14, textAlign: 'center', marginBottom: 20, maxWidth: 500, lineHeight: 22 }}>
+                Your syllabus has been perfectly organized. Open your Daily Planner or hit "GS I" in the sidebar to complete your very first syllabus topic!
+              </Text>
+              <TouchableOpacity onPress={() => router.push('/gs/GS I')} style={{ backgroundColor: '#10b981', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 15 }}>Start GS I Topic #1</Text>
+                <Ionicons name="arrow-forward" size={16} color="white" />
+              </TouchableOpacity>
+            </View>
+          )
+        }
+
         {/* Target Milestone Countdown Banners */}
         <View style={{ flexDirection: isDesktop ? 'row' : 'column', gap: 12, marginBottom: 24 }}>
           <View style={{ flex: 1, backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 14, borderRadius: 12, borderWidth: 1, borderColor: '#3b82f6', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: isDesktop ? 'nowrap' : 'wrap', gap: 8 }}>
@@ -259,180 +313,182 @@ export default function Dashboard() {
         </View>
 
         {/* SECTION 1: TODAY'S MISSION (HERO SECTION) */}
-        {dashMission && (
-          <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 20, borderRadius: 18, borderWidth: 2, borderColor: '#3b82f6', marginBottom: 32 }}>
-            {/* Header */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <TouchableOpacity
-                onPress={() => setIsMissionCollapsed(!isMissionCollapsed)}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}
-              >
-                <Text style={{ fontSize: 24 }}>🎯</Text>
-                <View>
-                  <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 20, fontWeight: 'bold' }}>Today's Mission</Text>
-                  <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12 }}>
-                    {dashMission.gsPaper} Day • Rotation {(dashMission.rotationDay || 0) + 1}/8
-                  </Text>
-                </View>
-              </TouchableOpacity>
-
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                {studyStats && studyStats.streak > 0 && (
-                  <View style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <Text style={{ fontSize: 14 }}>🔥</Text>
-                    <Text style={{ color: '#ef4444', fontWeight: 'bold', fontSize: 13 }}>{studyStats.streak} Day Streak</Text>
-                  </View>
-                )}
-
+        {
+          dashMission && (
+            <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 20, borderRadius: 18, borderWidth: 2, borderColor: '#3b82f6', marginBottom: 32 }}>
+              {/* Header */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                 <TouchableOpacity
                   onPress={() => setIsMissionCollapsed(!isMissionCollapsed)}
-                  style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: isDark ? 'rgba(55, 65, 81, 0.6)' : '#e5e7eb', alignItems: 'center', justifyContent: 'center' }}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}
                 >
-                  <Ionicons name={isMissionCollapsed ? "chevron-down" : "chevron-up"} size={20} color={isDark ? 'white' : '#111827'} />
+                  <Text style={{ fontSize: 24 }}>🎯</Text>
+                  <View>
+                    <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 20, fontWeight: 'bold' }}>Today's Mission</Text>
+                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12 }}>
+                      {dashMission.gsPaper} Day • Rotation {(dashMission.rotationDay || 0) + 1}/8
+                    </Text>
+                  </View>
                 </TouchableOpacity>
+
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  {studyStats && studyStats.streak > 0 && (
+                    <View style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <Text style={{ fontSize: 14 }}>🔥</Text>
+                      <Text style={{ color: '#ef4444', fontWeight: 'bold', fontSize: 13 }}>{studyStats.streak} Day Streak</Text>
+                    </View>
+                  )}
+
+                  <TouchableOpacity
+                    onPress={() => setIsMissionCollapsed(!isMissionCollapsed)}
+                    style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: isDark ? 'rgba(55, 65, 81, 0.6)' : '#e5e7eb', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <Ionicons name={isMissionCollapsed ? "chevron-down" : "chevron-up"} size={20} color={isDark ? 'white' : '#111827'} />
+                  </TouchableOpacity>
+                </View>
               </View>
+
+              {/* Mission Progress Bar */}
+              {(() => {
+                const allTopics = [...(dashMission.gsTopicIds || []), ...(dashMission.optTopicIds || []), ...(dashMission.revisionTopicId ? [dashMission.revisionTopicId] : [])];
+                const doneCount = allTopics.filter((t: any) => t.completed).length;
+                const totalCount = allTopics.length;
+                const pct = totalCount > 0 ? (doneCount / totalCount) * 100 : 0;
+                return (
+                  <View style={{ marginBottom: isMissionCollapsed ? 0 : 16 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12, fontWeight: '600' }}>Daily Mission Progress</Text>
+                      <Text style={{ color: pct === 100 ? '#10b981' : '#3b82f6', fontSize: 12, fontWeight: 'bold' }}>{doneCount}/{totalCount} Topics Completed {pct === 100 ? '✅' : ''}</Text>
+                    </View>
+                    <View style={{ height: 8, backgroundColor: isDark ? '#374151' : '#e5e7eb', borderRadius: 4, overflow: 'hidden' }}>
+                      <View style={{ height: '100%', width: `${pct}%`, backgroundColor: pct === 100 ? '#10b981' : '#3b82f6', borderRadius: 4 }} />
+                    </View>
+                  </View>
+                );
+              })()}
+
+              {/* Collapsible Topics Body */}
+              {!isMissionCollapsed && (
+                <View style={{ marginTop: 12 }}>
+                  {/* GS Topics Section */}
+                  <View style={{ marginBottom: 16 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#3b82f6' }} />
+                      <Text style={{ color: '#3b82f6', fontWeight: 'bold', fontSize: 13 }}>{dashMission.gsPaper} — General Studies ({(dashMission.gsTopicIds || []).length} Topics)</Text>
+                    </View>
+                    {(dashMission.gsTopicIds || []).map((topic: any) => (
+                      <TouchableOpacity
+                        key={topic._id}
+                        onPress={() => handleToggleMissionTopic(topic._id)}
+                        style={{
+                          flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10, marginBottom: 6,
+                          backgroundColor: topic.completed ? (isDark ? 'rgba(16, 185, 129, 0.1)' : '#f0fdf4') : (isDark ? '#111827' : '#f9fafb'),
+                          borderWidth: 1, borderColor: topic.completed ? '#10b981' : (isDark ? '#374151' : '#e5e7eb'),
+                          opacity: topic.completed ? 0.7 : 1
+                        }}
+                      >
+                        <View style={{
+                          width: 22, height: 22, borderRadius: 6, borderWidth: 2, marginRight: 12,
+                          borderColor: topic.completed ? '#10b981' : (isDark ? '#4b5563' : '#d1d5db'),
+                          backgroundColor: topic.completed ? '#10b981' : 'transparent',
+                          alignItems: 'center', justifyContent: 'center'
+                        }}>
+                          {topic.completed && <Ionicons name="checkmark" size={14} color="white" />}
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{
+                            color: isDark ? 'white' : '#111827', fontWeight: '600', fontSize: 14,
+                            textDecorationLine: topic.completed ? 'line-through' : 'none'
+                          }}>{topic.title}</Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2, flexWrap: 'wrap' }}>
+                            <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11 }}>{topic.chapter}</Text>
+                            {topic.completed && topic.completedAt && (
+                              <Text style={{ color: '#10b981', fontSize: 11, fontWeight: '500' }}>• 🕒 {formatCompletionTime(topic.completedAt)}</Text>
+                            )}
+                          </View>
+                        </View>
+                        <View style={{ flexDirection: 'row', gap: 6 }}>
+                          <TouchableOpacity
+                            onPress={(e) => { e.stopPropagation(); router.push(`/answers?topicId=${topic._id}&topicTitle=${encodeURIComponent(topic.title)}&paper=${encodeURIComponent(dashMission.gsPaper)}` as any); }}
+                            style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
+                          >
+                            <Text style={{ color: '#10b981', fontSize: 11, fontWeight: 'bold' }}>Write Answer ✍️</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={(e) => { e.stopPropagation(); router.push(`/topic/${topic._id}` as any); }}
+                            style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
+                          >
+                            <Text style={{ color: '#3b82f6', fontSize: 11, fontWeight: 'bold' }}>Open Hub →</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  {/* Sociology Topics Section */}
+                  <View style={{ marginBottom: 12 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#8b5cf6' }} />
+                      <Text style={{ color: '#8b5cf6', fontWeight: 'bold', fontSize: 13 }}>{dashMission.optionalPaper} — Optional ({(dashMission.optTopicIds || []).length} Topics)</Text>
+                    </View>
+                    {(dashMission.optTopicIds || []).map((topic: any) => (
+                      <TouchableOpacity
+                        key={topic._id}
+                        onPress={() => handleToggleMissionTopic(topic._id)}
+                        style={{
+                          flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10, marginBottom: 6,
+                          backgroundColor: topic.completed ? (isDark ? 'rgba(16, 185, 129, 0.1)' : '#f0fdf4') : (isDark ? '#111827' : '#f9fafb'),
+                          borderWidth: 1, borderColor: topic.completed ? '#10b981' : (isDark ? '#374151' : '#e5e7eb'),
+                          opacity: topic.completed ? 0.7 : 1
+                        }}
+                      >
+                        <View style={{
+                          width: 22, height: 22, borderRadius: 6, borderWidth: 2, marginRight: 12,
+                          borderColor: topic.completed ? '#10b981' : (isDark ? '#4b5563' : '#d1d5db'),
+                          backgroundColor: topic.completed ? '#10b981' : 'transparent',
+                          alignItems: 'center', justifyContent: 'center'
+                        }}>
+                          {topic.completed && <Ionicons name="checkmark" size={14} color="white" />}
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{
+                            color: isDark ? 'white' : '#111827', fontWeight: '600', fontSize: 14,
+                            textDecorationLine: topic.completed ? 'line-through' : 'none'
+                          }}>{topic.title}</Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2, flexWrap: 'wrap' }}>
+                            <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11 }}>{topic.chapter}</Text>
+                            {topic.completed && topic.completedAt && (
+                              <Text style={{ color: '#10b981', fontSize: 11, fontWeight: '500' }}>• 🕒 {formatCompletionTime(topic.completedAt)}</Text>
+                            )}
+                          </View>
+                        </View>
+                        <View style={{ flexDirection: 'row', gap: 6 }}>
+                          <TouchableOpacity
+                            onPress={(e) => { e.stopPropagation(); router.push(`/answers?topicId=${topic._id}&topicTitle=${encodeURIComponent(topic.title)}&paper=${encodeURIComponent(dashMission.optionalPaper)}` as any); }}
+                            style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
+                          >
+                            <Text style={{ color: '#10b981', fontSize: 11, fontWeight: 'bold' }}>Write Answer ✍️</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={(e) => { e.stopPropagation(); router.push(`/topic/${topic._id}` as any); }}
+                            style={{ backgroundColor: 'rgba(139, 92, 246, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
+                          >
+                            <Text style={{ color: '#8b5cf6', fontSize: 11, fontWeight: 'bold' }}>Open Hub →</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  {/* Planner Link */}
+                  <TouchableOpacity onPress={() => router.push('/planner')} style={{ alignItems: 'flex-end', marginTop: 4 }}>
+                    <Text style={{ color: '#3b82f6', fontSize: 13, fontWeight: 'bold' }}>View Full Schedule & Planner →</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
-
-            {/* Mission Progress Bar */}
-            {(() => {
-              const allTopics = [...(dashMission.gsTopicIds || []), ...(dashMission.optTopicIds || []), ...(dashMission.revisionTopicId ? [dashMission.revisionTopicId] : [])];
-              const doneCount = allTopics.filter((t: any) => t.completed).length;
-              const totalCount = allTopics.length;
-              const pct = totalCount > 0 ? (doneCount / totalCount) * 100 : 0;
-              return (
-                <View style={{ marginBottom: isMissionCollapsed ? 0 : 16 }}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12, fontWeight: '600' }}>Daily Mission Progress</Text>
-                    <Text style={{ color: pct === 100 ? '#10b981' : '#3b82f6', fontSize: 12, fontWeight: 'bold' }}>{doneCount}/{totalCount} Topics Completed {pct === 100 ? '✅' : ''}</Text>
-                  </View>
-                  <View style={{ height: 8, backgroundColor: isDark ? '#374151' : '#e5e7eb', borderRadius: 4, overflow: 'hidden' }}>
-                    <View style={{ height: '100%', width: `${pct}%`, backgroundColor: pct === 100 ? '#10b981' : '#3b82f6', borderRadius: 4 }} />
-                  </View>
-                </View>
-              );
-            })()}
-
-            {/* Collapsible Topics Body */}
-            {!isMissionCollapsed && (
-              <View style={{ marginTop: 12 }}>
-                {/* GS Topics Section */}
-                <View style={{ marginBottom: 16 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#3b82f6' }} />
-                    <Text style={{ color: '#3b82f6', fontWeight: 'bold', fontSize: 13 }}>{dashMission.gsPaper} — General Studies ({(dashMission.gsTopicIds || []).length} Topics)</Text>
-                  </View>
-                  {(dashMission.gsTopicIds || []).map((topic: any) => (
-                    <TouchableOpacity
-                      key={topic._id}
-                      onPress={() => handleToggleMissionTopic(topic._id)}
-                      style={{
-                        flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10, marginBottom: 6,
-                        backgroundColor: topic.completed ? (isDark ? 'rgba(16, 185, 129, 0.1)' : '#f0fdf4') : (isDark ? '#111827' : '#f9fafb'),
-                        borderWidth: 1, borderColor: topic.completed ? '#10b981' : (isDark ? '#374151' : '#e5e7eb'),
-                        opacity: topic.completed ? 0.7 : 1
-                      }}
-                    >
-                      <View style={{
-                        width: 22, height: 22, borderRadius: 6, borderWidth: 2, marginRight: 12,
-                        borderColor: topic.completed ? '#10b981' : (isDark ? '#4b5563' : '#d1d5db'),
-                        backgroundColor: topic.completed ? '#10b981' : 'transparent',
-                        alignItems: 'center', justifyContent: 'center'
-                      }}>
-                        {topic.completed && <Ionicons name="checkmark" size={14} color="white" />}
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{
-                          color: isDark ? 'white' : '#111827', fontWeight: '600', fontSize: 14,
-                          textDecorationLine: topic.completed ? 'line-through' : 'none'
-                        }}>{topic.title}</Text>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2, flexWrap: 'wrap' }}>
-                          <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11 }}>{topic.chapter}</Text>
-                          {topic.completed && topic.completedAt && (
-                            <Text style={{ color: '#10b981', fontSize: 11, fontWeight: '500' }}>• 🕒 {formatCompletionTime(topic.completedAt)}</Text>
-                          )}
-                        </View>
-                      </View>
-                      <View style={{ flexDirection: 'row', gap: 6 }}>
-                        <TouchableOpacity
-                          onPress={(e) => { e.stopPropagation(); router.push(`/answers?topicId=${topic._id}&topicTitle=${encodeURIComponent(topic.title)}&paper=${encodeURIComponent(dashMission.gsPaper)}` as any); }}
-                          style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
-                        >
-                          <Text style={{ color: '#10b981', fontSize: 11, fontWeight: 'bold' }}>Write Answer ✍️</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          onPress={(e) => { e.stopPropagation(); router.push(`/topic/${topic._id}` as any); }}
-                          style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
-                        >
-                          <Text style={{ color: '#3b82f6', fontSize: 11, fontWeight: 'bold' }}>Open Hub →</Text>
-                        </TouchableOpacity>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-
-                {/* Sociology Topics Section */}
-                <View style={{ marginBottom: 12 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#8b5cf6' }} />
-                    <Text style={{ color: '#8b5cf6', fontWeight: 'bold', fontSize: 13 }}>{dashMission.optionalPaper} — Optional ({(dashMission.optTopicIds || []).length} Topics)</Text>
-                  </View>
-                  {(dashMission.optTopicIds || []).map((topic: any) => (
-                    <TouchableOpacity
-                      key={topic._id}
-                      onPress={() => handleToggleMissionTopic(topic._id)}
-                      style={{
-                        flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10, marginBottom: 6,
-                        backgroundColor: topic.completed ? (isDark ? 'rgba(16, 185, 129, 0.1)' : '#f0fdf4') : (isDark ? '#111827' : '#f9fafb'),
-                        borderWidth: 1, borderColor: topic.completed ? '#10b981' : (isDark ? '#374151' : '#e5e7eb'),
-                        opacity: topic.completed ? 0.7 : 1
-                      }}
-                    >
-                      <View style={{
-                        width: 22, height: 22, borderRadius: 6, borderWidth: 2, marginRight: 12,
-                        borderColor: topic.completed ? '#10b981' : (isDark ? '#4b5563' : '#d1d5db'),
-                        backgroundColor: topic.completed ? '#10b981' : 'transparent',
-                        alignItems: 'center', justifyContent: 'center'
-                      }}>
-                        {topic.completed && <Ionicons name="checkmark" size={14} color="white" />}
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{
-                          color: isDark ? 'white' : '#111827', fontWeight: '600', fontSize: 14,
-                          textDecorationLine: topic.completed ? 'line-through' : 'none'
-                        }}>{topic.title}</Text>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2, flexWrap: 'wrap' }}>
-                          <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11 }}>{topic.chapter}</Text>
-                          {topic.completed && topic.completedAt && (
-                            <Text style={{ color: '#10b981', fontSize: 11, fontWeight: '500' }}>• 🕒 {formatCompletionTime(topic.completedAt)}</Text>
-                          )}
-                        </View>
-                      </View>
-                      <View style={{ flexDirection: 'row', gap: 6 }}>
-                        <TouchableOpacity
-                          onPress={(e) => { e.stopPropagation(); router.push(`/answers?topicId=${topic._id}&topicTitle=${encodeURIComponent(topic.title)}&paper=${encodeURIComponent(dashMission.optionalPaper)}` as any); }}
-                          style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
-                        >
-                          <Text style={{ color: '#10b981', fontSize: 11, fontWeight: 'bold' }}>Write Answer ✍️</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          onPress={(e) => { e.stopPropagation(); router.push(`/topic/${topic._id}` as any); }}
-                          style={{ backgroundColor: 'rgba(139, 92, 246, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
-                        >
-                          <Text style={{ color: '#8b5cf6', fontSize: 11, fontWeight: 'bold' }}>Open Hub →</Text>
-                        </TouchableOpacity>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-
-                {/* Planner Link */}
-                <TouchableOpacity onPress={() => router.push('/planner')} style={{ alignItems: 'flex-end', marginTop: 4 }}>
-                  <Text style={{ color: '#3b82f6', fontSize: 13, fontWeight: 'bold' }}>View Full Schedule & Planner →</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        )}
+          )
+        }
 
         {/* SECTION 2: LIVE STATS CARDS */}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginBottom: 32 }}>
@@ -676,7 +732,7 @@ export default function Dashboard() {
 
         </View>
 
-      </ScrollView>
-    </View>
+      </ScrollView >
+    </View >
   );
 }

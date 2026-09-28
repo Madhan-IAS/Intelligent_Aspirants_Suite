@@ -61,6 +61,10 @@ export default function TopicKnowledgeHub() {
   const [flashcardBack, setFlashcardBack] = useState('');
   const [showAddFlashcard, setShowAddFlashcard] = useState(false);
 
+  // Recommendations state
+  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [loadingRecs, setLoadingRecs] = useState(false);
+
   // MCQ state for MCQs tab
   const [mcqSelected, setMcqSelected] = useState<number | null>(null);
   const [mcqSubmitted, setMcqSubmitted] = useState(false);
@@ -113,6 +117,20 @@ export default function TopicKnowledgeHub() {
       setTopicFlashcards(res.data || []);
     } catch (error) {
       console.error('Error fetching flashcards:', error);
+    }
+  };
+
+  const generateRecommendations = async () => {
+    if (!id) return;
+    setLoadingRecs(true);
+    try {
+      const res = await api.post('/ai/recommend-next', { topicId: id });
+      setRecommendations(res.data.recommendations || []);
+    } catch (error) {
+      console.error('Error getting recommendations:', error);
+      alert('Failed to get recommendations. Make sure GEMINI_API_KEY is set.');
+    } finally {
+      setLoadingRecs(false);
     }
   };
 
@@ -244,6 +262,37 @@ export default function TopicKnowledgeHub() {
             </TouchableOpacity>
           </View>
         </View>
+
+        {topic.completed && (
+          <View style={{ backgroundColor: 'rgba(139, 92, 246, 0.1)', padding: 16, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(139, 92, 246, 0.3)', marginBottom: 20 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Ionicons name="compass" size={20} color="#8b5cf6" />
+                <Text style={{ color: '#8b5cf6', fontWeight: 'bold', fontSize: 16 }}>What should I study next?</Text>
+              </View>
+              {recommendations.length === 0 && (
+                <TouchableOpacity onPress={generateRecommendations} disabled={loadingRecs} style={{ backgroundColor: '#8b5cf6', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, flexDirection: 'row', alignItems: 'center' }}>
+                  {loadingRecs ? <ActivityIndicator size="small" color="white" /> : <Ionicons name="sparkles" size={14} color="white" />}
+                  <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12, marginLeft: 4 }}>{loadingRecs ? 'Analyzing...' : 'Ask AI Planner'}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {recommendations.length > 0 && (
+              <View style={{ marginTop: 16, gap: 10 }}>
+                {recommendations.map((rec, idx) => (
+                  <TouchableOpacity key={idx} onPress={() => { router.replace(`/topic/${rec._id}` as any); }} style={{ backgroundColor: isDark ? '#111827' : '#ffffff', padding: 14, borderRadius: 10, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <View style={{ flex: 1, paddingRight: 10 }}>
+                      <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold', fontSize: 14 }}>{rec.title}</Text>
+                      <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12, marginTop: 4 }}>{rec.reason}</Text>
+                    </View>
+                    <Ionicons name="arrow-forward-circle" size={24} color="#3b82f6" />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+        )}
 
         {/* 360° Topic Hub Integration Banner */}
         <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 16, borderRadius: 14, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', marginBottom: 20, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>

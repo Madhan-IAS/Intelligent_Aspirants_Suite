@@ -10,5 +10,6 @@ router.post('/generate-topic-notes', aiController.generateTopicNotes);
 router.post('/generate-analysis-prompts', aiController.generateAnalysisPrompts);
 router.post('/auto-link-current-affairs', aiController.autoLinkCurrentAffairs);
 router.post('/evaluate-essay', aiController.evaluateEssay);
+router.post('/recommend-next', aiController.recommendNextTopics);
 
 module.exports = router;

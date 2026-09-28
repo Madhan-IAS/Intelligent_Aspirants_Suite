@@ -65,16 +65,37 @@ const essaysRoutes = require('./routes/essays');
 const mindMapsRoutes = require('./routes/mindMaps');
 const subscriptionRoutes = require('./routes/subscription');
 const adminRoutes = require('./routes/admin');
+const rateLimit = require('express-rate-limit');
 
+// Rate Limiters
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  message: { message: 'Too many requests from this IP, please try again in 15 minutes' }
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { message: 'Too many authentication attempts, please try again later' }
+});
+
+const aiLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 50,
+  message: { message: 'AI request limit reached for this IP. Please try again in an hour.' }
+});
+
+app.use(globalLimiter);
 app.use('/api/subjects', subjectsRoutes);
 app.use('/api/topics', topicsRoutes);
 app.use('/api/revisions', revisionsRoutes);
 app.use('/api/current-affairs', currentAffairsRoutes);
 app.use('/api/pyqs', pyqsRoutes);
 app.use('/api/answers', answersRoutes);
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/search', searchRoutes);
-app.use('/api/ai', aiRoutes);
+app.use('/api/ai', aiLimiter, aiRoutes);
 app.use('/api/quiz', quizRoutes);
 app.use('/api/tasks', tasksRoutes);
 app.use('/api/focus', focusRoutes);

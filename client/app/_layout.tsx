@@ -5,6 +5,8 @@ import Sidebar from '../src/components/Sidebar';
 import MobileNavigation from '../src/components/MobileNavigation';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { ThemeProvider, useTheme } from '../src/context/ThemeContext';
+import { ToastProvider } from '../src/context/ToastContext';
+import { ErrorBoundary } from '../src/components/ErrorBoundary';
 import { registerForPushNotificationsAsync } from '../src/services/notifications';
 import FeatureGate from '../src/components/FeatureGate';
 import { useEffect, useState } from 'react';
@@ -91,7 +93,11 @@ function AppContent() {
           <MobileNavigation />
         )}
         <View style={{ flex: 1 }}>
-          <FeatureGate><Slot /></FeatureGate>
+          <ErrorBoundary>
+            <ToastProvider>
+              <FeatureGate><Slot /></FeatureGate>
+            </ToastProvider>
+          </ErrorBoundary>
         </View>
       </View>
     </View>

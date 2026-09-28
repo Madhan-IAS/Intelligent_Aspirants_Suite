@@ -496,3 +496,72 @@ Output strictly in this exact JSON format:
     res.status(500).json({ message: 'Failed to evaluate essay.', error: error.message });
   }
 };
+
+exports.recommendNextTopics = async (req, res) => {
+  try {
+    const { topicId } = req.body;
+    if (!topicId) return res.status(400).json({ message: 'topicId is required' });
+
+    const topic = await Topic.findById(topicId);
+    if (!topic) return res.status(404).json({ message: 'Topic not found' });
+
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ message: 'GEMINI_API_KEY is not set.' });
+    }
+
+    // Grab 15 other topics from the same paper to choose from
+    const candidates = await Topic.find({
+      paper: topic.paper,
+      _id: { $ne: topic._id }
+    }).limit(15).select('title chapter');
+
+    if (candidates.length === 0) {
+      return res.json({ recommendations: [] });
+    }
+
+    const candidateList = candidates.map(c => `- ID: ${c._id.toString()} | Title: ${c.title} | Chapter: ${c.chapter}`).join('\n');
+
+    const prompt = `You are a UPSC Study Planner AI. The student just completed studying the following topic:
+Title: "${topic.title}"
+Chapter: "${topic.chapter}"
+Paper: "${topic.paper}"
+
+Based on logical progression, syllabus flow, and conceptual prerequisites, select exactly 3 topics from the list below that the student should study next. 
+
+Available Candidates:
+${candidateList}
+
+Output strictly in JSON format (do not use markdown blocks):
+{
+  "recommendations": [
+    {
+      "topicId": "<id of chosen topic>",
+      "reason": "<One short sentence explaining why this is the logical next step>"
+    }
+  ]
+}`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: { responseMimeType: 'application/json' }
+    });
+
+    const parsed = JSON.parse(response.text);
+
+    // Attach titles to the response by looking up the candidates
+    const finalRecs = (parsed.recommendations || []).map((rec) => {
+      const found = candidates.find(c => c._id.toString() === rec.topicId);
+      return {
+        _id: rec.topicId,
+        title: found ? found.title : 'Recommended Topic',
+        reason: rec.reason
+      };
+    }).filter(r => r.title !== 'Recommended Topic').slice(0, 3); // Ensure exactly 3
+
+    res.json({ recommendations: finalRecs });
+  } catch (error) {
+    console.error('AI Topic Recommendation Error:', error);
+    res.status(500).json({ message: 'Failed to recommend next topics.', error: error.message });
+  }
+};

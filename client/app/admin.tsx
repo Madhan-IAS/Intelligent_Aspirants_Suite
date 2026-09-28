@@ -171,6 +171,26 @@ export default function AdminDashboard() {
                 ))}
             </View>
 
+            {/* Subscriber Tier Analytics */}
+            <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 20, borderRadius: 16, marginBottom: 24, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
+                <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 16, fontWeight: 'bold', marginBottom: 16 }}>👑 Active Subscribers by Tier</Text>
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                    {[
+                        { label: 'Foundation', tier: 'foundation', color: '#10b981' },
+                        { label: 'Aspirant', tier: 'aspirant', color: '#8b5cf6' },
+                        { label: 'Topper (Pro)', tier: 'topper', color: '#f59e0b' }
+                    ].map((t, i) => {
+                        const count = allUsers.filter(u => u.subscriptionTier === t.tier && u.subscriptionStatus === 'active').length;
+                        return (
+                            <View key={i} style={{ flex: 1, backgroundColor: isDark ? '#111827' : '#f9fafb', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', alignItems: 'center' }}>
+                                <Text style={{ color: t.color, fontSize: 20, fontWeight: 'bold' }}>{count}</Text>
+                                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11, marginTop: 4, fontWeight: '600' }}>{t.label}</Text>
+                            </View>
+                        );
+                    })}
+                </View>
+            </View>
+
             {/* Tabs */}
             <View style={{ flexDirection: 'row', marginBottom: 20, gap: 8 }}>
                 {(['pending', 'all'] as const).map((tab) => (

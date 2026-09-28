@@ -22,7 +22,9 @@
     "web": {
       "name": "IAS — Intelligent Aspirant's Suite",
       "shortName": "IAS",
-      "favicon": "./assets/ias_logo.png"
+      "favicon": "./assets/ias_logo.png",
+      "output": "single",
+      "bundler": "metro"
     },
     "plugins": [
       "expo-router"

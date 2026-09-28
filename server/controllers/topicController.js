@@ -7,7 +7,7 @@ const CurrentAffair = require('../models/CurrentAffair');
 exports.getTopicsBySubject = async (req, res) => {
   try {
     let subjectId = req.params.subjectId;
-    
+
     // If not a valid ObjectId, treat it as a subject name
     if (!mongoose.Types.ObjectId.isValid(subjectId)) {
       let subject = await Subject.findOne({ name: subjectId });
@@ -16,7 +16,7 @@ exports.getTopicsBySubject = async (req, res) => {
       }
       subjectId = subject._id;
     }
-    
+
     const topics = await Topic.find({ subjectId });
     res.json(topics);
   } catch (error) {
@@ -113,8 +113,8 @@ exports.getRecentTopics = async (req, res) => {
     const recent = await Topic.find({
       $or: [{ completed: true }, { status: 'In Progress' }, { completedAt: { $ne: null } }]
     })
-    .sort({ completedAt: -1, updatedAt: -1 })
-    .limit(5);
+      .sort({ completedAt: -1, updatedAt: -1 })
+      .limit(5);
 
     if (recent.length < 5) {
       const fallback = await Topic.find()
@@ -155,12 +155,12 @@ exports.updateTopicStatus = async (req, res) => {
   try {
     const isCompleted = req.body.status === 'Completed';
     const topic = await Topic.findByIdAndUpdate(
-      req.params.id, 
-      { 
-        status: req.body.status, 
+      req.params.id,
+      {
+        status: req.body.status,
         completed: isCompleted,
         completedAt: isCompleted ? new Date() : null
-      }, 
+      },
       { new: true }
     );
 
@@ -178,9 +178,18 @@ exports.updateTopicStatus = async (req, res) => {
 
 exports.updateTopic = async (req, res) => {
   try {
+    const updateData = { ...req.body };
+
+    // Auto-set completedAt when completed status changes
+    if (updateData.completed === true || updateData.status === 'Completed') {
+      updateData.completedAt = new Date();
+    } else if (updateData.completed === false || updateData.status === 'Pending') {
+      updateData.completedAt = null;
+    }
+
     const topic = await Topic.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      updateData,
       { new: true }
     );
     res.json(topic);

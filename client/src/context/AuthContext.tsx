@@ -7,6 +7,10 @@ type UserProfile = {
   _id: string;
   name: string;
   email: string;
+  role?: string;
+  subscriptionStatus?: string;
+  subscriptionTier?: string;
+  subscriptionExpiry?: string;
   bio?: string;
   targetAttempt?: number;
   optionalSubject?: string;
@@ -28,9 +32,9 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
-  login: async () => {},
-  logout: async () => {},
-  updateProfile: async () => {}
+  login: async () => { },
+  logout: async () => { },
+  updateProfile: async () => { }
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {

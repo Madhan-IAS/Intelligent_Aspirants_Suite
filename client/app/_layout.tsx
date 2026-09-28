@@ -6,6 +6,7 @@ import MobileNavigation from '../src/components/MobileNavigation';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { ThemeProvider, useTheme } from '../src/context/ThemeContext';
 import { registerForPushNotificationsAsync } from '../src/services/notifications';
+import FeatureGate from '../src/components/FeatureGate';
 import { useEffect, useState } from 'react';
 
 function AppContent() {
@@ -17,7 +18,7 @@ function AppContent() {
   const router = useRouter();
   const { user, loading } = useAuth();
 
-  const isAuthPage = pathname === '/login' || pathname === '/welcome' || pathname === '/register';
+  const isAuthPage = pathname === '/login' || pathname === '/welcome' || pathname === '/register' || pathname === '/subscription' || pathname === '/pending-approval' || pathname === '/admin';
 
   const [welcomeCompleted, setWelcomeCompleted] = useState(false);
   const [routerReady, setRouterReady] = useState(false);
@@ -36,7 +37,17 @@ function AppContent() {
     if (!loading && routerReady && !welcomeCompleted) {
       setWelcomeCompleted(true);
       if (user) {
-        if (pathname === '/welcome' || pathname === '/login' || pathname === '/register') {
+        // Subscription-based routing
+        const subStatus = user.subscriptionStatus || 'pending';
+        if (subStatus === 'pending' && pathname !== '/subscription' && user.role !== 'admin') {
+          router.replace('/subscription');
+        } else if (subStatus === 'pending_review' && pathname !== '/pending-approval' && user.role !== 'admin') {
+          router.replace('/pending-approval');
+        } else if (subStatus === 'rejected' && pathname !== '/subscription' && user.role !== 'admin') {
+          router.replace('/subscription');
+        } else if (subStatus === 'expired' && pathname !== '/subscription' && user.role !== 'admin') {
+          router.replace('/subscription');
+        } else if (pathname === '/welcome' || pathname === '/login' || pathname === '/register') {
           router.replace('/');
         }
       } else {
@@ -80,7 +91,7 @@ function AppContent() {
           <MobileNavigation />
         )}
         <View style={{ flex: 1 }}>
-          <Slot />
+          <FeatureGate><Slot /></FeatureGate>
         </View>
       </View>
     </View>

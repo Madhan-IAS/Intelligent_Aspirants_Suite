@@ -63,6 +63,8 @@ const dailyPlanRoutes = require('./routes/dailyPlan');
 const interlinkagesRoutes = require('./routes/interlinkages');
 const essaysRoutes = require('./routes/essays');
 const mindMapsRoutes = require('./routes/mindMaps');
+const subscriptionRoutes = require('./routes/subscription');
+const adminRoutes = require('./routes/admin');
 
 app.use('/api/subjects', subjectsRoutes);
 app.use('/api/topics', topicsRoutes);
@@ -88,6 +90,8 @@ app.use('/api/interlinkages', interlinkagesRoutes);
 app.use('/api/essays', essaysRoutes);
 app.use('/api/mind-maps', mindMapsRoutes);
 app.use('/api/answers/gallery', require('./routes/answerGallery'));
+app.use('/api/subscription', subscriptionRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

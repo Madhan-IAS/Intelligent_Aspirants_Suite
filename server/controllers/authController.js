@@ -75,11 +75,13 @@ exports.devLogin = async (req, res) => {
         name: 'Madhan Mohan',
         email: 'madhan@upsc.kms',
         passwordHash,
+        role: 'admin',
+        subscriptionStatus: 'active',
         targetAttempt: 2027,
         dailyTargetHours: 14,
         optionalSubject: 'Sociology'
       });
-      
+
       // Seed data for dev user too if they were just created
       const slotsWithUser = MASTER_TIMETABLE.map((s, i) => ({ ...s, userId: user._id, order: i }));
       await TimetableSlot.insertMany(slotsWithUser);
@@ -93,6 +95,14 @@ exports.devLogin = async (req, res) => {
       await WeeklySchedule.insertMany(weeklyWithUser);
     }
 
+    // Ensure admin account always has admin role, active subscription, and topper tier
+    if (user.role !== 'admin' || user.subscriptionStatus !== 'active' || user.subscriptionTier !== 'topper') {
+      user.role = 'admin';
+      user.subscriptionStatus = 'active';
+      user.subscriptionTier = 'topper';
+      await user.save();
+    }
+
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '30d' });
     res.json({ token, user });
   } catch (error) {
@@ -103,16 +113,16 @@ exports.devLogin = async (req, res) => {
 exports.register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
-    
+
     let user = await User.findOne({ email });
     if (user) return res.status(400).json({ message: 'User already exists' });
 
     const passwordHash = await bcrypt.hash(password, 10);
-    
+
     // Create new user with identical starting values
-    user = new User({ 
-      name, 
-      email, 
+    user = new User({
+      name,
+      email,
       passwordHash,
       targetAttempt: 2027,
       dailyTargetHours: 14,
@@ -142,12 +152,18 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    
+
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
+
+    // Check if subscription has expired
+    if (user.subscriptionStatus === 'active' && user.subscriptionExpiry && new Date() > user.subscriptionExpiry) {
+      user.subscriptionStatus = 'expired';
+      await user.save();
+    }
 
     // Auto-seed user profile values if missing
     if (!user.targetAttempt || !user.dailyTargetHours || !user.optionalSubject) {
@@ -197,24 +213,24 @@ exports.getProfile = async (req, res) => {
 
 exports.updateProfile = async (req, res) => {
   try {
-    const { 
-      name, bio, targetAttempt, optionalSubject, 
-      dailyTargetHours, preferredRevisionPattern, 
-      examStage, theme, studyPreferences 
+    const {
+      name, bio, targetAttempt, optionalSubject,
+      dailyTargetHours, preferredRevisionPattern,
+      examStage, theme, studyPreferences
     } = req.body;
 
     const user = await User.findByIdAndUpdate(
       req.user.id,
       {
         $set: {
-          name, bio, targetAttempt, optionalSubject, 
-          dailyTargetHours, preferredRevisionPattern, 
-          examStage, theme, studyPreferences 
+          name, bio, targetAttempt, optionalSubject,
+          dailyTargetHours, preferredRevisionPattern,
+          examStage, theme, studyPreferences
         }
       },
       { new: true, runValidators: true }
     ).select('-passwordHash');
-    
+
     res.json(user);
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'expo-router';
 import CommandPalette from './CommandPalette';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { hasAccess } from '../services/tierConfig';
 import { scheduleLocalNotification } from '../services/notifications';
 
 interface SidebarProps {
@@ -15,8 +16,11 @@ const SidebarItem = ({ icon, label, href, onNavigate }: { icon: any, label: stri
   const pathname = usePathname();
   const router = useRouter();
   const { mode } = useTheme();
+  const { user } = useAuth();
   const isDark = mode === 'dark';
   const isActive = pathname === href || (href !== '/' && pathname.startsWith(href + '/'));
+
+  const locked = user?.role !== 'admin' && !hasAccess(user?.subscriptionTier, href);
 
   return (
     <TouchableOpacity
@@ -30,7 +34,8 @@ const SidebarItem = ({ icon, label, href, onNavigate }: { icon: any, label: stri
       }}
     >
       <Ionicons name={icon} size={20} color={isActive ? 'white' : isDark ? '#9ca3af' : '#6b7280'} />
-      <Text style={{ marginLeft: 12, fontWeight: '500', color: isActive ? 'white' : isDark ? '#9ca3af' : '#374151' }}>{label}</Text>
+      <Text style={{ marginLeft: 12, fontWeight: '500', color: isActive ? 'white' : isDark ? '#9ca3af' : '#374151', flex: 1 }}>{label}</Text>
+      {locked && <Ionicons name="lock-closed" size={14} color={isDark ? '#4b5563' : '#9ca3af'} />}
     </TouchableOpacity>
   );
 };
@@ -116,6 +121,9 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
           <SidebarItem icon="home" label="Dashboard" href="/" onNavigate={onNavigate} />
           <SidebarItem icon="person" label="Profile" href="/profile" onNavigate={onNavigate} />
           <SidebarItem icon="calendar" label="Daily Planner" href="/planner" onNavigate={onNavigate} />
+          {user?.role === 'admin' && (
+            <SidebarItem icon="shield-checkmark" label="Admin Panel" href="/admin" onNavigate={onNavigate} />
+          )}
         </View>
 
         <View style={{ marginBottom: 20 }}>

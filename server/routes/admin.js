@@ -9,5 +9,6 @@ router.get('/pending', auth, adminAuth, adminController.getPendingUsers);
 router.get('/all-users', auth, adminAuth, adminController.getAllUsers);
 router.post('/approve/:id', auth, adminAuth, adminController.approveUser);
 router.post('/reject/:id', auth, adminAuth, adminController.rejectUser);
+router.post('/revoke/:id', auth, adminAuth, adminController.revokeUser);
 
 module.exports = router;

@@ -100,6 +100,21 @@ export default function AdminDashboard() {
         }
     };
 
+    const handleRevoke = async (userId: string) => {
+        if (Platform.OS === 'web') {
+            if (!window.confirm("Are you sure you want to revoke this user's subscription? They will immediately lose access.")) return;
+        }
+        setActionLoading(userId);
+        try {
+            await api.post(`/admin/revoke/${userId}`);
+            await fetchData();
+        } catch (e: any) {
+            console.error('Revoke failed:', e.response?.data?.message);
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
     const getStatusBadge = (status: string) => {
         const config: Record<string, { bg: string; text: string; label: string }> = {
             active: { bg: 'rgba(34, 197, 94, 0.15)', text: '#22c55e', label: '✅ Active' },
@@ -448,6 +463,19 @@ export default function AdminDashboard() {
                                 </View>
                             )}
                             {getStatusBadge(u.subscriptionStatus || 'pending')}
+                            {u.subscriptionStatus === 'active' && u.role !== 'admin' && (
+                                <TouchableOpacity
+                                    onPress={() => handleRevoke(u._id)}
+                                    disabled={actionLoading === u._id}
+                                    style={{ marginLeft: 6, backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: 6, borderRadius: 8 }}
+                                >
+                                    {actionLoading === u._id ? (
+                                        <ActivityIndicator size="small" color="#ef4444" />
+                                    ) : (
+                                        <Ionicons name="trash-outline" size={16} color="#ef4444" />
+                                    )}
+                                </TouchableOpacity>
+                            )}
                         </View>
                     </View>
                 ))

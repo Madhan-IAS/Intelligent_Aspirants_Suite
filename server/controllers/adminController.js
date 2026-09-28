@@ -118,3 +118,34 @@ exports.rejectUser = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// POST /api/admin/revoke/:id
+// Revoke an active user's subscription instantly
+exports.revokeUser = async (req, res) => {
+    try {
+        const user = await User.findByIdAndUpdate(
+            req.params.id,
+            {
+                subscriptionStatus: 'expired',
+                subscriptionTier: 'foundation'
+            },
+            { new: true }
+        ).select('-passwordHash');
+
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        // Update the latest granted proof mathematically for history
+        await Subscription.findOneAndUpdate(
+            { userId: req.params.id, status: 'approved' },
+            {
+                status: 'rejected',
+                reviewNote: 'Subscription revoked by Administrator'
+            },
+            { sort: { createdAt: -1 } }
+        );
+
+        res.json({ message: 'User subscription has been revoked successfully', user });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

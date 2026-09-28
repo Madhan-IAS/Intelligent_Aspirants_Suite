@@ -23,6 +23,16 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
     const { mode } = useTheme();
     const isDark = mode === 'dark';
 
+    React.useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const handleLimit = (e: any) => {
+                showToast('error', e.detail || 'Free Trial Limit Reached! Please upgrade.', 5000);
+            };
+            window.addEventListener('LIMIT_REACHED', handleLimit);
+            return () => window.removeEventListener('LIMIT_REACHED', handleLimit);
+        }
+    }, [isDark]);
+
     const showToast = (type: ToastType, message: string, duration = 3000) => {
         const id = Math.random().toString(36).substring(7);
         setToasts((prev) => [...prev, { id, type, message, duration }]);

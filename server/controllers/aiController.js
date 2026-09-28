@@ -4,6 +4,7 @@ const PYQ = require('../models/PYQ');
 const CurrentAffair = require('../models/CurrentAffair');
 const Topic = require('../models/Topic');
 const Interlinkage = require('../models/Interlinkage');
+const { incrementUsage } = require('../middleware/aiLimits');
 
 const ai = new GoogleGenAI({}); // Automatically uses GEMINI_API_KEY from env
 
@@ -79,6 +80,7 @@ exports.evaluateAnswer = async (req, res) => {
     answer.status = 'Evaluated';
     await answer.save();
 
+    await incrementUsage(req.user.id, 'aiAnswerEvaluations');
     res.json(answer);
   } catch (error) {
     console.error('AI Evaluation Error:', error);
@@ -132,6 +134,8 @@ exports.generateDailyQuiz = async (req, res) => {
     });
 
     const quizData = JSON.parse(response.text);
+
+    await incrementUsage(req.user.id, 'aiQuizGenerated');
     res.json(quizData);
   } catch (error) {
     console.error('AI Quiz Gen Error:', error);
@@ -184,6 +188,8 @@ exports.generateDailyQuestion = async (req, res) => {
     });
 
     const questionData = JSON.parse(response.text);
+
+    await incrementUsage(req.user.id, 'aiQuestionGenerated');
     res.json(questionData);
   } catch (error) {
     console.error('AI Question Gen Error:', error);
@@ -244,6 +250,8 @@ exports.generateModelOutline = async (req, res) => {
     });
 
     const outline = JSON.parse(response.text);
+
+    await incrementUsage(req.user.id, 'aiTopicSummaries');
     res.json(outline);
   } catch (error) {
     console.error('AI Model Outline Error:', error);
@@ -321,6 +329,8 @@ exports.generateTopicNotes = async (req, res) => {
     });
 
     await topic.save();
+
+    await incrementUsage(req.user.id, 'aiTopicSummaries');
     res.json({ message: 'Topic notes generated successfully', notes: topic.notes });
   } catch (error) {
     console.error('AI Generate Topic Notes Error:', error);
@@ -391,6 +401,8 @@ exports.generateAnalysisPrompts = async (req, res) => {
     });
 
     const analysisData = JSON.parse(response.text);
+
+    await incrementUsage(req.user.id, 'aiAnalyticPrompts');
     res.json(analysisData);
   } catch (error) {
     console.error('AI Analysis Prompts Error:', error);
@@ -490,6 +502,8 @@ Output strictly in this exact JSON format:
     });
 
     const evaluation = JSON.parse(response.text);
+
+    await incrementUsage(req.user.id, 'aiEssayEvaluations');
     res.json(evaluation);
   } catch (error) {
     console.error('AI Essay Evaluation Error:', error);
@@ -559,6 +573,7 @@ Output strictly in JSON format (do not use markdown blocks):
       };
     }).filter(r => r.title !== 'Recommended Topic').slice(0, 3); // Ensure exactly 3
 
+    await incrementUsage(req.user.id, 'aiRecommendations');
     res.json({ recommendations: finalRecs });
   } catch (error) {
     console.error('AI Topic Recommendation Error:', error);

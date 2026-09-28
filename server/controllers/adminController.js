@@ -53,7 +53,19 @@ exports.approveUser = async (req, res) => {
             {
                 subscriptionStatus: 'active',
                 subscriptionTier: selectedTier,
-                subscriptionExpiry: expiry
+                subscriptionExpiry: expiry,
+                isTrial: false,
+                usageStats: {
+                    aiQuizGenerated: 0,
+                    aiQuestionGenerated: 0,
+                    aiAnswerEvaluations: 0,
+                    aiEssayEvaluations: 0,
+                    aiTopicSummaries: 0,
+                    aiRecommendations: 0,
+                    aiAnalyticPrompts: 0,
+                    customFlashcards: 0,
+                    customNotes: 0
+                }
             },
             { new: true }
         ).select('-passwordHash');

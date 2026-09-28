@@ -132,7 +132,8 @@ exports.register = async (req, res) => {
       // Grant 24-hour Free Trial
       subscriptionStatus: 'active',
       subscriptionTier: 'topper',
-      subscriptionExpiry: expiry24h
+      subscriptionExpiry: expiry24h,
+      isTrial: true
     });
     await user.save();
 

@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema({
   subscriptionStatus: { type: String, enum: ['pending', 'pending_review', 'active', 'expired', 'rejected'], default: 'pending' },
   subscriptionTier: { type: String, enum: ['foundation', 'aspirant', 'topper'], default: 'foundation' },
   subscriptionExpiry: { type: Date },
+  isTrial: { type: Boolean, default: false },
   bio: { type: String, default: 'UPSC CSE Aspirant' },
   targetAttempt: { type: Number },
   optionalSubject: { type: String },
@@ -21,7 +22,18 @@ const userSchema = new mongoose.Schema({
     mockTest: { type: String, enum: ['Sunday', 'Weekly', 'Monthly'], default: 'Sunday' }
   },
   streak: { type: Number, default: 0 },
-  reputation: { type: Number, default: 0 }
+  reputation: { type: Number, default: 0 },
+  usageStats: {
+    aiQuizGenerated: { type: Number, default: 0 },
+    aiQuestionGenerated: { type: Number, default: 0 },
+    aiAnswerEvaluations: { type: Number, default: 0 },
+    aiEssayEvaluations: { type: Number, default: 0 },
+    aiTopicSummaries: { type: Number, default: 0 },
+    aiRecommendations: { type: Number, default: 0 },
+    aiAnalyticPrompts: { type: Number, default: 0 },
+    customFlashcards: { type: Number, default: 0 },
+    customNotes: { type: Number, default: 0 }
+  }
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);

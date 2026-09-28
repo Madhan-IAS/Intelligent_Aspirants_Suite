@@ -6,7 +6,7 @@ const getBackendURL = () => {
   if (process.env.EXPO_PUBLIC_API_URL) {
     return process.env.EXPO_PUBLIC_API_URL;
   }
-  
+
   if (Platform.OS === 'web') {
     const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
     return `http://${hostname}:5000/api`;
@@ -28,5 +28,19 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.data?.code === 'LIMIT_REACHED') {
+      if (Platform.OS === 'web') {
+        window.dispatchEvent(new CustomEvent('LIMIT_REACHED', { detail: error.response.data.message }));
+      } else {
+        alert(error.response.data.message);
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default api;

@@ -131,6 +131,23 @@ export default function AdminDashboard() {
         );
     };
 
+    const handleRefreshCA = async () => {
+        setActionLoading('refreshing-ca');
+        try {
+            const res = await api.post('/current-affairs/refresh');
+            if (Platform.OS === 'web') {
+                window.alert(`Success: Pulled ${res.data.newCount} new articles!`);
+            }
+        } catch (e: any) {
+            console.error('Refresh CA failed:', e.response?.data?.message || e.message);
+            if (Platform.OS === 'web') {
+                window.alert('Failed to refresh Current Affairs. See console.');
+            }
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
     const formatDate = (d: string) => {
         return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     };
@@ -156,15 +173,31 @@ export default function AdminDashboard() {
                         🛡️ Admin Panel
                     </Text>
                     <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 13, marginTop: 4 }}>
-                        Manage user subscriptions
+                        Manage user subscriptions and platform tools
                     </Text>
                 </View>
-                <TouchableOpacity
-                    onPress={() => router.replace('/')}
-                    style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}
-                >
-                    <Ionicons name="home" size={20} color={isDark ? '#d1d5db' : '#374151'} />
-                </TouchableOpacity>
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                    <TouchableOpacity
+                        onPress={handleRefreshCA}
+                        disabled={actionLoading === 'refreshing-ca'}
+                        style={{ backgroundColor: isDark ? '#374151' : '#e5e7eb', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 10, flexDirection: 'row', alignItems: 'center', gap: 6 }}
+                    >
+                        {actionLoading === 'refreshing-ca' ? (
+                            <ActivityIndicator size="small" color={isDark ? 'white' : '#374151'} />
+                        ) : (
+                            <>
+                                <Ionicons name="refresh" size={18} color={isDark ? 'white' : '#374151'} />
+                                <Text style={{ color: isDark ? 'white' : '#374151', fontWeight: 'bold', fontSize: 13 }}>Scrape News</Text>
+                            </>
+                        )}
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={() => router.replace('/')}
+                        style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}
+                    >
+                        <Ionicons name="home" size={20} color={isDark ? '#d1d5db' : '#374151'} />
+                    </TouchableOpacity>
+                </View>
             </View>
 
             {/* Stats */}

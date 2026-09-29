@@ -29,6 +29,8 @@ export default function CurrentAffairs() {
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshingNews, setRefreshingNews] = useState(false);
   const [autoLinking, setAutoLinking] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState<Record<string, any>>({});
+  const [analyzingId, setAnalyzingId] = useState('');
 
   useEffect(() => {
     fetchArticles();
@@ -166,6 +168,19 @@ export default function CurrentAffairs() {
       });
     } else {
       Alert.alert("Notice", "No link available for this article.");
+    }
+  };
+
+  const handleAiAnalyze = async (article: any) => {
+    setAnalyzingId(article._id);
+    try {
+      const res = await api.post('/ai/analyze-current-affair', { articleId: article._id, title: article.title, summary: article.content || '' });
+      setAiAnalysis(prev => ({ ...prev, [article._id]: res.data }));
+    } catch (error: any) {
+      if (Platform.OS === 'web') alert(error.response?.data?.message || 'Failed to analyze article.');
+      else Alert.alert('Error', error.response?.data?.message || 'Failed to analyze article.');
+    } finally {
+      setAnalyzingId('');
     }
   };
 
@@ -522,6 +537,58 @@ export default function CurrentAffairs() {
                       <Ionicons name="link" size={14} color="#60a5fa" />
                       <Text style={{ color: '#60a5fa', fontSize: 12, fontWeight: '500', marginLeft: 4 }}>Linked</Text>
                     </View>
+                  )}
+                </View>
+
+                {/* AI Analyze Button & Results */}
+                <View style={{ marginTop: 12, borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#e5e7eb', paddingTop: 12 }}>
+                  {aiAnalysis[article._id] ? (
+                    <View style={{ gap: 10 }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                          <Text style={{ color: '#8b5cf6', fontWeight: 'bold', fontSize: 13 }}>🧠 UPSC Analysis</Text>
+                          <View style={{ backgroundColor: aiAnalysis[article._id].relevanceScore >= 7 ? '#10b981' : aiAnalysis[article._id].relevanceScore >= 4 ? '#f59e0b' : '#ef4444', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
+                            <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>{aiAnalysis[article._id].relevanceScore}/10</Text>
+                          </View>
+                          <View style={{ backgroundColor: 'rgba(59,130,246,0.15)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
+                            <Text style={{ color: '#3b82f6', fontSize: 10, fontWeight: 'bold' }}>{aiAnalysis[article._id].gsPaper}</Text>
+                          </View>
+                        </View>
+                        <TouchableOpacity onPress={() => setAiAnalysis(prev => { const c = { ...prev }; delete c[article._id]; return c; })}>
+                          <Ionicons name="close-circle" size={16} color="#ef4444" />
+                        </TouchableOpacity>
+                      </View>
+                      <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', fontSize: 11 }}>📍 {aiAnalysis[article._id].topicMapping}</Text>
+                      <View style={{ backgroundColor: isDark ? '#111827' : '#eff6ff', padding: 10, borderRadius: 8, borderWidth: 1, borderColor: isDark ? '#1e3a5f' : '#bfdbfe' }}>
+                        <Text style={{ color: '#2563eb', fontWeight: 'bold', fontSize: 10, marginBottom: 4 }}>MAINS-READY NOTE</Text>
+                        <Text style={{ color: isDark ? '#d1d5db' : '#1e3a5f', fontSize: 12, lineHeight: 18 }}>{aiAnalysis[article._id].mainsNote}</Text>
+                      </View>
+                      <View style={{ backgroundColor: isDark ? '#111827' : '#fefce8', padding: 10, borderRadius: 8, borderWidth: 1, borderColor: isDark ? '#78350f' : '#fde68a' }}>
+                        <Text style={{ color: '#f59e0b', fontWeight: 'bold', fontSize: 10, marginBottom: 4 }}>PROBABLE MAINS QUESTION</Text>
+                        <Text style={{ color: isDark ? '#fde68a' : '#78350f', fontSize: 12, lineHeight: 18, fontStyle: 'italic' }}>{aiAnalysis[article._id].probableQuestion}</Text>
+                      </View>
+                      {aiAnalysis[article._id].keyFacts?.length > 0 && (
+                        <View>
+                          <Text style={{ color: '#10b981', fontWeight: 'bold', fontSize: 10, marginBottom: 4 }}>KEY FACTS</Text>
+                          {aiAnalysis[article._id].keyFacts.map((f: string, i: number) => (
+                            <Text key={i} style={{ color: isDark ? '#9ca3af' : '#4b5563', fontSize: 11, marginBottom: 2 }}>• {f}</Text>
+                          ))}
+                        </View>
+                      )}
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      onPress={(e) => { e.stopPropagation(); handleAiAnalyze(article); }}
+                      disabled={analyzingId === article._id}
+                      style={{ backgroundColor: analyzingId === article._id ? (isDark ? '#374151' : '#d1d5db') : '#8b5cf6', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, alignSelf: 'flex-start' }}
+                    >
+                      {analyzingId === article._id ? (
+                        <ActivityIndicator size="small" color="white" />
+                      ) : (
+                        <Ionicons name="sparkles" size={14} color="white" />
+                      )}
+                      <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12 }}>{analyzingId === article._id ? 'Analyzing...' : '🧠 AI Analyze for UPSC'}</Text>
+                    </TouchableOpacity>
                   )}
                 </View>
               </TouchableOpacity>

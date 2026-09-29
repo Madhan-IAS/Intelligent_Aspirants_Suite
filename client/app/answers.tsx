@@ -35,6 +35,8 @@ export default function AnswerWorkspace() {
   const [recommendedQuotes, setRecommendedQuotes] = useState<any[]>([]);
   const [modelOutline, setModelOutline] = useState<any>(null);
   const [fetchingOutline, setFetchingOutline] = useState<boolean>(false);
+  const [modelAnswerData, setModelAnswerData] = useState<any>(null);
+  const [fetchingModelAnswer, setFetchingModelAnswer] = useState(false);
 
   useEffect(() => {
     let interval: any = null;
@@ -172,7 +174,7 @@ export default function AnswerWorkspace() {
       alert("Please write an answer first.");
       return;
     }
-    
+
     setSaving(true);
     setEvaluating(true);
     setTimerActive(false); // Pause timer
@@ -189,7 +191,7 @@ export default function AnswerWorkspace() {
       const evalRes = await api.post('/ai/evaluate', {
         answerId: savedAnswer._id
       });
-      
+
       setAiFeedback(evalRes.data.aiEvaluation);
       alert('AI Evaluation Complete!');
       fetchPreviousAttempts();
@@ -199,6 +201,21 @@ export default function AnswerWorkspace() {
     } finally {
       setSaving(false);
       setEvaluating(false);
+    }
+  };
+
+  const handleGenerateModelAnswer = async () => {
+    if (!previousAttempts.length) { alert('Please submit & evaluate first.'); return; }
+    const latestAnswerId = previousAttempts[0]?._id;
+    if (!latestAnswerId) return;
+    setFetchingModelAnswer(true);
+    try {
+      const res = await api.post('/ai/improve-answer', { answerId: latestAnswerId });
+      setModelAnswerData(res.data);
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Failed to generate model answer.');
+    } finally {
+      setFetchingModelAnswer(false);
     }
   };
 
@@ -213,7 +230,7 @@ export default function AnswerWorkspace() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, backgroundColor: isDark ? '#111827' : '#f9fafb' }}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 24 }}>
-        
+
         {/* Header */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 16 }}>
@@ -225,13 +242,13 @@ export default function AnswerWorkspace() {
               <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 24, fontWeight: 'bold' }}>Answer Writing</Text>
             </View>
           </View>
-          
-          <TouchableOpacity 
-            onPress={handleEvaluate} 
+
+          <TouchableOpacity
+            onPress={handleEvaluate}
             disabled={saving || evaluating}
-            style={{ 
-              backgroundColor: saving || evaluating ? (isDark ? '#374151' : '#d1d5db') : '#8b5cf6', 
-              paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, flexDirection: 'row', alignItems: 'center' 
+            style={{
+              backgroundColor: saving || evaluating ? (isDark ? '#374151' : '#d1d5db') : '#8b5cf6',
+              paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, flexDirection: 'row', alignItems: 'center'
             }}
           >
             {evaluating ? (
@@ -246,7 +263,7 @@ export default function AnswerWorkspace() {
         </View>
 
         <View style={{ flexDirection: Platform.OS === 'web' && window.innerWidth > 1024 ? 'row' : 'column', flex: 1, gap: 24 }}>
-          
+
           {/* Editor Area (Left Split) */}
           <View style={{ flex: 2, backgroundColor: isDark ? '#1f2937' : '#ffffff', borderRadius: 16, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', padding: 16, display: 'flex', flexDirection: 'column' }}>
             <View style={{ marginBottom: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: isDark ? '#374151' : '#e5e7eb' }}>
@@ -301,7 +318,7 @@ export default function AnswerWorkspace() {
                 {/* Previous Attempts Bar */}
                 {previousAttempts.length > 0 && (
                   <View style={{ backgroundColor: isDark ? '#111827' : '#f9fafb', borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', overflow: 'hidden' }}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       onPress={() => setShowHistory(!showHistory)}
                       style={{ padding: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
                     >
@@ -355,7 +372,7 @@ export default function AnswerWorkspace() {
                 )}
               </View>
             )}
-            
+
             <TextInput
               style={{ flex: 1, color: isDark ? '#d1d5db' : '#374151', fontSize: 16, textAlignVertical: 'top', lineHeight: 24, fontFamily: 'serif', outlineStyle: 'none' } as any}
               multiline
@@ -364,7 +381,7 @@ export default function AnswerWorkspace() {
               value={answer}
               onChangeText={handleTextChange}
             />
-            
+
             {/* Word count footer */}
             <View style={{ marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#e5e7eb', flexDirection: 'row', justifyContent: 'flex-end' }}>
               <Text style={{ fontSize: 12, color: answer.split(/\s+/).filter(w => w.length > 0).length > (pyq?.wordLimit || 150) ? '#ef4444' : (isDark ? '#9ca3af' : '#6b7280') }}>
@@ -375,7 +392,7 @@ export default function AnswerWorkspace() {
 
           {/* Guidelines & Evaluation (Right Split) */}
           <View style={{ flex: 1, gap: 24 }}>
-            
+
             {aiFeedback ? (
               /* AI Feedback Panel */
               <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: '#8b5cf6' }}>
@@ -383,7 +400,7 @@ export default function AnswerWorkspace() {
                   <Ionicons name="sparkles" size={24} color="#8b5cf6" />
                   <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>AI Mentor Feedback</Text>
                 </View>
-                
+
                 <View style={{ alignItems: 'center', marginBottom: 16 }}>
                   <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12, textTransform: 'uppercase', fontWeight: 'bold', marginBottom: 4 }}>Score</Text>
                   {(() => {
@@ -459,11 +476,63 @@ export default function AnswerWorkspace() {
                     ))}
                   </View>
                 )}
+
+                {/* AI Answer Improver */}
+                <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#e5e7eb', paddingTop: 16 }}>
+                  {modelAnswerData ? (
+                    <View style={{ gap: 12 }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Text style={{ color: '#f59e0b', fontWeight: 'bold', fontSize: 15 }}>✨ AI Model Answer</Text>
+                        <TouchableOpacity onPress={() => setModelAnswerData(null)}>
+                          <Ionicons name="close-circle" size={18} color="#ef4444" />
+                        </TouchableOpacity>
+                      </View>
+                      <View style={{ backgroundColor: isDark ? '#111827' : '#fffbeb', padding: 14, borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#78350f' : '#fde68a' }}>
+                        <Text style={{ color: isDark ? '#fde68a' : '#78350f', fontSize: 13, lineHeight: 22, fontFamily: 'serif' }}>{modelAnswerData.modelAnswer}</Text>
+                      </View>
+                      {modelAnswerData.missedPoints?.length > 0 && (
+                        <View>
+                          <Text style={{ color: '#ef4444', fontWeight: 'bold', fontSize: 12, marginBottom: 4 }}>❌ Points You Missed:</Text>
+                          {modelAnswerData.missedPoints.map((p: string, i: number) => (
+                            <Text key={i} style={{ color: isDark ? '#fca5a5' : '#991b1b', fontSize: 12, marginBottom: 2 }}>• {p}</Text>
+                          ))}
+                        </View>
+                      )}
+                      {modelAnswerData.keywordsToInclude?.length > 0 && (
+                        <View>
+                          <Text style={{ color: '#10b981', fontWeight: 'bold', fontSize: 12, marginBottom: 4 }}>🔑 Must-Use Keywords:</Text>
+                          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                            {modelAnswerData.keywordsToInclude.map((k: string, i: number) => (
+                              <View key={i} style={{ backgroundColor: isDark ? '#064e3b' : '#d1fae5', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 }}>
+                                <Text style={{ color: isDark ? '#6ee7b7' : '#065f46', fontSize: 11, fontWeight: '600' }}>{k}</Text>
+                              </View>
+                            ))}
+                          </View>
+                        </View>
+                      )}
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      onPress={handleGenerateModelAnswer}
+                      disabled={fetchingModelAnswer}
+                      style={{ backgroundColor: '#f59e0b', padding: 12, borderRadius: 10, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}
+                    >
+                      {fetchingModelAnswer ? (
+                        <ActivityIndicator size="small" color="white" />
+                      ) : (
+                        <>
+                          <Ionicons name="document-text" size={16} color="white" />
+                          <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 13 }}>✨ Generate Model Answer</Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
             ) : (
               /* Custom Writing Helper Panel */
               <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
-                
+
                 {/* Tab switcher inside the panel */}
                 <View style={{ flexDirection: 'row', backgroundColor: isDark ? '#111827' : '#f3f4f6', padding: 4, borderRadius: 10, marginBottom: 18 }}>
                   <TouchableOpacity onPress={() => setRightPanelTab('structure')} style={{ flex: 1, paddingVertical: 8, alignItems: 'center', backgroundColor: rightPanelTab === 'structure' ? (isDark ? '#1f2937' : '#ffffff') : 'transparent', borderRadius: 8 }}>
@@ -555,8 +624,8 @@ export default function AnswerWorkspace() {
                             )}
                           </View>
                         ) : (
-                          <TouchableOpacity 
-                            onPress={handleFetchModelOutline} 
+                          <TouchableOpacity
+                            onPress={handleFetchModelOutline}
                             disabled={fetchingOutline}
                             style={{ backgroundColor: '#2563eb', padding: 12, borderRadius: 10, alignItems: 'center', marginTop: 16, flexDirection: 'row', justifyContent: 'center', gap: 8 }}
                           >
@@ -575,7 +644,7 @@ export default function AnswerWorkspace() {
                       /* Default Fallback */
                       <View>
                         <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold', fontSize: 18, marginBottom: 12 }}>Structure Guide</Text>
-                        
+
                         <View style={{ marginBottom: 12 }}>
                           <Text style={{ color: '#3b82f6', fontWeight: 'bold', fontSize: 12 }}>Intro (10%)</Text>
                           <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 13 }}>Define key concepts or set the context with a current affairs hook.</Text>
@@ -636,7 +705,7 @@ export default function AnswerWorkspace() {
                             <Text style={{ color: '#2563eb', fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase' }}>
                               #{q.index} • {q.category}
                             </Text>
-                            <TouchableOpacity 
+                            <TouchableOpacity
                               onPress={() => {
                                 if (Platform.OS === 'web') {
                                   navigator.clipboard.writeText(q.text);

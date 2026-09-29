@@ -37,6 +37,8 @@ export default function Dashboard() {
   const [studyStats, setStudyStats] = useState<any>(null);
   const [isMissionCollapsed, setIsMissionCollapsed] = useState(false);
   const [trialTimeLeft, setTrialTimeLeft] = useState('');
+  const [weaknessData, setWeaknessData] = useState<any>(null);
+  const [fetchingWeakness, setFetchingWeakness] = useState(false);
 
   useEffect(() => {
     if (user?.subscriptionStatus === 'active' && user?.subscriptionExpiry) {
@@ -196,6 +198,18 @@ export default function Dashboard() {
     if (hour < 12) return 'Good Morning';
     if (hour < 17) return 'Good Afternoon';
     return 'Good Evening';
+  };
+
+  const handleFetchWeakness = async () => {
+    setFetchingWeakness(true);
+    try {
+      const res = await api.get('/ai/weakness-analysis');
+      setWeaknessData(res.data);
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Failed to analyze weaknesses.');
+    } finally {
+      setFetchingWeakness(false);
+    }
   };
 
   const { mode } = useTheme();
@@ -614,6 +628,62 @@ export default function Dashboard() {
                 <Text style={{ color: '#f97316', marginLeft: 8, fontWeight: '500' }}>Start Revision</Text>
               </TouchableOpacity>
             </View>
+          </View>
+
+          {/* AI Weakness Analyzer */}
+          <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', borderRadius: 16, padding: 24, borderWidth: 1, borderColor: '#8b5cf6' }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Text style={{ fontSize: 20 }}>🔍</Text>
+                <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 18, fontWeight: 'bold' }}>AI Weakness Report</Text>
+              </View>
+              {weaknessData && (
+                <TouchableOpacity onPress={() => setWeaknessData(null)}>
+                  <Ionicons name="refresh" size={18} color="#8b5cf6" />
+                </TouchableOpacity>
+              )}
+            </View>
+            {weaknessData ? (
+              <View style={{ gap: 14 }}>
+                {weaknessData.weakAreas?.map((area: any, i: number) => (
+                  <View key={i} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, backgroundColor: isDark ? '#111827' : '#f9fafb', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
+                    <View style={{ backgroundColor: area.priority === 'High' ? '#ef4444' : area.priority === 'Medium' ? '#f59e0b' : '#10b981', width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginTop: 2 }}>
+                      <Text style={{ color: 'white', fontSize: 11, fontWeight: 'bold' }}>{i + 1}</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold', fontSize: 14 }}>{area.topic}</Text>
+                        <View style={{ backgroundColor: area.priority === 'High' ? 'rgba(239,68,68,0.15)' : area.priority === 'Medium' ? 'rgba(245,158,11,0.15)' : 'rgba(16,185,129,0.15)', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4 }}>
+                          <Text style={{ color: area.priority === 'High' ? '#ef4444' : area.priority === 'Medium' ? '#f59e0b' : '#10b981', fontSize: 9, fontWeight: 'bold' }}>{area.priority}</Text>
+                        </View>
+                      </View>
+                      <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12, marginTop: 2 }}>{area.reason}</Text>
+                    </View>
+                  </View>
+                ))}
+                <View style={{ backgroundColor: isDark ? '#111827' : '#eff6ff', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: isDark ? '#1e3a5f' : '#bfdbfe' }}>
+                  <Text style={{ color: '#3b82f6', fontWeight: 'bold', fontSize: 11, marginBottom: 4 }}>🎯 THIS WEEK'S FOCUS</Text>
+                  <Text style={{ color: isDark ? '#d1d5db' : '#1e3a5f', fontSize: 13, lineHeight: 20 }}>{weaknessData.weeklyFocus}</Text>
+                </View>
+                <View style={{ backgroundColor: isDark ? '#111827' : '#fefce8', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: isDark ? '#78350f' : '#fde68a' }}>
+                  <Text style={{ color: '#f59e0b', fontWeight: 'bold', fontSize: 11, marginBottom: 4 }}>📊 READINESS ASSESSMENT</Text>
+                  <Text style={{ color: isDark ? '#fde68a' : '#78350f', fontSize: 13, lineHeight: 20 }}>{weaknessData.overallReadiness}</Text>
+                </View>
+              </View>
+            ) : (
+              <TouchableOpacity
+                onPress={handleFetchWeakness}
+                disabled={fetchingWeakness}
+                style={{ backgroundColor: fetchingWeakness ? (isDark ? '#374151' : '#d1d5db') : '#8b5cf6', padding: 14, borderRadius: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}
+              >
+                {fetchingWeakness ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <Ionicons name="sparkles" size={18} color="white" />
+                )}
+                <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 14 }}>{fetchingWeakness ? 'Analyzing your data...' : '🔍 Generate AI Weakness Report'}</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Recent Topics + Pending Revisions */}

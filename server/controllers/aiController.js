@@ -580,3 +580,304 @@ Output strictly in JSON format (do not use markdown blocks):
     res.status(500).json({ message: 'Failed to recommend next topics.', error: error.message });
   }
 };
+
+// ===== NEW AI FEATURES (Topper Tier) =====
+
+// Feature 1: AI Answer Improver — Generates a model answer for comparison
+exports.improveAnswer = async (req, res) => {
+  try {
+    const { answerId } = req.body;
+    const answer = await Answer.findById(answerId).populate('pyqId');
+    if (!answer) return res.status(404).json({ message: 'Answer not found' });
+    if (!process.env.GEMINI_API_KEY) return res.status(500).json({ message: 'GEMINI_API_KEY is not set.' });
+
+    const pyq = answer.pyqId;
+    const wordLimit = pyq.wordLimit || 150;
+
+    const prompt = `
+    You are an expert UPSC Civil Services Mains examiner and top-rank answer writer.
+
+    Question: ${pyq.question}
+    Directive: ${pyq.directive || 'Discuss'}
+    Year: ${pyq.year}
+    Marks: ${pyq.marks || 10}
+    Word Limit: ${wordLimit}
+
+    Student's Answer:
+    "${answer.content}"
+
+    Your tasks:
+    1. Write an IDEAL model answer for this question within ${wordLimit} words. This should be a top-rank quality answer with proper introduction, structured body with subheadings, relevant examples/data/committees/articles, and a forward-looking conclusion.
+    2. List 5 key points/facts/keywords the student missed in their answer.
+    3. List important keywords, constitutional articles, committee names, or data points that should be included.
+
+    Output strictly in JSON format:
+    {
+      "modelAnswer": "<The complete model answer text with proper structure>",
+      "missedPoints": ["<point 1>", "<point 2>", "<point 3>", "<point 4>", "<point 5>"],
+      "keywordsToInclude": ["<keyword 1>", "<keyword 2>", "<keyword 3>", "<keyword 4>", "<keyword 5>"]
+    }`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: { responseMimeType: 'application/json' }
+    });
+
+    const result = JSON.parse(response.text);
+    await incrementUsage(req.user.id, 'aiAnswerEvaluations');
+    res.json(result);
+  } catch (error) {
+    console.error('AI Improve Answer Error:', error);
+    res.status(500).json({ message: 'Failed to generate model answer.', error: error.message });
+  }
+};
+
+// Feature 2: AI Current Affairs UPSC Mapper
+exports.analyzeCurrentAffair = async (req, res) => {
+  try {
+    const { articleId, title, summary } = req.body;
+    if (!process.env.GEMINI_API_KEY) return res.status(500).json({ message: 'GEMINI_API_KEY is not set.' });
+
+    let articleTitle = title || '';
+    let articleContent = summary || '';
+
+    if (articleId) {
+      const article = await CurrentAffair.findById(articleId);
+      if (article) {
+        articleTitle = article.title || articleTitle;
+        articleContent = article.content || article.summary || articleContent;
+      }
+    }
+
+    if (!articleTitle && !articleContent) {
+      return res.status(400).json({ message: 'Article title or content is required.' });
+    }
+
+    const prompt = `
+    You are an expert UPSC Current Affairs analyst. Analyze the following news article for UPSC Civil Services Examination relevance.
+
+    Title: "${articleTitle}"
+    Content: "${articleContent.substring(0, 2000)}"
+
+    Provide a comprehensive UPSC-oriented analysis:
+    1. Rate UPSC relevance from 1-10
+    2. Map to specific GS Paper(s) and syllabus topic(s)
+    3. Write a concise mains-ready note (60-80 words) that an aspirant can directly use in answers
+    4. Generate a probable Mains question from this news
+    5. Extract 5 key facts/data points to remember
+
+    Output strictly in JSON format:
+    {
+      "relevanceScore": <1-10>,
+      "gsPaper": "<GS I / GS II / GS III / GS IV or multiple>",
+      "topicMapping": "<Specific syllabus topic this maps to>",
+      "mainsNote": "<60-80 word mains-ready note>",
+      "probableQuestion": "<A probable UPSC Mains question from this news>",
+      "keyFacts": ["<fact 1>", "<fact 2>", "<fact 3>", "<fact 4>", "<fact 5>"]
+    }`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: { responseMimeType: 'application/json' }
+    });
+
+    const result = JSON.parse(response.text);
+    await incrementUsage(req.user.id, 'aiTopicSummaries');
+    res.json(result);
+  } catch (error) {
+    console.error('AI Current Affair Analysis Error:', error);
+    res.status(500).json({ message: 'Failed to analyze current affair.', error: error.message });
+  }
+};
+
+// Feature 3: AI Weakness Analyzer
+exports.analyzeWeaknesses = async (req, res) => {
+  try {
+    if (!process.env.GEMINI_API_KEY) return res.status(500).json({ message: 'GEMINI_API_KEY is not set.' });
+
+    const userId = req.user.id;
+    const UserTopicProgress = require('../models/UserTopicProgress');
+    const Quiz = require('../models/Quiz');
+
+    // Aggregate user data
+    const completedProgress = await UserTopicProgress.find({ userId, completed: true }).populate('topicId', 'title paper chapter subjectName');
+    const pendingProgress = await UserTopicProgress.find({ userId, completed: false }).populate('topicId', 'title paper chapter subjectName');
+    const recentAnswers = await Answer.find({ userId }).sort({ createdAt: -1 }).limit(10).populate('pyqId', 'question subject');
+    const recentQuizzes = await Quiz.find({ userId }).sort({ createdAt: -1 }).limit(10);
+
+    const completedTopics = completedProgress.filter(p => p.topicId).map(p => `${p.topicId.title} (${p.topicId.paper || 'GS'})`);
+    const pendingTopics = pendingProgress.filter(p => p.topicId).map(p => `${p.topicId.title} (${p.topicId.paper || 'GS'})`);
+
+    const answerScores = recentAnswers.map(a => ({
+      question: a.pyqId?.question?.substring(0, 80) || 'Unknown',
+      score: a.score || 0,
+      maxScore: 10
+    }));
+
+    const quizScores = recentQuizzes.map(q => ({
+      score: q.score || 0,
+      total: q.totalQuestions || 5,
+      percentage: q.totalQuestions ? Math.round((q.score / q.totalQuestions) * 100) : 0
+    }));
+
+    const prompt = `
+    You are a UPSC preparation coach. Analyze this aspirant's data and identify their weak areas.
+
+    COMPLETED TOPICS (${completedTopics.length}): ${completedTopics.slice(0, 20).join(', ') || 'None yet'}
+    PENDING TOPICS (${pendingTopics.length}): ${pendingTopics.slice(0, 20).join(', ') || 'None'}
+    
+    RECENT ANSWER SCORES: ${JSON.stringify(answerScores)}
+    RECENT QUIZ SCORES: ${JSON.stringify(quizScores)}
+
+    Based on this data:
+    1. Identify their top 5 weak areas (subjects/topics needing attention)
+    2. For each weak area, explain WHY it's weak and assign a priority
+    3. Recommend what to focus on this week
+    4. Give an overall exam readiness assessment
+
+    Output strictly in JSON format:
+    {
+      "weakAreas": [
+        { "topic": "<topic/subject name>", "reason": "<why this is weak>", "priority": "<High/Medium/Low>" }
+      ],
+      "weeklyFocus": "<2-3 sentence recommendation for this week>",
+      "overallReadiness": "<1-2 sentence honest assessment of exam readiness>",
+      "completionRate": "${completedTopics.length} of ${completedTopics.length + pendingTopics.length} topics"
+    }`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: { responseMimeType: 'application/json' }
+    });
+
+    const result = JSON.parse(response.text);
+    await incrementUsage(req.user.id, 'aiRecommendations');
+    res.json(result);
+  } catch (error) {
+    console.error('AI Weakness Analysis Error:', error);
+    res.status(500).json({ message: 'Failed to analyze weaknesses.', error: error.message });
+  }
+};
+
+// Feature 4: AI Interlinkage Generator
+exports.generateInterlinkages = async (req, res) => {
+  try {
+    const { topicId } = req.body;
+    if (!topicId) return res.status(400).json({ message: 'topicId is required' });
+
+    const topic = await Topic.findById(topicId).populate('subjectId');
+    if (!topic) return res.status(404).json({ message: 'Topic not found' });
+    if (!process.env.GEMINI_API_KEY) return res.status(500).json({ message: 'GEMINI_API_KEY is not set.' });
+
+    const subjectName = topic.subjectId?.name || topic.paper || 'General Studies';
+
+    const prompt = `
+    You are an expert UPSC mentor specializing in multi-dimensional answer writing.
+    
+    Topic: "${topic.title}"
+    Subject/Paper: "${subjectName}"
+    Chapter: "${topic.chapter || 'General'}"
+
+    Generate cross-paper interlinkages showing how this topic connects across the entire UPSC syllabus. For each GS paper, Optional, Ethics, and Current Affairs, explain the specific connection and its exam relevance.
+
+    Output strictly in JSON format:
+    {
+      "interlinkages": [
+        { "paper": "GS I (History, Society, Geography)", "connection": "<How this topic connects to GS I>", "examRelevance": "<High/Medium/Low>", "sampleAngle": "<A specific angle for mains answer>" },
+        { "paper": "GS II (Polity, Governance, IR)", "connection": "<How this topic connects to GS II>", "examRelevance": "<High/Medium/Low>", "sampleAngle": "<A specific angle>" },
+        { "paper": "GS III (Economy, Environment, S&T)", "connection": "<How this topic connects to GS III>", "examRelevance": "<High/Medium/Low>", "sampleAngle": "<A specific angle>" },
+        { "paper": "GS IV (Ethics, Integrity)", "connection": "<How this topic connects to Ethics>", "examRelevance": "<High/Medium/Low>", "sampleAngle": "<An ethical dimension>" },
+        { "paper": "Essay", "connection": "<How this topic can be used in essays>", "examRelevance": "<High/Medium/Low>", "sampleAngle": "<Essay theme suggestion>" },
+        { "paper": "Current Affairs", "connection": "<Recent news/developments related to this topic>", "examRelevance": "<High/Medium/Low>", "sampleAngle": "<Current affair connection>" }
+      ],
+      "topperTip": "<One practical tip on how toppers use interlinkages in their answers>"
+    }`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: { responseMimeType: 'application/json' }
+    });
+
+    const result = JSON.parse(response.text);
+    await incrementUsage(req.user.id, 'aiTopicSummaries');
+    res.json(result);
+  } catch (error) {
+    console.error('AI Interlinkage Error:', error);
+    res.status(500).json({ message: 'Failed to generate interlinkages.', error: error.message });
+  }
+};
+
+// Feature 5: AI Smart Planner
+exports.generateSmartPlan = async (req, res) => {
+  try {
+    if (!process.env.GEMINI_API_KEY) return res.status(500).json({ message: 'GEMINI_API_KEY is not set.' });
+
+    const userId = req.user.id;
+    const user = await require('../models/User').findById(userId);
+    const UserTopicProgress = require('../models/UserTopicProgress');
+    const Revision = require('../models/Revision');
+
+    const dailyHours = user?.dailyTargetHours || 10;
+    const optionalSubject = user?.optionalSubject || 'Sociology';
+
+    // Aggregate progress data
+    const allProgress = await UserTopicProgress.find({ userId }).populate('topicId', 'title paper chapter subjectName');
+    const completedCount = allProgress.filter(p => p.completed).length;
+    const pendingCount = allProgress.filter(p => !p.completed).length;
+
+    const pendingByPaper = {};
+    allProgress.filter(p => !p.completed && p.topicId).forEach(p => {
+      const paper = p.topicId.paper || 'GS';
+      pendingByPaper[paper] = (pendingByPaper[paper] || 0) + 1;
+    });
+
+    // Pending revisions
+    const pendingRevisions = await Revision.countDocuments({ userId, status: 'Pending', scheduledDate: { $lte: new Date() } });
+
+    const prompt = `
+    You are a UPSC preparation strategist. Create a personalized 7-day study plan for this aspirant.
+
+    ASPIRANT PROFILE:
+    - Daily study hours: ${dailyHours}
+    - Optional Subject: ${optionalSubject}
+    - Topics Completed: ${completedCount}
+    - Topics Remaining: ${pendingCount}
+    - Pending Revisions: ${pendingRevisions}
+    - Paper-wise Pending: ${JSON.stringify(pendingByPaper)}
+
+    Create a balanced 7-day plan covering GS papers, Optional, Current Affairs, Answer Writing, and Revision. Each day should have morning, afternoon, and evening blocks.
+
+    Output strictly in JSON format:
+    {
+      "weeklyPlan": [
+        {
+          "day": "Day 1 (Monday)",
+          "morning": "<What to study in morning session>",
+          "afternoon": "<Afternoon session plan>",
+          "evening": "<Evening session plan>",
+          "revision": "<What to revise>"
+        }
+      ],
+      "focusAreas": ["<Top 3 areas to prioritize this week>"],
+      "motivationalNote": "<A short encouraging message for the aspirant>"
+    }`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: { responseMimeType: 'application/json' }
+    });
+
+    const result = JSON.parse(response.text);
+    await incrementUsage(req.user.id, 'aiRecommendations');
+    res.json(result);
+  } catch (error) {
+    console.error('AI Smart Plan Error:', error);
+    res.status(500).json({ message: 'Failed to generate smart plan.', error: error.message });
+  }
+};
+

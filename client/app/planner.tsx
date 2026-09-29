@@ -55,7 +55,7 @@ export default function Planner() {
   const router = useRouter();
   const { mode } = useTheme();
   const isDark = mode === 'dark';
-  
+
   const [slots, setSlots] = useState<any[]>([]);
   const [checklistItems, setChecklistItems] = useState<any[]>([]);
   const [weeklySchedule, setWeeklySchedule] = useState<any[]>([]);
@@ -67,6 +67,8 @@ export default function Planner() {
   const [missionLoading, setMissionLoading] = useState(true);
   const [studyStats, setStudyStats] = useState<any>(null);
   const [isMissionCollapsed, setIsMissionCollapsed] = useState(false);
+  const [smartPlan, setSmartPlan] = useState<any>(null);
+  const [fetchingSmartPlan, setFetchingSmartPlan] = useState(false);
 
   // Determine which day in the 8-day rotation we are on
   const getRotationDay = () => {
@@ -74,15 +76,15 @@ export default function Planner() {
     const startYear = 2026;
     const startMonth = 6; // July is 6 (0-indexed)
     const startDateNum = 28;
-    
+
     // Get current local date in Asia/Kolkata timezone
     const now = new Date();
     const utcOffset = now.getTime() + (now.getTimezoneOffset() * 60000);
     const istTime = new Date(utcOffset + (3600000 * 5.5));
-    
+
     const start = new Date(startYear, startMonth, startDateNum);
     const todayLocal = new Date(istTime.getFullYear(), istTime.getMonth(), istTime.getDate());
-    
+
     const diffTime = todayLocal.getTime() - start.getTime();
     const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
     return Math.abs(diffDays) % 8;
@@ -153,14 +155,14 @@ export default function Planner() {
       // Update the mission state locally
       setTodayMission((prev: any) => {
         if (!prev) return prev;
-        const updateList = (list: any[]) => list.map((t: any) => 
+        const updateList = (list: any[]) => list.map((t: any) =>
           t._id === topicId ? { ...t, completed: res.data.completed, status: res.data.status, completedAt: res.data.completedAt } : t
         );
         return {
           ...prev,
           gsTopicIds: updateList(prev.gsTopicIds || []),
           optTopicIds: updateList(prev.optTopicIds || []),
-          revisionTopicId: prev.revisionTopicId?._id === topicId 
+          revisionTopicId: prev.revisionTopicId?._id === topicId
             ? { ...prev.revisionTopicId, completed: res.data.completed, status: res.data.status, completedAt: res.data.completedAt }
             : prev.revisionTopicId
         };
@@ -195,6 +197,18 @@ export default function Planner() {
     } catch (error) {
       console.error('Error toggling checklist item progress:', error);
       setProgress(prev => ({ ...prev, [itemId]: !prev[itemId] }));
+    }
+  };
+
+  const handleGenerateSmartPlan = async () => {
+    setFetchingSmartPlan(true);
+    try {
+      const res = await api.get('/ai/smart-plan');
+      setSmartPlan(res.data);
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Failed to generate smart plan.');
+    } finally {
+      setFetchingSmartPlan(false);
     }
   };
 
@@ -237,12 +251,12 @@ export default function Planner() {
     if (activity.includes('gs-ii') || activity.includes('gs-2')) return '/gs/GS II';
     if (activity.includes('gs-iii') || activity.includes('gs-3')) return '/gs/GS III';
     if (activity.includes('gs-iv') || activity.includes('gs-4') || activity.includes('ethics')) return '/gs/GS IV';
-    
+
     if (category === 'Current Affairs') return '/current-affairs';
     if (category === 'PYQ Practice') return '/pyqs';
     if (category === 'Answer Writing') return '/answers';
     if (category === 'Revision') return '/revision';
-    
+
     return null;
   };
 
@@ -257,7 +271,7 @@ export default function Planner() {
   return (
     <View style={{ flex: 1, backgroundColor: isDark ? '#111827' : '#f9fafb' }}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 20, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
-        
+
         {/* Header */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -304,7 +318,7 @@ export default function Planner() {
         {/* ===== TODAY'S MISSION 🎯 ===== */}
         <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 20, borderRadius: 16, borderWidth: 2, borderColor: '#3b82f6', marginBottom: 24 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => setIsMissionCollapsed(!isMissionCollapsed)}
               style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}
             >
@@ -325,7 +339,7 @@ export default function Planner() {
                 </View>
               )}
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => setIsMissionCollapsed(!isMissionCollapsed)}
                 style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: isDark ? 'rgba(55, 65, 81, 0.6)' : '#e5e7eb', alignItems: 'center', justifyContent: 'center' }}
               >
@@ -360,182 +374,182 @@ export default function Planner() {
               {!isMissionCollapsed && (
                 <View style={{ gap: 12 }}>
                   {/* GS Topics Section */}
-              <View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#3b82f6' }} />
-                  <Text style={{ color: '#3b82f6', fontWeight: 'bold', fontSize: 13 }}>{todayMission.gsPaper} — General Studies ({(todayMission.gsTopicIds || []).length} Topics)</Text>
-                </View>
-                {(todayMission.gsTopicIds || []).map((topic: any) => (
-                  <TouchableOpacity
-                    key={topic._id}
-                    onPress={() => handleToggleMissionTopic(topic._id)}
-                    style={{
-                      flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10, marginBottom: 6,
-                      backgroundColor: topic.completed ? (isDark ? 'rgba(16, 185, 129, 0.1)' : '#f0fdf4') : (isDark ? '#111827' : '#f9fafb'),
-                      borderWidth: 1, borderColor: topic.completed ? '#10b981' : (isDark ? '#374151' : '#e5e7eb'),
-                      opacity: topic.completed ? 0.7 : 1
-                    }}
-                  >
-                    <View style={{
-                      width: 22, height: 22, borderRadius: 6, borderWidth: 2, marginRight: 12,
-                      borderColor: topic.completed ? '#10b981' : (isDark ? '#4b5563' : '#d1d5db'),
-                      backgroundColor: topic.completed ? '#10b981' : 'transparent',
-                      alignItems: 'center', justifyContent: 'center'
-                    }}>
-                      {topic.completed && <Ionicons name="checkmark" size={14} color="white" />}
+                  <View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#3b82f6' }} />
+                      <Text style={{ color: '#3b82f6', fontWeight: 'bold', fontSize: 13 }}>{todayMission.gsPaper} — General Studies ({(todayMission.gsTopicIds || []).length} Topics)</Text>
                     </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{
-                        color: isDark ? 'white' : '#111827', fontWeight: '600', fontSize: 14,
-                        textDecorationLine: topic.completed ? 'line-through' : 'none'
-                      }}>{topic.title}</Text>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2, flexWrap: 'wrap' }}>
-                        <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11 }}>{topic.chapter}</Text>
-                        {topic.completed && topic.completedAt && (
-                          <Text style={{ color: '#10b981', fontSize: 11, fontWeight: '500' }}>• 🕒 {formatCompletionTime(topic.completedAt)}</Text>
-                        )}
+                    {(todayMission.gsTopicIds || []).map((topic: any) => (
+                      <TouchableOpacity
+                        key={topic._id}
+                        onPress={() => handleToggleMissionTopic(topic._id)}
+                        style={{
+                          flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10, marginBottom: 6,
+                          backgroundColor: topic.completed ? (isDark ? 'rgba(16, 185, 129, 0.1)' : '#f0fdf4') : (isDark ? '#111827' : '#f9fafb'),
+                          borderWidth: 1, borderColor: topic.completed ? '#10b981' : (isDark ? '#374151' : '#e5e7eb'),
+                          opacity: topic.completed ? 0.7 : 1
+                        }}
+                      >
+                        <View style={{
+                          width: 22, height: 22, borderRadius: 6, borderWidth: 2, marginRight: 12,
+                          borderColor: topic.completed ? '#10b981' : (isDark ? '#4b5563' : '#d1d5db'),
+                          backgroundColor: topic.completed ? '#10b981' : 'transparent',
+                          alignItems: 'center', justifyContent: 'center'
+                        }}>
+                          {topic.completed && <Ionicons name="checkmark" size={14} color="white" />}
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{
+                            color: isDark ? 'white' : '#111827', fontWeight: '600', fontSize: 14,
+                            textDecorationLine: topic.completed ? 'line-through' : 'none'
+                          }}>{topic.title}</Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2, flexWrap: 'wrap' }}>
+                            <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11 }}>{topic.chapter}</Text>
+                            {topic.completed && topic.completedAt && (
+                              <Text style={{ color: '#10b981', fontSize: 11, fontWeight: '500' }}>• 🕒 {formatCompletionTime(topic.completedAt)}</Text>
+                            )}
+                          </View>
+                        </View>
+                        <View style={{ flexDirection: 'row', gap: 6 }}>
+                          <TouchableOpacity
+                            onPress={(e) => { e.stopPropagation(); router.push(`/answers?topicId=${topic._id}&topicTitle=${encodeURIComponent(topic.title)}&paper=${encodeURIComponent(todayMission.gsPaper)}` as any); }}
+                            style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
+                          >
+                            <Text style={{ color: '#10b981', fontSize: 11, fontWeight: 'bold' }}>Write Answer ✍️</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={(e) => { e.stopPropagation(); router.push(`/topic/${topic._id}` as any); }}
+                            style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
+                          >
+                            <Text style={{ color: '#3b82f6', fontSize: 11, fontWeight: 'bold' }}>Open Hub →</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  {/* Sociology Topics Section */}
+                  <View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#8b5cf6' }} />
+                      <Text style={{ color: '#8b5cf6', fontWeight: 'bold', fontSize: 13 }}>{todayMission.optionalPaper} — Optional ({(todayMission.optTopicIds || []).length} Topics)</Text>
+                    </View>
+                    {(todayMission.optTopicIds || []).map((topic: any) => (
+                      <TouchableOpacity
+                        key={topic._id}
+                        onPress={() => handleToggleMissionTopic(topic._id)}
+                        style={{
+                          flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10, marginBottom: 6,
+                          backgroundColor: topic.completed ? (isDark ? 'rgba(16, 185, 129, 0.1)' : '#f0fdf4') : (isDark ? '#111827' : '#f9fafb'),
+                          borderWidth: 1, borderColor: topic.completed ? '#10b981' : (isDark ? '#374151' : '#e5e7eb'),
+                          opacity: topic.completed ? 0.7 : 1
+                        }}
+                      >
+                        <View style={{
+                          width: 22, height: 22, borderRadius: 6, borderWidth: 2, marginRight: 12,
+                          borderColor: topic.completed ? '#10b981' : (isDark ? '#4b5563' : '#d1d5db'),
+                          backgroundColor: topic.completed ? '#10b981' : 'transparent',
+                          alignItems: 'center', justifyContent: 'center'
+                        }}>
+                          {topic.completed && <Ionicons name="checkmark" size={14} color="white" />}
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{
+                            color: isDark ? 'white' : '#111827', fontWeight: '600', fontSize: 14,
+                            textDecorationLine: topic.completed ? 'line-through' : 'none'
+                          }}>{topic.title}</Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2, flexWrap: 'wrap' }}>
+                            <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11 }}>{topic.chapter}</Text>
+                            {topic.completed && topic.completedAt && (
+                              <Text style={{ color: '#10b981', fontSize: 11, fontWeight: '500' }}>• 🕒 {formatCompletionTime(topic.completedAt)}</Text>
+                            )}
+                          </View>
+                        </View>
+                        <View style={{ flexDirection: 'row', gap: 6 }}>
+                          <TouchableOpacity
+                            onPress={(e) => { e.stopPropagation(); router.push(`/answers?topicId=${topic._id}&topicTitle=${encodeURIComponent(topic.title)}&paper=${encodeURIComponent(todayMission.optionalPaper)}` as any); }}
+                            style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
+                          >
+                            <Text style={{ color: '#10b981', fontSize: 11, fontWeight: 'bold' }}>Write Answer ✍️</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={(e) => { e.stopPropagation(); router.push(`/topic/${topic._id}` as any); }}
+                            style={{ backgroundColor: 'rgba(139, 92, 246, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
+                          >
+                            <Text style={{ color: '#8b5cf6', fontSize: 11, fontWeight: 'bold' }}>Open Hub →</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  {/* Revision Topic */}
+                  {todayMission.revisionTopicId && (
+                    <View>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#f59e0b' }} />
+                        <Text style={{ color: '#f59e0b', fontWeight: 'bold', fontSize: 13 }}>Revision Slot</Text>
+                      </View>
+                      <TouchableOpacity
+                        onPress={() => handleToggleMissionTopic(todayMission.revisionTopicId._id)}
+                        style={{
+                          flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10,
+                          backgroundColor: todayMission.revisionTopicId.completed ? (isDark ? 'rgba(16, 185, 129, 0.1)' : '#f0fdf4') : (isDark ? '#111827' : '#f9fafb'),
+                          borderWidth: 1, borderColor: todayMission.revisionTopicId.completed ? '#10b981' : (isDark ? '#374151' : '#e5e7eb'),
+                          opacity: todayMission.revisionTopicId.completed ? 0.7 : 1
+                        }}
+                      >
+                        <View style={{
+                          width: 22, height: 22, borderRadius: 6, borderWidth: 2, marginRight: 12,
+                          borderColor: todayMission.revisionTopicId.completed ? '#10b981' : (isDark ? '#4b5563' : '#d1d5db'),
+                          backgroundColor: todayMission.revisionTopicId.completed ? '#10b981' : 'transparent',
+                          alignItems: 'center', justifyContent: 'center'
+                        }}>
+                          {todayMission.revisionTopicId.completed && <Ionicons name="checkmark" size={14} color="white" />}
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{
+                            color: isDark ? 'white' : '#111827', fontWeight: '600', fontSize: 14,
+                            textDecorationLine: todayMission.revisionTopicId.completed ? 'line-through' : 'none'
+                          }}>{todayMission.revisionTopicId.title}</Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2, flexWrap: 'wrap' }}>
+                            <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11 }}>{todayMission.revisionTopicId.paper} • {todayMission.revisionTopicId.chapter}</Text>
+                            {todayMission.revisionTopicId.completed && todayMission.revisionTopicId.completedAt && (
+                              <Text style={{ color: '#10b981', fontSize: 11, fontWeight: '500' }}>• 🕒 {formatCompletionTime(todayMission.revisionTopicId.completedAt)}</Text>
+                            )}
+                          </View>
+                        </View>
+                        <TouchableOpacity
+                          onPress={(e) => { e.stopPropagation(); router.push(`/topic/${todayMission.revisionTopicId._id}` as any); }}
+                          style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
+                        >
+                          <Text style={{ color: '#f59e0b', fontSize: 11, fontWeight: 'bold' }}>Revise →</Text>
+                        </TouchableOpacity>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+
+                  {/* Study Pace Stats */}
+                  {studyStats && (
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#e5e7eb' }}>
+                      <View style={{ backgroundColor: isDark ? '#111827' : '#f3f4f6', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}>
+                        <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 10 }}>Completed</Text>
+                        <Text style={{ color: '#10b981', fontWeight: 'bold', fontSize: 14 }}>{studyStats.completedTopics}/{studyStats.totalTopics}</Text>
+                      </View>
+                      <View style={{ backgroundColor: isDark ? '#111827' : '#f3f4f6', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}>
+                        <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 10 }}>Remaining</Text>
+                        <Text style={{ color: '#f59e0b', fontWeight: 'bold', fontSize: 14 }}>{studyStats.remainingTopics}</Text>
+                      </View>
+                      <View style={{ backgroundColor: isDark ? '#111827' : '#f3f4f6', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}>
+                        <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 10 }}>Est. Days Left</Text>
+                        <Text style={{ color: '#3b82f6', fontWeight: 'bold', fontSize: 14 }}>{studyStats.estimatedDays}</Text>
+                      </View>
+                      <View style={{ backgroundColor: isDark ? '#111827' : '#f3f4f6', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}>
+                        <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 10 }}>Coverage</Text>
+                        <Text style={{ color: '#8b5cf6', fontWeight: 'bold', fontSize: 14 }}>{studyStats.completionPercent}%</Text>
                       </View>
                     </View>
-                    <View style={{ flexDirection: 'row', gap: 6 }}>
-                      <TouchableOpacity
-                        onPress={(e) => { e.stopPropagation(); router.push(`/answers?topicId=${topic._id}&topicTitle=${encodeURIComponent(topic.title)}&paper=${encodeURIComponent(todayMission.gsPaper)}` as any); }}
-                        style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
-                      >
-                        <Text style={{ color: '#10b981', fontSize: 11, fontWeight: 'bold' }}>Write Answer ✍️</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={(e) => { e.stopPropagation(); router.push(`/topic/${topic._id}` as any); }}
-                        style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
-                      >
-                        <Text style={{ color: '#3b82f6', fontSize: 11, fontWeight: 'bold' }}>Open Hub →</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              {/* Sociology Topics Section */}
-              <View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#8b5cf6' }} />
-                  <Text style={{ color: '#8b5cf6', fontWeight: 'bold', fontSize: 13 }}>{todayMission.optionalPaper} — Optional ({(todayMission.optTopicIds || []).length} Topics)</Text>
-                </View>
-                {(todayMission.optTopicIds || []).map((topic: any) => (
-                  <TouchableOpacity
-                    key={topic._id}
-                    onPress={() => handleToggleMissionTopic(topic._id)}
-                    style={{
-                      flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10, marginBottom: 6,
-                      backgroundColor: topic.completed ? (isDark ? 'rgba(16, 185, 129, 0.1)' : '#f0fdf4') : (isDark ? '#111827' : '#f9fafb'),
-                      borderWidth: 1, borderColor: topic.completed ? '#10b981' : (isDark ? '#374151' : '#e5e7eb'),
-                      opacity: topic.completed ? 0.7 : 1
-                    }}
-                  >
-                    <View style={{
-                      width: 22, height: 22, borderRadius: 6, borderWidth: 2, marginRight: 12,
-                      borderColor: topic.completed ? '#10b981' : (isDark ? '#4b5563' : '#d1d5db'),
-                      backgroundColor: topic.completed ? '#10b981' : 'transparent',
-                      alignItems: 'center', justifyContent: 'center'
-                    }}>
-                      {topic.completed && <Ionicons name="checkmark" size={14} color="white" />}
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{
-                        color: isDark ? 'white' : '#111827', fontWeight: '600', fontSize: 14,
-                        textDecorationLine: topic.completed ? 'line-through' : 'none'
-                      }}>{topic.title}</Text>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2, flexWrap: 'wrap' }}>
-                        <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11 }}>{topic.chapter}</Text>
-                        {topic.completed && topic.completedAt && (
-                          <Text style={{ color: '#10b981', fontSize: 11, fontWeight: '500' }}>• 🕒 {formatCompletionTime(topic.completedAt)}</Text>
-                        )}
-                      </View>
-                    </View>
-                    <View style={{ flexDirection: 'row', gap: 6 }}>
-                      <TouchableOpacity
-                        onPress={(e) => { e.stopPropagation(); router.push(`/answers?topicId=${topic._id}&topicTitle=${encodeURIComponent(topic.title)}&paper=${encodeURIComponent(todayMission.optionalPaper)}` as any); }}
-                        style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
-                      >
-                        <Text style={{ color: '#10b981', fontSize: 11, fontWeight: 'bold' }}>Write Answer ✍️</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={(e) => { e.stopPropagation(); router.push(`/topic/${topic._id}` as any); }}
-                        style={{ backgroundColor: 'rgba(139, 92, 246, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
-                      >
-                        <Text style={{ color: '#8b5cf6', fontSize: 11, fontWeight: 'bold' }}>Open Hub →</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              {/* Revision Topic */}
-              {todayMission.revisionTopicId && (
-                <View>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#f59e0b' }} />
-                    <Text style={{ color: '#f59e0b', fontWeight: 'bold', fontSize: 13 }}>Revision Slot</Text>
-                  </View>
-                  <TouchableOpacity
-                    onPress={() => handleToggleMissionTopic(todayMission.revisionTopicId._id)}
-                    style={{
-                      flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10,
-                      backgroundColor: todayMission.revisionTopicId.completed ? (isDark ? 'rgba(16, 185, 129, 0.1)' : '#f0fdf4') : (isDark ? '#111827' : '#f9fafb'),
-                      borderWidth: 1, borderColor: todayMission.revisionTopicId.completed ? '#10b981' : (isDark ? '#374151' : '#e5e7eb'),
-                      opacity: todayMission.revisionTopicId.completed ? 0.7 : 1
-                    }}
-                  >
-                    <View style={{
-                      width: 22, height: 22, borderRadius: 6, borderWidth: 2, marginRight: 12,
-                      borderColor: todayMission.revisionTopicId.completed ? '#10b981' : (isDark ? '#4b5563' : '#d1d5db'),
-                      backgroundColor: todayMission.revisionTopicId.completed ? '#10b981' : 'transparent',
-                      alignItems: 'center', justifyContent: 'center'
-                    }}>
-                      {todayMission.revisionTopicId.completed && <Ionicons name="checkmark" size={14} color="white" />}
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{
-                        color: isDark ? 'white' : '#111827', fontWeight: '600', fontSize: 14,
-                        textDecorationLine: todayMission.revisionTopicId.completed ? 'line-through' : 'none'
-                      }}>{todayMission.revisionTopicId.title}</Text>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2, flexWrap: 'wrap' }}>
-                        <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11 }}>{todayMission.revisionTopicId.paper} • {todayMission.revisionTopicId.chapter}</Text>
-                        {todayMission.revisionTopicId.completed && todayMission.revisionTopicId.completedAt && (
-                          <Text style={{ color: '#10b981', fontSize: 11, fontWeight: '500' }}>• 🕒 {formatCompletionTime(todayMission.revisionTopicId.completedAt)}</Text>
-                        )}
-                      </View>
-                    </View>
-                    <TouchableOpacity
-                      onPress={(e) => { e.stopPropagation(); router.push(`/topic/${todayMission.revisionTopicId._id}` as any); }}
-                      style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
-                    >
-                      <Text style={{ color: '#f59e0b', fontSize: 11, fontWeight: 'bold' }}>Revise →</Text>
-                    </TouchableOpacity>
-                  </TouchableOpacity>
-                </View>
-              )}
-
-              {/* Study Pace Stats */}
-              {studyStats && (
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#e5e7eb' }}>
-                  <View style={{ backgroundColor: isDark ? '#111827' : '#f3f4f6', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}>
-                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 10 }}>Completed</Text>
-                    <Text style={{ color: '#10b981', fontWeight: 'bold', fontSize: 14 }}>{studyStats.completedTopics}/{studyStats.totalTopics}</Text>
-                  </View>
-                  <View style={{ backgroundColor: isDark ? '#111827' : '#f3f4f6', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}>
-                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 10 }}>Remaining</Text>
-                    <Text style={{ color: '#f59e0b', fontWeight: 'bold', fontSize: 14 }}>{studyStats.remainingTopics}</Text>
-                  </View>
-                  <View style={{ backgroundColor: isDark ? '#111827' : '#f3f4f6', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}>
-                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 10 }}>Est. Days Left</Text>
-                    <Text style={{ color: '#3b82f6', fontWeight: 'bold', fontSize: 14 }}>{studyStats.estimatedDays}</Text>
-                  </View>
-                  <View style={{ backgroundColor: isDark ? '#111827' : '#f3f4f6', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}>
-                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 10 }}>Coverage</Text>
-                    <Text style={{ color: '#8b5cf6', fontWeight: 'bold', fontSize: 14 }}>{studyStats.completionPercent}%</Text>
-                  </View>
-                </View>
-              )}
+                  )}
                 </View>
               )}
             </View>
@@ -562,7 +576,7 @@ export default function Planner() {
                 marginBottom: 10,
                 padding: 14,
                 borderRadius: 14,
-                backgroundColor: isDark 
+                backgroundColor: isDark
                   ? (isDone ? 'rgba(17, 24, 39, 0.8)' : '#1f2937')
                   : (isDone ? '#f9fafb' : '#ffffff'),
                 borderWidth: 1,
@@ -574,8 +588,8 @@ export default function Planner() {
               {/* Top Row: Time, Duration, Checkbox */}
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 8 }}>
-                  <View style={{ 
-                    width: 10, height: 10, borderRadius: 5, 
+                  <View style={{
+                    width: 10, height: 10, borderRadius: 5,
                     backgroundColor: isDone ? '#10b981' : color,
                     marginRight: 8
                   }} />
@@ -588,11 +602,11 @@ export default function Planner() {
                 </View>
 
                 {/* Checkbox */}
-                <View style={{ 
-                  width: 24, height: 24, borderRadius: 6, borderWidth: 2, 
-                  borderColor: isDone ? '#10b981' : (isDark ? '#4b5563' : '#d1d5db'), 
-                  backgroundColor: isDone ? '#10b981' : 'transparent', 
-                  alignItems: 'center', justifyContent: 'center' 
+                <View style={{
+                  width: 24, height: 24, borderRadius: 6, borderWidth: 2,
+                  borderColor: isDone ? '#10b981' : (isDark ? '#4b5563' : '#d1d5db'),
+                  backgroundColor: isDone ? '#10b981' : 'transparent',
+                  alignItems: 'center', justifyContent: 'center'
                 }}>
                   {isDone && <Ionicons name="checkmark" size={16} color="white" />}
                 </View>
@@ -600,15 +614,15 @@ export default function Planner() {
 
               {/* Title & Category Icon Row */}
               <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 6 }}>
-                <View style={{ 
-                  width: 32, height: 32, borderRadius: 8, 
-                  backgroundColor: color + '20', 
+                <View style={{
+                  width: 32, height: 32, borderRadius: 8,
+                  backgroundColor: color + '20',
                   alignItems: 'center', justifyContent: 'center', marginRight: 10, marginTop: 2
                 }}>
                   <Ionicons name={icon as any} size={16} color={color} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ 
+                  <Text style={{
                     color: isDark ? 'white' : '#111827', fontWeight: 'bold', fontSize: 15,
                     textDecorationLine: isDone ? 'line-through' : 'none',
                     lineHeight: 20
@@ -631,7 +645,7 @@ export default function Planner() {
                 </View>
 
                 {getSlotRoute(slot) && (
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     onPress={(e) => {
                       e.stopPropagation();
                       const route = getSlotRoute(slot);
@@ -682,18 +696,18 @@ export default function Planner() {
             {dailyTargets.map((target) => {
               const isChecked = progress[target._id] || false;
               return (
-                <TouchableOpacity 
-                  key={target._id} 
+                <TouchableOpacity
+                  key={target._id}
                   onPress={() => toggleChecklistItem(target._id)}
                   style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, opacity: isChecked ? 0.6 : 1 }}
                 >
                   <Text style={{ fontSize: 16, marginRight: 10 }}>{target.icon}</Text>
                   <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', fontSize: 13, flex: 1, textDecorationLine: isChecked ? 'line-through' : 'none' }}>{target.label}</Text>
-                  <View style={{ 
-                    width: 20, height: 20, borderRadius: 4, borderWidth: 2, 
-                    borderColor: isChecked ? '#10b981' : (isDark ? '#4b5563' : '#d1d5db'), 
-                    backgroundColor: isChecked ? '#10b981' : 'transparent', 
-                    alignItems: 'center', justifyContent: 'center' 
+                  <View style={{
+                    width: 20, height: 20, borderRadius: 4, borderWidth: 2,
+                    borderColor: isChecked ? '#10b981' : (isDark ? '#4b5563' : '#d1d5db'),
+                    backgroundColor: isChecked ? '#10b981' : 'transparent',
+                    alignItems: 'center', justifyContent: 'center'
                   }}>
                     {isChecked && <Ionicons name="checkmark" size={14} color="white" />}
                   </View>
@@ -713,9 +727,9 @@ export default function Planner() {
             {weeklySchedule.map((item) => {
               const isToday = currentDayOfWeek.toLowerCase().includes(item.day.split(' ')[0].toLowerCase());
               return (
-                <View 
-                  key={item._id} 
-                  style={{ 
+                <View
+                  key={item._id}
+                  style={{
                     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10,
                     borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#f3f4f6',
                     backgroundColor: isToday ? (isDark ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.05)') : 'transparent',
@@ -735,6 +749,77 @@ export default function Planner() {
           </View>
         )}
 
+        {/* AI Smart Planner */}
+        <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: '#10b981', marginTop: 16 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Text style={{ fontSize: 20 }}>🧠</Text>
+              <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 16, fontWeight: 'bold' }}>AI Smart Weekly Plan</Text>
+            </View>
+            {smartPlan && (
+              <TouchableOpacity onPress={() => setSmartPlan(null)}>
+                <Ionicons name="refresh" size={16} color="#10b981" />
+              </TouchableOpacity>
+            )}
+          </View>
+          {smartPlan ? (
+            <View style={{ gap: 12 }}>
+              {smartPlan.weeklyPlan?.map((day: any, i: number) => (
+                <View key={i} style={{ backgroundColor: isDark ? '#111827' : '#f9fafb', padding: 14, borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
+                  <Text style={{ color: '#3b82f6', fontWeight: 'bold', fontSize: 13, marginBottom: 8 }}>{day.day}</Text>
+                  <View style={{ gap: 4 }}>
+                    <View style={{ flexDirection: 'row', gap: 6 }}>
+                      <Text style={{ color: '#f59e0b', fontSize: 11, fontWeight: 'bold', width: 55 }}>☀️ Morning</Text>
+                      <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 12, flex: 1 }}>{day.morning}</Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', gap: 6 }}>
+                      <Text style={{ color: '#3b82f6', fontSize: 11, fontWeight: 'bold', width: 55 }}>🌤️ Afternoon</Text>
+                      <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 12, flex: 1 }}>{day.afternoon}</Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', gap: 6 }}>
+                      <Text style={{ color: '#8b5cf6', fontSize: 11, fontWeight: 'bold', width: 55 }}>🌙 Evening</Text>
+                      <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 12, flex: 1 }}>{day.evening}</Text>
+                    </View>
+                    {day.revision && (
+                      <View style={{ flexDirection: 'row', gap: 6 }}>
+                        <Text style={{ color: '#10b981', fontSize: 11, fontWeight: 'bold', width: 55 }}>🔄 Revise</Text>
+                        <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 12, flex: 1 }}>{day.revision}</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              ))}
+              {smartPlan.focusAreas?.length > 0 && (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                  {smartPlan.focusAreas.map((area: string, i: number) => (
+                    <View key={i} style={{ backgroundColor: 'rgba(59,130,246,0.15)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 }}>
+                      <Text style={{ color: '#3b82f6', fontSize: 11, fontWeight: 'bold' }}>🎯 {area}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+              {smartPlan.motivationalNote && (
+                <View style={{ backgroundColor: isDark ? '#1a1a2e' : '#fefce8', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: isDark ? '#78350f' : '#fde68a' }}>
+                  <Text style={{ color: isDark ? '#fde68a' : '#78350f', fontSize: 12, fontStyle: 'italic', lineHeight: 18 }}>💪 {smartPlan.motivationalNote}</Text>
+                </View>
+              )}
+            </View>
+          ) : (
+            <TouchableOpacity
+              onPress={handleGenerateSmartPlan}
+              disabled={fetchingSmartPlan}
+              style={{ backgroundColor: fetchingSmartPlan ? (isDark ? '#374151' : '#d1d5db') : '#10b981', padding: 14, borderRadius: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}
+            >
+              {fetchingSmartPlan ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <Ionicons name="sparkles" size={18} color="white" />
+              )}
+              <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 14 }}>{fetchingSmartPlan ? 'Building your plan...' : '🧠 Generate AI Weekly Study Plan'}</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
         {/* End-of-Day Checklist Card (Interactive) */}
         {eodChecklist.length > 0 && (
           <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', marginTop: 16 }}>
@@ -745,18 +830,18 @@ export default function Planner() {
             {eodChecklist.map((item) => {
               const isChecked = progress[item._id] || false;
               return (
-                <TouchableOpacity 
-                  key={item._id} 
+                <TouchableOpacity
+                  key={item._id}
                   onPress={() => toggleChecklistItem(item._id)}
                   style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, opacity: isChecked ? 0.6 : 1 }}
                 >
                   <Text style={{ fontSize: 16, marginRight: 10 }}>{item.icon}</Text>
                   <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', fontSize: 13, flex: 1, textDecorationLine: isChecked ? 'line-through' : 'none' }}>{item.label}</Text>
-                  <View style={{ 
-                    width: 20, height: 20, borderRadius: 4, borderWidth: 2, 
-                    borderColor: isChecked ? '#10b981' : (isDark ? '#4b5563' : '#d1d5db'), 
-                    backgroundColor: isChecked ? '#10b981' : 'transparent', 
-                    alignItems: 'center', justifyContent: 'center' 
+                  <View style={{
+                    width: 20, height: 20, borderRadius: 4, borderWidth: 2,
+                    borderColor: isChecked ? '#10b981' : (isDark ? '#4b5563' : '#d1d5db'),
+                    backgroundColor: isChecked ? '#10b981' : 'transparent',
+                    alignItems: 'center', justifyContent: 'center'
                   }}>
                     {isChecked && <Ionicons name="checkmark" size={14} color="white" />}
                   </View>

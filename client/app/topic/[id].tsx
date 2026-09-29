@@ -75,6 +75,8 @@ export default function TopicKnowledgeHub() {
   const [analysisPrompts, setAnalysisPrompts] = useState<any[]>([]);
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
   const [expandedHints, setExpandedHints] = useState<Record<number, boolean>>({});
+  const [aiInterlinkages, setAiInterlinkages] = useState<any>(null);
+  const [fetchingInterlinkages, setFetchingInterlinkages] = useState(false);
 
   useEffect(() => {
     fetchTopicData();
@@ -184,6 +186,18 @@ export default function TopicKnowledgeHub() {
       fetchTopicFlashcards();
     } catch (error) {
       console.error('Error saving flashcard:', error);
+    }
+  };
+
+  const handleGenerateInterlinkages = async () => {
+    setFetchingInterlinkages(true);
+    try {
+      const res = await api.post('/ai/generate-interlinkages', { topicId: id });
+      setAiInterlinkages(res.data);
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Failed to generate interlinkages.');
+    } finally {
+      setFetchingInterlinkages(false);
     }
   };
 
@@ -502,6 +516,60 @@ export default function TopicKnowledgeHub() {
                   <View style={{ padding: 20, alignItems: 'center' }}>
                     <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 12 }}>No linked current affairs yet.</Text>
                   </View>
+                )}
+
+                {/* Divider */}
+                <View style={{ height: 1, backgroundColor: isDark ? '#374151' : '#e5e7eb', marginVertical: 20 }} />
+
+                {/* AI Cross-Paper Interlinkages */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 16, fontWeight: 'bold' }}>✨ AI Cross-Paper Map</Text>
+                  {aiInterlinkages && (
+                    <TouchableOpacity onPress={() => setAiInterlinkages(null)}>
+                      <Ionicons name="refresh" size={16} color="#8b5cf6" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+                {aiInterlinkages ? (
+                  <View style={{ gap: 10 }}>
+                    {aiInterlinkages.interlinkages?.map((link: any, i: number) => {
+                      const relColor = link.examRelevance === 'High' ? '#10b981' : link.examRelevance === 'Medium' ? '#f59e0b' : '#6b7280';
+                      return (
+                        <View key={i} style={{ backgroundColor: isDark ? '#111827' : '#f9fafb', padding: 14, borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', borderLeftWidth: 4, borderLeftColor: relColor }}>
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                            <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold', fontSize: 13, flex: 1 }}>{link.paper}</Text>
+                            <View style={{ backgroundColor: `${relColor}20`, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                              <Text style={{ color: relColor, fontSize: 10, fontWeight: 'bold' }}>{link.examRelevance}</Text>
+                            </View>
+                          </View>
+                          <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 12, lineHeight: 18 }}>{link.connection}</Text>
+                          <View style={{ backgroundColor: isDark ? '#1f2937' : '#eff6ff', padding: 8, borderRadius: 6, marginTop: 8 }}>
+                            <Text style={{ color: '#3b82f6', fontSize: 10, fontWeight: 'bold' }}>MAINS ANGLE</Text>
+                            <Text style={{ color: isDark ? '#93c5fd' : '#1e3a5f', fontSize: 11, marginTop: 2 }}>{link.sampleAngle}</Text>
+                          </View>
+                        </View>
+                      );
+                    })}
+                    {aiInterlinkages.topperTip && (
+                      <View style={{ backgroundColor: isDark ? '#1a1a2e' : '#fefce8', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: isDark ? '#78350f' : '#fde68a', marginTop: 4 }}>
+                        <Text style={{ color: '#f59e0b', fontWeight: 'bold', fontSize: 11 }}>🏆 TOPPER TIP</Text>
+                        <Text style={{ color: isDark ? '#fde68a' : '#78350f', fontSize: 12, marginTop: 4, lineHeight: 18 }}>{aiInterlinkages.topperTip}</Text>
+                      </View>
+                    )}
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    onPress={handleGenerateInterlinkages}
+                    disabled={fetchingInterlinkages}
+                    style={{ backgroundColor: fetchingInterlinkages ? (isDark ? '#374151' : '#d1d5db') : '#8b5cf6', padding: 12, borderRadius: 10, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}
+                  >
+                    {fetchingInterlinkages ? (
+                      <ActivityIndicator size="small" color="white" />
+                    ) : (
+                      <Ionicons name="sparkles" size={16} color="white" />
+                    )}
+                    <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 13 }}>{fetchingInterlinkages ? 'Mapping...' : '✨ Generate AI Cross-Paper Connections'}</Text>
+                  </TouchableOpacity>
                 )}
               </ScrollView>
             )}

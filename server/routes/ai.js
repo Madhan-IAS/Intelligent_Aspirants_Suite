@@ -14,4 +14,11 @@ router.post('/auto-link-current-affairs', auth, aiController.autoLinkCurrentAffa
 router.post('/evaluate-essay', auth, checkTrialLimit('aiEssayEvaluations', 1), aiController.evaluateEssay);
 router.post('/recommend-next', auth, checkTrialLimit('aiRecommendations', 3), aiController.recommendNextTopics);
 
+// New Topper-Tier AI Features
+router.post('/improve-answer', auth, checkTrialLimit('aiAnswerEvaluations', 1), aiController.improveAnswer);
+router.post('/analyze-current-affair', auth, checkTrialLimit('aiTopicSummaries', 3), aiController.analyzeCurrentAffair);
+router.get('/weakness-analysis', auth, checkTrialLimit('aiRecommendations', 3), aiController.analyzeWeaknesses);
+router.post('/generate-interlinkages', auth, checkTrialLimit('aiTopicSummaries', 3), aiController.generateInterlinkages);
+router.get('/smart-plan', auth, checkTrialLimit('aiRecommendations', 3), aiController.generateSmartPlan);
+
 module.exports = router;

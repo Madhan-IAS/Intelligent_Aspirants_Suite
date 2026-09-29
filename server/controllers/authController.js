@@ -74,6 +74,7 @@ exports.devLogin = async (req, res) => {
       user = await User.create({
         name: 'Madhan Mohan',
         email: 'madhan@upsc.kms',
+        mobile: '9999999999',
         passwordHash,
         role: 'admin',
         subscriptionStatus: 'active',
@@ -112,7 +113,11 @@ exports.devLogin = async (req, res) => {
 
 exports.register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, mobile } = req.body;
+
+    if (!mobile || !/^[0-9]{10}$/.test(mobile)) {
+      return res.status(400).json({ message: 'Please provide a valid 10-digit mobile number' });
+    }
 
     let user = await User.findOne({ email });
     if (user) return res.status(400).json({ message: 'User already exists' });
@@ -125,6 +130,7 @@ exports.register = async (req, res) => {
     user = new User({
       name,
       email,
+      mobile,
       passwordHash,
       targetAttempt: 2027,
       dailyTargetHours: 14,
@@ -158,13 +164,18 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, mobile } = req.body;
 
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
+
+    // Verify mobile number matches for security
+    if (user.mobile && mobile !== user.mobile) {
+      return res.status(400).json({ message: 'Invalid credentials — mobile number does not match' });
+    }
 
     // Check if subscription has expired
     if (user.subscriptionStatus === 'active' && user.subscriptionExpiry && new Date() > user.subscriptionExpiry) {

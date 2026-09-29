@@ -11,21 +11,22 @@ export default function Login() {
   const { login } = useAuth();
   const { mode } = useTheme();
   const isDark = mode === 'dark';
-  
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [mobile, setMobile] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleStandardLogin = async () => {
-    if (!email || !password) {
+    if (!email || !password || !mobile) {
       setError('Please fill in all fields');
       return;
     }
     setLoading(true);
     setError('');
     try {
-      const res = await api.post('/auth/login', { email, password });
+      const res = await api.post('/auth/login', { email, password, mobile });
       await login(res.data.token, res.data.user);
       router.replace('/');
     } catch (err: any) {
@@ -51,12 +52,12 @@ export default function Login() {
 
   return (
     <View style={{ flex: 1, backgroundColor: isDark ? '#111827' : '#f3f4f6', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24 }}>
-      
+
       <View style={{ width: '100%', maxWidth: 448, backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 32, borderRadius: 16, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 6 }}>
         <View style={{ alignItems: 'center', marginBottom: 32 }}>
-          <Image 
-            source={require('../assets/ias_logo.png')} 
-            style={{ width: 120, height: 120, borderRadius: 24, marginBottom: 16 }} 
+          <Image
+            source={require('../assets/ias_logo.png')}
+            style={{ width: 120, height: 120, borderRadius: 24, marginBottom: 16 }}
           />
           <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 24, fontWeight: 'bold' }}>IAS</Text>
           <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 14, marginTop: 4 }}>Intelligent Aspirant's Suite</Text>
@@ -71,7 +72,7 @@ export default function Login() {
         <View style={{ gap: 16, marginBottom: 24 }}>
           <View>
             <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', marginBottom: 8, fontWeight: '500' }}>Email Address</Text>
-            <TextInput 
+            <TextInput
               style={{ backgroundColor: isDark ? '#111827' : '#f9fafb', color: isDark ? 'white' : '#111827', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', outlineStyle: 'none' } as any}
               placeholder="madhan@upsc.kms"
               placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
@@ -83,8 +84,21 @@ export default function Login() {
           </View>
 
           <View>
+            <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', marginBottom: 8, fontWeight: '500' }}>Mobile Number</Text>
+            <TextInput
+              style={{ backgroundColor: isDark ? '#111827' : '#f9fafb', color: isDark ? 'white' : '#111827', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', outlineStyle: 'none' } as any}
+              placeholder="9876543210"
+              placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
+              value={mobile}
+              onChangeText={(val) => setMobile(val.replace(/[^0-9]/g, '').slice(0, 10))}
+              keyboardType="phone-pad"
+              maxLength={10}
+            />
+          </View>
+
+          <View>
             <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', marginBottom: 8, fontWeight: '500' }}>Password</Text>
-            <TextInput 
+            <TextInput
               style={{ backgroundColor: isDark ? '#111827' : '#f9fafb', color: isDark ? 'white' : '#111827', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', outlineStyle: 'none' } as any}
               placeholder="••••••••"
               placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
@@ -95,7 +109,7 @@ export default function Login() {
           </View>
         </View>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={handleStandardLogin}
           disabled={loading}
           style={{ backgroundColor: loading ? '#1e40af' : '#2563eb', padding: 16, borderRadius: 12, alignItems: 'center', marginBottom: 16 }}

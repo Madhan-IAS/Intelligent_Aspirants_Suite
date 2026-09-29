@@ -65,17 +65,8 @@ export default function GSModule() {
         return t;
       }));
 
-      let res;
-      try {
-        res = await api.put(`/topics/${topicId}`, {
-          completed: nextCompleted,
-          status: nextStatus
-        });
-      } catch (err) {
-        res = await api.patch(`/topics/${topicId}/status`, {
-          status: nextStatus
-        });
-      }
+      // Use /toggle endpoint which correctly writes to UserTopicProgress (per-user)
+      const res = await api.patch(`/topics/${topicId}/toggle`);
 
       // Update with server response to get accurate completedAt
       if (res?.data) {

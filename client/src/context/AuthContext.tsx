@@ -7,6 +7,7 @@ type UserProfile = {
   _id: string;
   name: string;
   email: string;
+  mobile?: string;
   role?: string;
   subscriptionStatus?: string;
   subscriptionTier?: string;

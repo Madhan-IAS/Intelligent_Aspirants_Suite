@@ -20,6 +20,7 @@ export default function Profile() {
   const [formData, setFormData] = useState({
     name: '',
     bio: '',
+    mobile: '',
     targetAttempt: '',
     optionalSubject: '',
     dailyTargetHours: '',
@@ -35,6 +36,7 @@ export default function Profile() {
       setFormData({
         name: user.name || '',
         bio: user.bio || '',
+        mobile: user.mobile || '',
         targetAttempt: user.targetAttempt?.toString() || '',
         optionalSubject: user.optionalSubject || '',
         dailyTargetHours: user.dailyTargetHours?.toString() || '',
@@ -78,6 +80,7 @@ export default function Profile() {
       const payload = {
         name: formData.name,
         bio: formData.bio,
+        mobile: formData.mobile,
         targetAttempt: parseInt(formData.targetAttempt) || undefined,
         optionalSubject: formData.optionalSubject,
         dailyTargetHours: parseInt(formData.dailyTargetHours) || undefined,
@@ -209,6 +212,20 @@ export default function Profile() {
                   placeholder="e.g. 10"
                   placeholderTextColor={isDark ? '#4b5563' : '#9ca3af'}
                 />
+              </View>
+
+              <View>
+                <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', marginBottom: 8, fontWeight: '500' }}>Mobile Number (Login Security)</Text>
+                <TextInput
+                  style={{ backgroundColor: isDark ? '#111827' : '#f9fafb', color: isDark ? 'white' : '#111827', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', outlineStyle: 'none' } as any}
+                  value={formData.mobile}
+                  onChangeText={(t) => setFormData({ ...formData, mobile: t.replace(/[^0-9]/g, '').slice(0, 10) })}
+                  keyboardType="phone-pad"
+                  maxLength={10}
+                  placeholder="9876543210"
+                  placeholderTextColor={isDark ? '#4b5563' : '#9ca3af'}
+                />
+                <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11, marginTop: 6 }}>This number is required during login for account security.</Text>
               </View>
             </View>
           </View>

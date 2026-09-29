@@ -239,16 +239,20 @@ exports.getProfile = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const {
-      name, bio, targetAttempt, optionalSubject,
+      name, bio, mobile, targetAttempt, optionalSubject,
       dailyTargetHours, preferredRevisionPattern,
       examStage, theme, studyPreferences
     } = req.body;
+
+    if (mobile && !/^[0-9]{10}$/.test(mobile)) {
+      return res.status(400).json({ message: 'Please provide a valid 10-digit mobile number' });
+    }
 
     const user = await User.findByIdAndUpdate(
       req.user.id,
       {
         $set: {
-          name, bio, targetAttempt, optionalSubject,
+          name, bio, mobile, targetAttempt, optionalSubject,
           dailyTargetHours, preferredRevisionPattern,
           examStage, theme, studyPreferences
         }

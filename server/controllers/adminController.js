@@ -38,28 +38,40 @@ exports.getAllUsers = async (req, res) => {
 };
 
 // POST /api/admin/approve/:id
-// Approve a user's subscription
+// Approve a user's subscription (with custom plan support)
 exports.approveUser = async (req, res) => {
     try {
-        const { durationMonths, tier } = req.body; // How many months + which tier
-        const months = durationMonths || 1; // Default 1 month
-        const selectedTier = tier || 'foundation'; // Default foundation
+        const { durationMonths, tier, customExpiryDate, aiEssayLimitOverride, adminNote, selectedTier: fallbackTier, approvedAmount: manualAmount, paymentMethod } = req.body;
 
-        const expiry = new Date();
-        expiry.setMonth(expiry.getMonth() + months);
+        const TIER_PRICES = {
+            foundation: { monthly: 99, annual: 999 },
+            aspirant: { monthly: 199, annual: 1999 },
+            topper: { monthly: 299, annual: 2999 }
+        };
+
+        const finalTier = tier || fallbackTier || 'foundation';
+        const months = durationMonths || 1;
+
+        // Set expiry logic
+        let expiry = new Date();
+        if (customExpiryDate) {
+            expiry = new Date(customExpiryDate);
+        } else {
+            expiry.setMonth(expiry.getMonth() + months);
+        }
 
         const user = await User.findByIdAndUpdate(
             req.params.id,
             {
                 subscriptionStatus: 'active',
-                subscriptionTier: selectedTier,
+                subscriptionTier: finalTier,
                 subscriptionExpiry: expiry,
                 isTrial: false,
                 usageStats: {
                     aiQuizGenerated: 0,
                     aiQuestionGenerated: 0,
                     aiAnswerEvaluations: 0,
-                    aiEssayEvaluations: 0,
+                    aiEssayEvaluations: aiEssayLimitOverride || 0,
                     aiTopicSummaries: 0,
                     aiRecommendations: 0,
                     aiAnalyticPrompts: 0,
@@ -72,14 +84,34 @@ exports.approveUser = async (req, res) => {
 
         if (!user) return res.status(404).json({ message: 'User not found' });
 
-        // Update the subscription proof record
+        // Auto-calculate amount from tier pricing if not manually set
+        const sub = await Subscription.findOne({ userId: req.params.id, status: 'pending' }).sort({ createdAt: -1 });
+        const isAnnual = sub?.isAnnual || false;
+        const tierPrice = TIER_PRICES[finalTier] || TIER_PRICES.foundation;
+        const finalMethod = paymentMethod || 'manual';
+        let finalAmount;
+        if (manualAmount !== undefined && manualAmount !== null && manualAmount !== '') {
+            finalAmount = Number(manualAmount);
+        } else if (finalMethod === 'scholarship') {
+            finalAmount = 0;
+        } else {
+            finalAmount = isAnnual ? tierPrice.annual : tierPrice.monthly * months;
+        }
+
+        // Update the subscription proof record if exists
         await Subscription.findOneAndUpdate(
             { userId: req.params.id, status: 'pending' },
             {
                 status: 'approved',
                 reviewedBy: req.user.id,
                 reviewedAt: new Date(),
-                reviewNote: `Approved for ${months} month(s)`
+                reviewNote: customExpiryDate ? `Custom approval until ${expiry.toISOString().split('T')[0]}` : `Approved for ${months} month(s)`,
+                adminNote: adminNote || '',
+                approvedTier: finalTier,
+                approvedDuration: months,
+                approvedExpiry: expiry,
+                approvedAmount: finalAmount,
+                paymentMethod: finalMethod
             }
         );
 
@@ -164,6 +196,97 @@ exports.deleteUser = async (req, res) => {
         await Subscription.deleteMany({ userId: req.params.id });
 
         res.json({ message: 'User permanently deleted from the platform', deletedUserId: req.params.id });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// GET /api/admin/revenue
+// Revenue analytics for the admin dashboard
+exports.getRevenueAnalytics = async (req, res) => {
+    try {
+        const allApproved = await Subscription.find({ status: 'approved', approvedAmount: { $exists: true } });
+
+        const totalRevenue = allApproved.reduce((sum, s) => sum + (s.approvedAmount || 0), 0);
+
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const thisMonthRevenue = allApproved
+            .filter(s => s.reviewedAt && new Date(s.reviewedAt) >= startOfMonth)
+            .reduce((sum, s) => sum + (s.approvedAmount || 0), 0);
+
+        // By tier
+        const revenueByTier = { foundation: 0, aspirant: 0, topper: 0 };
+        allApproved.forEach(s => {
+            if (s.approvedTier && revenueByTier.hasOwnProperty(s.approvedTier)) {
+                revenueByTier[s.approvedTier] += (s.approvedAmount || 0);
+            }
+        });
+
+        // By method
+        const revenueByMethod = { manual: 0, gateway: 0, scholarship: 0 };
+        allApproved.forEach(s => {
+            const method = s.paymentMethod || 'manual';
+            if (revenueByMethod.hasOwnProperty(method)) {
+                revenueByMethod[method] += (s.approvedAmount || 0);
+            }
+        });
+
+        // Monthly trend (last 6 months)
+        const monthlyTrend = [];
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59);
+            const monthLabel = d.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
+            const monthRevenue = allApproved
+                .filter(s => s.reviewedAt && new Date(s.reviewedAt) >= d && new Date(s.reviewedAt) <= end)
+                .reduce((sum, s) => sum + (s.approvedAmount || 0), 0);
+            monthlyTrend.push({ month: monthLabel, revenue: monthRevenue });
+        }
+
+        res.json({ totalRevenue, thisMonthRevenue, revenueByTier, revenueByMethod, monthlyTrend });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// GET /api/admin/payment-history
+// Full approval/rejection ledger
+exports.getPaymentHistory = async (req, res) => {
+    try {
+        const history = await Subscription.find({ status: { $in: ['approved', 'rejected'] } })
+            .populate('userId', 'name email')
+            .populate('reviewedBy', 'name')
+            .sort({ reviewedAt: -1 });
+
+        const records = history.map(s => ({
+            _id: s._id,
+            userName: s.userId?.name || 'Deleted User',
+            userEmail: s.userId?.email || '',
+            requestedTier: s.requestedTier,
+            isAnnual: s.isAnnual,
+            approvedTier: s.approvedTier,
+            approvedDuration: s.approvedDuration,
+            approvedExpiry: s.approvedExpiry,
+            approvedAmount: s.approvedAmount || 0,
+            paymentMethod: s.paymentMethod || 'manual',
+            status: s.status,
+            reviewNote: s.reviewNote,
+            adminNote: s.adminNote,
+            reviewedBy: s.reviewedBy?.name || 'System',
+            reviewedAt: s.reviewedAt,
+            createdAt: s.createdAt
+        }));
+
+        // Summary counts
+        const totalApproved = records.filter(r => r.status === 'approved').length;
+        const totalRejected = records.filter(r => r.status === 'rejected').length;
+        const totalCollected = records.filter(r => r.status === 'approved').reduce((s, r) => s + r.approvedAmount, 0);
+
+        res.json({
+            summary: { total: records.length, approved: totalApproved, rejected: totalRejected, collected: totalCollected },
+            records
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

@@ -71,30 +71,21 @@ export default function SubscriptionScreen() {
         return () => clearInterval(interval);
     }, []);
 
-    const handleSubmitProof = async () => {
-        if (!utrNumber.trim()) {
-            setError('Please enter your UTR / Transaction ID');
-            return;
-        }
-        if (utrNumber.trim().length < 6) {
-            setError('UTR number seems too short. Please check again.');
-            return;
-        }
-
+    const handleRequestPlan = async () => {
         setLoading(true);
         setError('');
-        const info = TIER_INFO[selectedTier];
-        const amount = isAnnual ? info?.annualPriceNum : info?.priceNum;
-
         try {
-            await api.post('/subscription/submit-proof', {
-                utrNumber: utrNumber.trim(),
-                amount: amount || 99,
+            await api.post('/subscription/request', {
+                requestedTier: selectedTier,
+                isAnnual
             });
             setSuccess(true);
-            setTimeout(() => router.replace('/pending-approval'), 1500);
+            setTimeout(() => {
+                // Instantly send them to their dashboard because they get 3-day proxy access!
+                router.replace('/');
+            }, 1500);
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to submit payment proof');
+            setError(err.response?.data?.message || 'Failed to request plan');
         } finally {
             setLoading(false);
         }
@@ -171,7 +162,7 @@ export default function SubscriptionScreen() {
             )}
 
             {/* ====== TIER SELECTION ====== */}
-            {!showPayment ? (
+            {!showPayment && (
                 <>
                     <View style={{
                         width: '100%', maxWidth: 800,
@@ -261,163 +252,43 @@ export default function SubscriptionScreen() {
                         })}
                     </View>
 
-                    {/* Continue Button */}
+                    {/* Continue / Request Button */}
                     <TouchableOpacity
-                        onPress={() => setShowPayment(true)}
+                        onPress={handleRequestPlan}
+                        disabled={loading}
                         style={{
                             marginTop: 24, width: '100%', maxWidth: 400,
-                            backgroundColor: TIER_INFO[selectedTier].color,
+                            backgroundColor: loading ? '#6b7280' : TIER_INFO[selectedTier].color,
                             padding: 16, borderRadius: 14, alignItems: 'center',
                             flexDirection: 'row', justifyContent: 'center', gap: 8,
                         }}
                     >
-                        <Ionicons name="card" size={20} color="white" />
-                        <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>
-                            Continue with {TIER_INFO[selectedTier].name} — {isAnnual ? TIER_INFO[selectedTier].annualPrice : TIER_INFO[selectedTier].price}/{isAnnual ? 'yr' : 'mo'}
-                        </Text>
-                    </TouchableOpacity>
-                </>
-            ) : (
-                /* ====== PAYMENT SCREEN ====== */
-                <View style={{
-                    width: '100%', maxWidth: 448,
-                    backgroundColor: isDark ? '#1f2937' : '#ffffff',
-                    borderRadius: 20, overflow: 'hidden',
-                    borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb',
-                    elevation: 8,
-                }}>
-                    {/* Amount Banner */}
-                    <View style={{
-                        backgroundColor: TIER_INFO[selectedTier].color,
-                        paddingVertical: 18, alignItems: 'center',
-                    }}>
-                        <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, letterSpacing: 1 }}>
-                            {TIER_INFO[selectedTier].icon} {TIER_INFO[selectedTier].name.toUpperCase()} PLAN
-                        </Text>
-                        <Text style={{ color: 'white', fontSize: 34, fontWeight: 'bold', marginTop: 4 }}>
-                            {isAnnual ? TIER_INFO[selectedTier].annualPrice : TIER_INFO[selectedTier].price}
-                        </Text>
-                        <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 2 }}>{isAnnual ? 'per year' : 'per month'}</Text>
-                        <TouchableOpacity onPress={() => setShowPayment(false)} style={{ marginTop: 8 }}>
-                            <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, textDecorationLine: 'underline' }}>
-                                ← Change plan
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    <View style={{ padding: 24 }}>
-                        {/* QR Code */}
-                        <View style={{ alignItems: 'center', marginBottom: 20 }}>
-                            <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 14, fontWeight: '600', marginBottom: 14 }}>
-                                📱 Scan QR to Pay via UPI
-                            </Text>
-                            <Animated.View style={{
-                                opacity: fadeAnim,
-                                backgroundColor: 'white', padding: 10, borderRadius: 14,
-                                elevation: 3, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4, shadowOffset: { width: 0, height: 2 },
-                            }}>
-                                <Image
-                                    source={QR_IMAGES[currentQR]}
-                                    style={{ width: 180, height: 180, borderRadius: 8 }}
-                                    resizeMode="contain"
-                                />
-                            </Animated.View>
-                            <View style={{ flexDirection: 'row', marginTop: 10, gap: 6 }}>
-                                {QR_IMAGES.map((_, i) => (
-                                    <View key={i} style={{
-                                        width: 7, height: 7, borderRadius: 4,
-                                        backgroundColor: i === currentQR ? TIER_INFO[selectedTier].color : (isDark ? '#4b5563' : '#d1d5db'),
-                                    }} />
-                                ))}
-                            </View>
-                        </View>
-
-                        {/* UPI Details */}
-                        <View style={{
-                            backgroundColor: isDark ? '#111827' : '#f0f9ff',
-                            padding: 14, borderRadius: 12, marginBottom: 20,
-                            borderWidth: 1, borderColor: isDark ? '#1e3a5f' : '#bfdbfe',
-                        }}>
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12 }}>UPI ID</Text>
-                                <Text style={{ color: isDark ? '#60a5fa' : '#2563eb', fontWeight: 'bold', fontSize: 12 }}>{UPI_ID}</Text>
-                            </View>
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12 }}>Mobile</Text>
-                                <Text style={{ color: isDark ? '#60a5fa' : '#2563eb', fontWeight: 'bold', fontSize: 12 }}>{UPI_MOBILE}</Text>
-                            </View>
-                        </View>
-
-                        {/* Divider */}
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-                            <View style={{ flex: 1, height: 1, backgroundColor: isDark ? '#374151' : '#e5e7eb' }} />
-                            <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', marginHorizontal: 12, fontSize: 11 }}>AFTER PAYMENT</Text>
-                            <View style={{ flex: 1, height: 1, backgroundColor: isDark ? '#374151' : '#e5e7eb' }} />
-                        </View>
-
-                        {/* Error */}
-                        {error ? (
-                            <View style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', padding: 10, borderRadius: 8, marginBottom: 14, borderWidth: 1, borderColor: 'rgba(239, 68, 68, 0.4)' }}>
-                                <Text style={{ color: '#ef4444', textAlign: 'center', fontSize: 13 }}>{error}</Text>
-                            </View>
-                        ) : null}
-
-                        {/* Success */}
-                        {success ? (
-                            <View style={{ backgroundColor: 'rgba(34, 197, 94, 0.15)', padding: 14, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(34, 197, 94, 0.4)' }}>
-                                <Ionicons name="checkmark-circle" size={30} color="#22c55e" />
-                                <Text style={{ color: '#22c55e', fontWeight: 'bold', fontSize: 15, marginTop: 6 }}>Payment Proof Submitted!</Text>
-                                <Text style={{ color: '#86efac', fontSize: 12, marginTop: 2 }}>Redirecting...</Text>
-                            </View>
-                        ) : (
+                        {loading ? <ActivityIndicator color="white" /> : (
                             <>
-                                {/* UTR Input */}
-                                <View style={{ marginBottom: 16 }}>
-                                    <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', marginBottom: 6, fontWeight: '500', fontSize: 13 }}>
-                                        UTR / Transaction Reference Number
-                                    </Text>
-                                    <TextInput
-                                        style={{
-                                            backgroundColor: isDark ? '#111827' : '#f9fafb',
-                                            color: isDark ? 'white' : '#111827',
-                                            padding: 14, borderRadius: 12,
-                                            borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb',
-                                            fontSize: 14, letterSpacing: 0.5,
-                                            ...(Platform.OS === 'web' ? { outlineStyle: 'none' } : {}),
-                                        } as any}
-                                        placeholder="Enter 12-digit UTR number"
-                                        placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
-                                        value={utrNumber}
-                                        onChangeText={setUtrNumber}
-                                        autoCapitalize="characters"
-                                    />
-                                    <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 10, marginTop: 4 }}>
-                                        💡 Find UTR in your UPI app's transaction history
-                                    </Text>
-                                </View>
-
-                                {/* Submit */}
-                                <TouchableOpacity
-                                    onPress={handleSubmitProof}
-                                    disabled={loading}
-                                    style={{
-                                        backgroundColor: loading ? '#6b7280' : TIER_INFO[selectedTier].color,
-                                        padding: 15, borderRadius: 12, alignItems: 'center',
-                                        flexDirection: 'row', justifyContent: 'center', gap: 8,
-                                    }}
-                                >
-                                    {loading ? <ActivityIndicator color="white" /> : (
-                                        <>
-                                            <Ionicons name="send" size={17} color="white" />
-                                            <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 15 }}>Submit Payment Proof</Text>
-                                        </>
-                                    )}
-                                </TouchableOpacity>
+                                <Ionicons name="flash" size={20} color="white" />
+                                <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>
+                                    Request {TIER_INFO[selectedTier].name} Plan
+                                </Text>
                             </>
                         )}
-                    </View>
-                </View>
+                    </TouchableOpacity>
+
+                    {/* Error / Success Overlay */}
+                    {error ? (
+                        <View style={{ marginTop: 16, backgroundColor: 'rgba(239, 68, 68, 0.15)', padding: 10, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(239, 68, 68, 0.4)' }}>
+                            <Text style={{ color: '#ef4444', textAlign: 'center', fontSize: 13 }}>{error}</Text>
+                        </View>
+                    ) : null}
+                    {success ? (
+                        <View style={{ marginTop: 16, backgroundColor: 'rgba(34, 197, 94, 0.15)', padding: 14, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(34, 197, 94, 0.4)' }}>
+                            <Ionicons name="checkmark-circle" size={30} color="#22c55e" />
+                            <Text style={{ color: '#22c55e', fontWeight: 'bold', fontSize: 15, marginTop: 6 }}>Request Sent Successfully!</Text>
+                            <Text style={{ color: '#86efac', fontSize: 13, marginTop: 2, textAlign: 'center' }}>You've been granted 3-day temporary access! Redirecting to Dashboard...</Text>
+                        </View>
+                    ) : null}
+                </>
             )}
+
 
             {/* ====== TRANSACTION HISTORY ====== */}
             {!showPayment && history.length > 0 && (
@@ -430,7 +301,7 @@ export default function SubscriptionScreen() {
                             marginBottom: 10, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb'
                         }}>
                             <View>
-                                <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold' }}>UTR: {tx.utrNumber}</Text>
+                                <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold' }}>Requested: {tx.requestedTier ? tx.requestedTier.toUpperCase() : 'Tier Upgrade'}</Text>
                                 <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12, marginTop: 4 }}>
                                     {new Date(tx.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                 </Text>

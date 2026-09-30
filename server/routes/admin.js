@@ -11,6 +11,7 @@ router.post('/approve/:id', auth, adminAuth, adminController.approveUser);
 router.post('/reject/:id', auth, adminAuth, adminController.rejectUser);
 router.post('/revoke/:id', auth, adminAuth, adminController.revokeUser);
 router.delete('/user/:id', auth, adminAuth, adminController.deleteUser);
+router.put('/update-name/:id', auth, adminAuth, adminController.updateUserName);
 router.get('/revenue', auth, adminAuth, adminController.getRevenueAnalytics);
 router.get('/payment-history', auth, adminAuth, adminController.getPaymentHistory);
 

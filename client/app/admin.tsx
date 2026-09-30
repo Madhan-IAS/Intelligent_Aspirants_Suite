@@ -47,6 +47,9 @@ export default function AdminDashboard() {
     const [approvedAmount, setApprovedAmount] = useState('');
     const [paymentMethod, setPaymentMethod] = useState('manual');
 
+    const [editUserId, setEditUserId] = useState<string | null>(null);
+    const [editUserName, setEditUserName] = useState('');
+
     const [revenueData, setRevenueData] = useState<any>(null);
     const [paymentHistory, setPaymentHistory] = useState<any>(null);
 
@@ -135,6 +138,23 @@ export default function AdminDashboard() {
             await fetchData();
         } catch (e: any) {
             console.error('Revoke failed:', e.response?.data?.message);
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    const handleUpdateName = async (userId: string) => {
+        if (!editUserName.trim()) return;
+        setActionLoading(userId);
+        try {
+            await api.put(`/admin/update-name/${userId}`, { name: editUserName.trim() });
+            setEditUserId(null);
+            setEditUserName('');
+            await fetchData();
+        } catch (e: any) {
+            console.error('Update name failed:', e);
+            if (Platform.OS === 'web') window.alert("Failed to update user name");
+            else window.alert("Failed to update user name");
         } finally {
             setActionLoading(null);
         }
@@ -634,9 +654,35 @@ export default function AdminDashboard() {
                     }}>
                         <View style={{ flex: 1 }}>
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 15, fontWeight: '600' }}>
-                                    {u.name}
-                                </Text>
+                                {editUserId === u._id ? (
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
+                                        <TextInput
+                                            style={{
+                                                backgroundColor: isDark ? '#111827' : '#f9fafb', color: isDark ? 'white' : '#111827',
+                                                paddingVertical: 4, paddingHorizontal: 8, borderRadius: 6, borderWidth: 1, borderColor: isDark ? '#374151' : '#cbd5e1',
+                                                fontSize: 14, flex: 1
+                                            }}
+                                            autoFocus
+                                            value={editUserName}
+                                            onChangeText={setEditUserName}
+                                        />
+                                        <TouchableOpacity onPress={() => handleUpdateName(u._id)} disabled={actionLoading === u._id}>
+                                            {actionLoading === u._id ? <ActivityIndicator size="small" color="#22c55e" /> : <Ionicons name="checkmark-circle" size={20} color="#22c55e" />}
+                                        </TouchableOpacity>
+                                        <TouchableOpacity onPress={() => { setEditUserId(null); setEditUserName(''); }}>
+                                            <Ionicons name="close-circle" size={20} color="#ef4444" />
+                                        </TouchableOpacity>
+                                    </View>
+                                ) : (
+                                    <>
+                                        <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 15, fontWeight: '600' }}>
+                                            {u.name}
+                                        </Text>
+                                        <TouchableOpacity onPress={() => { setEditUserId(u._id); setEditUserName(u.name); }}>
+                                            <Ionicons name="pencil" size={14} color={isDark ? '#9ca3af' : '#6b7280'} />
+                                        </TouchableOpacity>
+                                    </>
+                                )}
                                 {u.role === 'admin' && (
                                     <View style={{ backgroundColor: 'rgba(168, 85, 247, 0.15)', paddingVertical: 2, paddingHorizontal: 8, borderRadius: 8 }}>
                                         <Text style={{ color: '#a855f7', fontSize: 10, fontWeight: 'bold' }}>ADMIN</Text>

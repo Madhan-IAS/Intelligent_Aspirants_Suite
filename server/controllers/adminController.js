@@ -6,7 +6,11 @@ const Subscription = require('../models/Subscription');
 exports.getPendingUsers = async (req, res) => {
     try {
         const users = await User.find({
-            subscriptionStatus: { $in: ['pending', 'pending_review'] }
+            $or: [
+                { subscriptionStatus: { $in: ['pending', 'pending_review', 'expired'] } },
+                { subscriptionStatus: { $exists: false } },
+                { subscriptionStatus: null }
+            ]
         }).select('-passwordHash').sort({ createdAt: -1 });
 
         // Attach latest subscription proof for each user
@@ -196,6 +200,31 @@ exports.deleteUser = async (req, res) => {
         await Subscription.deleteMany({ userId: req.params.id });
 
         res.json({ message: 'User permanently deleted from the platform', deletedUserId: req.params.id });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// PUT /api/admin/update-name/:id
+// Admin updates a user's display name
+exports.updateUserName = async (req, res) => {
+    try {
+        const { name } = req.body;
+        if (!name || name.trim().length === 0) {
+            return res.status(400).json({ message: 'Name cannot be empty' });
+        }
+
+        const user = await User.findByIdAndUpdate(
+            req.params.id,
+            { name: name.trim() },
+            { new: true }
+        ).select('-passwordHash');
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.json({ message: 'User name updated successfully', user });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

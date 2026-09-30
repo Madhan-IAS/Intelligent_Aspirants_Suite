@@ -90,9 +90,10 @@ exports.approveUser = async (req, res) => {
 
         // Auto-calculate amount from tier pricing if not manually set
         const sub = await Subscription.findOne({ userId: req.params.id, status: 'pending' }).sort({ createdAt: -1 });
-        const isAnnual = sub?.isAnnual || false;
+        const isAnnual = sub?.isAnnual || (months === 12);
         const tierPrice = TIER_PRICES[finalTier] || TIER_PRICES.foundation;
         const finalMethod = paymentMethod || 'manual';
+
         let finalAmount;
         if (manualAmount !== undefined && manualAmount !== null && manualAmount !== '') {
             finalAmount = Number(manualAmount);
@@ -102,21 +103,28 @@ exports.approveUser = async (req, res) => {
             finalAmount = isAnnual ? tierPrice.annual : tierPrice.monthly * months;
         }
 
-        // Update the subscription proof record if exists
+        // Update the subscription proof record if exists, or create a new ledger entry if manual
         await Subscription.findOneAndUpdate(
             { userId: req.params.id, status: 'pending' },
             {
-                status: 'approved',
-                reviewedBy: req.user.id,
-                reviewedAt: new Date(),
-                reviewNote: customExpiryDate ? `Custom approval until ${expiry.toISOString().split('T')[0]}` : `Approved for ${months} month(s)`,
-                adminNote: adminNote || '',
-                approvedTier: finalTier,
-                approvedDuration: months,
-                approvedExpiry: expiry,
-                approvedAmount: finalAmount,
-                paymentMethod: finalMethod
-            }
+                $set: {
+                    status: 'approved',
+                    reviewedBy: req.user.id,
+                    reviewedAt: new Date(),
+                    reviewNote: customExpiryDate ? `Custom approval until ${expiry.toISOString().split('T')[0]}` : `Approved for ${months} month(s)`,
+                    adminNote: adminNote || '',
+                    approvedTier: finalTier,
+                    approvedDuration: months,
+                    approvedExpiry: expiry,
+                    approvedAmount: finalAmount,
+                    paymentMethod: finalMethod,
+                    isAnnual: isAnnual
+                },
+                $setOnInsert: {
+                    requestedTier: finalTier, // fallback if this is a purely manual approval
+                }
+            },
+            { new: true, upsert: true }
         );
 
         res.json({ message: `User approved for ${months} month(s)`, user });

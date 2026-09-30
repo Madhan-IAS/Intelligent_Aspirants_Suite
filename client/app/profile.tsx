@@ -336,6 +336,30 @@ export default function Profile() {
                 {exporting ? 'Exporting JSON Dump...' : 'Export Full Data Backup (JSON)'}
               </Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              onPress={async () => {
+                try {
+                  const res = await api.get('/export/progress', { responseType: 'blob' });
+                  if (Platform.OS === 'web') {
+                    const blob = new Blob([res.data], { type: 'text/csv' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `upsc-progress-${new Date().toISOString().split('T')[0]}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                  }
+                  showToast('success', 'CSV progress report exported!');
+                } catch (error) {
+                  showToast('error', 'Failed to export CSV.');
+                }
+              }}
+              style={{ backgroundColor: '#3b82f6', paddingVertical: 14, borderRadius: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', marginTop: 12 }}
+            >
+              <Ionicons name="document-text-outline" size={20} color="white" style={{ marginRight: 8 }} />
+              <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 15 }}>Export Progress Report (CSV)</Text>
+            </TouchableOpacity>
           </View>
 
         </View>

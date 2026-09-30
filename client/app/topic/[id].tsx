@@ -77,10 +77,12 @@ export default function TopicKnowledgeHub() {
   const [expandedHints, setExpandedHints] = useState<Record<number, boolean>>({});
   const [aiInterlinkages, setAiInterlinkages] = useState<any>(null);
   const [fetchingInterlinkages, setFetchingInterlinkages] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
 
   useEffect(() => {
     fetchTopicData();
     fetchTopicFlashcards();
+    if (id) api.get(`/bookmarks/check/${id}`).then(r => setIsBookmarked(r.data.bookmarked)).catch(() => { });
   }, [id]);
 
   const fetchTopicData = async () => {
@@ -234,6 +236,17 @@ export default function TopicKnowledgeHub() {
           <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 16 }}>
             <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16, width: 40, height: 40, backgroundColor: isDark ? '#1f2937' : '#e5e7eb', borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="arrow-back" size={20} color={isDark ? 'white' : '#111827'} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={async () => {
+                try {
+                  const res = await api.post(`/bookmarks/toggle/${id}`);
+                  setIsBookmarked(res.data.bookmarked);
+                } catch (e) { console.error(e); }
+              }}
+              style={{ marginRight: 12, width: 40, height: 40, backgroundColor: isBookmarked ? 'rgba(245, 158, 11, 0.2)' : (isDark ? '#1f2937' : '#e5e7eb'), borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: isBookmarked ? 1 : 0, borderColor: '#f59e0b' }}
+            >
+              <Ionicons name={isBookmarked ? 'bookmark' : 'bookmark-outline'} size={18} color={isBookmarked ? '#f59e0b' : (isDark ? '#9ca3af' : '#6b7280')} />
             </TouchableOpacity>
             <View style={{ flex: 1 }}>
               <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1 }}>

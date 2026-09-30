@@ -34,6 +34,16 @@ exports.deletePYQ = async (req, res) => {
   }
 };
 
+exports.updatePYQ = async (req, res) => {
+  try {
+    const pyq = await PYQ.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!pyq) return res.status(404).json({ message: 'PYQ not found' });
+    res.json(pyq);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 exports.getPYQById = async (req, res) => {
   try {
     const pyq = await PYQ.findById(req.params.id)

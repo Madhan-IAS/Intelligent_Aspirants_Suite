@@ -54,6 +54,16 @@ exports.toggleSaveArticle = async (req, res) => {
   }
 };
 
+exports.updateArticle = async (req, res) => {
+  try {
+    const article = await CurrentAffair.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!article) return res.status(404).json({ message: 'Article not found' });
+    res.json(article);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 exports.refreshCurrentAffairs = async (req, res) => {
   try {
     const { runScraper } = require('../workers/currentAffairsScraper');

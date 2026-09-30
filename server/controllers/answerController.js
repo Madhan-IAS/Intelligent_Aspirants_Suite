@@ -54,3 +54,32 @@ exports.upvoteAnswer = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+exports.deleteAnswer = async (req, res) => {
+  try {
+    const answer = await Answer.findOne({ _id: req.params.id, userId: req.user.id });
+    if (!answer) return res.status(404).json({ message: 'Answer not found or not yours' });
+    await Answer.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Answer deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.updateAnswer = async (req, res) => {
+  try {
+    const answer = await Answer.findOne({ _id: req.params.id, userId: req.user.id });
+    if (!answer) return res.status(404).json({ message: 'Answer not found or not yours' });
+
+    const { content, wordCount, timeTaken, status } = req.body;
+    if (content !== undefined) answer.content = content;
+    if (wordCount !== undefined) answer.wordCount = wordCount;
+    if (timeTaken !== undefined) answer.timeTaken = timeTaken;
+    if (status !== undefined) answer.status = status;
+
+    const updated = await answer.save();
+    res.json(updated);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};

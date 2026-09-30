@@ -113,6 +113,8 @@ app.use('/api/mind-maps', mindMapsRoutes);
 app.use('/api/answers/gallery', require('./routes/answerGallery'));
 app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/bookmarks', require('./routes/bookmarks'));
+app.use('/api/export', require('./routes/export'));
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
@@ -149,6 +151,23 @@ if (MONGO_URI) {
           }
         } catch (err) {
           console.error('[CRON] Scraper failed:', err.message);
+        }
+      });
+
+      // Schedule Subscription Auto-Expire at midnight IST (= 18:30 UTC)
+      cron.schedule('30 18 * * *', async () => {
+        console.log('[CRON] Running subscription auto-expire check...');
+        try {
+          const User = require('./models/User');
+          const result = await User.updateMany(
+            { subscriptionStatus: 'active', subscriptionExpiry: { $lte: new Date() }, role: { $ne: 'admin' } },
+            { $set: { subscriptionStatus: 'expired', subscriptionTier: 'foundation' } }
+          );
+          if (result.modifiedCount > 0) {
+            console.log(`[CRON] Expired ${result.modifiedCount} subscription(s).`);
+          }
+        } catch (err) {
+          console.error('[CRON] Subscription auto-expire failed:', err.message);
         }
       });
     })

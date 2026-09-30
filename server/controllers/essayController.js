@@ -44,9 +44,16 @@ exports.getEssayTheme = async (req, res) => {
 // GET /api/answers/gallery/:topicId — sample/model answers for a topic
 exports.getAnswerGallery = async (req, res) => {
     try {
-        const answers = await Answer.find({
-            status: 'Evaluated',
-        })
+        const PYQ = require('../models/PYQ');
+        const topicPyqIds = await PYQ.find({ topicId: req.params.topicId }).select('_id');
+        const pyqIds = topicPyqIds.map(p => p._id);
+
+        const filter = { status: 'Evaluated' };
+        if (pyqIds.length > 0) {
+            filter.pyqId = { $in: pyqIds };
+        }
+
+        const answers = await Answer.find(filter)
             .populate('pyqId', 'question year marks directive')
             .sort({ score: -1 })
             .limit(10);

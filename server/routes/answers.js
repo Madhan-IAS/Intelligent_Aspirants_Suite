@@ -9,5 +9,7 @@ router.get('/', answerController.getAnswers);
 router.get('/pyq/:pyqId', answerController.getAnswersForPYQ);
 router.post('/', answerController.saveAnswer);
 router.post('/:id/upvote', answerController.upvoteAnswer);
+router.put('/:id', answerController.updateAnswer);
+router.delete('/:id', answerController.deleteAnswer);
 
 module.exports = router;

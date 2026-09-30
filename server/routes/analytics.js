@@ -19,7 +19,7 @@ router.get('/heatmap', async (req, res) => {
 
     const [tasks, answers, sessions] = await Promise.all([
       Task.find({ user: req.user.id, completed: true, updatedAt: { $gte: oneYearAgo } }),
-      Answer.find({ createdAt: { $gte: oneYearAgo } }),
+      Answer.find({ userId: req.user.id, createdAt: { $gte: oneYearAgo } }),
       FocusSession.find({ userId: req.user.id, date: { $gte: oneYearAgo } })
     ]);
 

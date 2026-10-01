@@ -897,297 +897,298 @@ export default function AdminDashboard() {
                         const isExpiringSoon = daysLeft !== null && daysLeft > 0 && daysLeft <= 7;
 
                         return (
-                            <View key={u._id} style={{
-                                backgroundColor: isDark ? '#1f2937' : '#ffffff',
-                                padding: 16, borderRadius: 14, marginBottom: 8,
-                                borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb',
-                                flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'
-                            }}>
-                                <View style={{ flex: 1 }}>
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                        <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 15, fontWeight: '600' }}>
-                                            {u.name}
-                                        </Text>
-                                        <TouchableOpacity onPress={() => {
-                                            setEditUserId(u._id);
-                                            setEditUserName(u.name);
-                                            setEditUserEmail(u.email);
-                                            setEditUserMobile(u.mobile || '');
-                                            setEditUserPassword('');
-                                        }}>
-                                            <Ionicons name="pencil" size={14} color={isDark ? '#9ca3af' : '#6b7280'} />
-                                        </TouchableOpacity>
-                                        {u.role === 'admin' && (
-                                            <View style={{ backgroundColor: 'rgba(168, 85, 247, 0.15)', paddingVertical: 2, paddingHorizontal: 8, borderRadius: 8 }}>
-                                                <Text style={{ color: '#a855f7', fontSize: 10, fontWeight: 'bold' }}>ADMIN</Text>
-                                            </View>
-                                        )}
-                                    </View>
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 4 }}>
-                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                                            <Ionicons name="mail" size={12} color={isDark ? '#6b7280' : '#9ca3af'} />
-                                            <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 12 }}>{u.email}</Text>
+                            <View key={u._id} style={{ marginBottom: 8 }}>
+                                <View style={{
+                                    backgroundColor: isDark ? '#1f2937' : '#ffffff',
+                                    padding: 16, borderRadius: 14,
+                                    borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb',
+                                    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'
+                                }}>
+                                    <View style={{ flex: 1 }}>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                            <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 15, fontWeight: '600' }}>
+                                                {u.name}
+                                            </Text>
+                                            <TouchableOpacity onPress={() => {
+                                                setEditUserId(u._id);
+                                                setEditUserName(u.name);
+                                                setEditUserEmail(u.email);
+                                                setEditUserMobile(u.mobile || '');
+                                                setEditUserPassword('');
+                                            }}>
+                                                <Ionicons name="pencil" size={14} color={isDark ? '#9ca3af' : '#6b7280'} />
+                                            </TouchableOpacity>
+                                            {u.role === 'admin' && (
+                                                <View style={{ backgroundColor: 'rgba(168, 85, 247, 0.15)', paddingVertical: 2, paddingHorizontal: 8, borderRadius: 8 }}>
+                                                    <Text style={{ color: '#a855f7', fontSize: 10, fontWeight: 'bold' }}>ADMIN</Text>
+                                                </View>
+                                            )}
                                         </View>
-                                        {u.mobile && (
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 4 }}>
                                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                                                <Ionicons name="call" size={12} color={isDark ? '#6b7280' : '#9ca3af'} />
-                                                <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 12 }}>{u.mobile}</Text>
+                                                <Ionicons name="mail" size={12} color={isDark ? '#6b7280' : '#9ca3af'} />
+                                                <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 12 }}>{u.email}</Text>
                                             </View>
-                                        )}
-                                        {u.subscriptionStatus === 'active' && u.subscriptionExpiry && (
-                                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                                                <Ionicons name={isExpiringSoon ? "warning" : "calendar"} size={12} color={isExpiringSoon ? "#f59e0b" : (isDark ? '#6b7280' : '#9ca3af')} />
-                                                <Text style={{ color: isExpiringSoon ? "#f59e0b" : (isDark ? '#6b7280' : '#9ca3af'), fontSize: 12, fontWeight: isExpiringSoon ? 'bold' : 'normal' }}>
-                                                    {isExpiringSoon ? `Expires in ${daysLeft}d` : `Exp: ${new Date(u.subscriptionExpiry).toLocaleDateString('en-IN')}`}
+                                            {u.mobile && (
+                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                                    <Ionicons name="call" size={12} color={isDark ? '#6b7280' : '#9ca3af'} />
+                                                    <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 12 }}>{u.mobile}</Text>
+                                                </View>
+                                            )}
+                                            {u.subscriptionStatus === 'active' && u.subscriptionExpiry && (
+                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                                    <Ionicons name={isExpiringSoon ? "warning" : "calendar"} size={12} color={isExpiringSoon ? "#f59e0b" : (isDark ? '#6b7280' : '#9ca3af')} />
+                                                    <Text style={{ color: isExpiringSoon ? "#f59e0b" : (isDark ? '#6b7280' : '#9ca3af'), fontSize: 12, fontWeight: isExpiringSoon ? 'bold' : 'normal' }}>
+                                                        {isExpiringSoon ? `Expires in ${daysLeft}d` : `Exp: ${new Date(u.subscriptionExpiry).toLocaleDateString('en-IN')}`}
+                                                    </Text>
+                                                </View>
+                                            )}
+                                        </View>
+                                    </View>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                        {u.subscriptionTier && TIER_INFO[u.subscriptionTier] && (
+                                            <View style={{ backgroundColor: `${TIER_INFO[u.subscriptionTier].color}20`, paddingVertical: 2, paddingHorizontal: 8, borderRadius: 8 }}>
+                                                <Text style={{ color: TIER_INFO[u.subscriptionTier].color, fontSize: 10, fontWeight: 'bold' }}>
+                                                    {TIER_INFO[u.subscriptionTier].icon} {TIER_INFO[u.subscriptionTier].name}
                                                 </Text>
                                             </View>
                                         )}
+                                        {getStatusBadge(u.subscriptionStatus || 'pending')}
+                                        {u.subscriptionStatus === 'active' && u.role !== 'admin' && (
+                                            <TouchableOpacity
+                                                onPress={() => handleRevoke(u._id)}
+                                                disabled={actionLoading === u._id}
+                                                style={{ marginLeft: 6, backgroundColor: 'rgba(245, 158, 11, 0.1)', padding: 6, borderRadius: 8 }}
+                                            >
+                                                {actionLoading === u._id ? (
+                                                    <ActivityIndicator size="small" color="#f59e0b" />
+                                                ) : (
+                                                    <Ionicons name="close-circle" size={16} color="#f59e0b" />
+                                                )}
+                                            </TouchableOpacity>
+                                        )}
+                                        {(u.subscriptionStatus === 'pending' || u.subscriptionStatus === 'pending_review') && u.role !== 'admin' && (
+                                            <TouchableOpacity
+                                                onPress={() => handleReject(u._id)}
+                                                disabled={actionLoading === u._id}
+                                                style={{ marginLeft: 6, backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: 6, borderRadius: 8 }}
+                                            >
+                                                {actionLoading === u._id ? (
+                                                    <ActivityIndicator size="small" color="#ef4444" />
+                                                ) : (
+                                                    <Ionicons name="close-circle" size={16} color="#ef4444" />
+                                                )}
+                                            </TouchableOpacity>
+                                        )}
+                                        {u.role !== 'admin' && (
+                                            <TouchableOpacity
+                                                onPress={() => handleDeleteUser(u._id)}
+                                                disabled={actionLoading === u._id}
+                                                style={{ marginLeft: 3, backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: 6, borderRadius: 8 }}
+                                            >
+                                                {actionLoading === u._id ? (
+                                                    <ActivityIndicator size="small" color="#ef4444" />
+                                                ) : (
+                                                    <Ionicons name="trash-outline" size={16} color="#ef4444" />
+                                                )}
+                                            </TouchableOpacity>
+                                        )}
                                     </View>
                                 </View>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                    {u.subscriptionTier && TIER_INFO[u.subscriptionTier] && (
-                                        <View style={{ backgroundColor: `${TIER_INFO[u.subscriptionTier].color}20`, paddingVertical: 2, paddingHorizontal: 8, borderRadius: 8 }}>
-                                            <Text style={{ color: TIER_INFO[u.subscriptionTier].color, fontSize: 10, fontWeight: 'bold' }}>
-                                                {TIER_INFO[u.subscriptionTier].icon} {TIER_INFO[u.subscriptionTier].name}
-                                            </Text>
+                                {
+                                    editUserId === u._id && (
+                                        <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#e5e7eb', backgroundColor: isDark ? '#111827' : '#f9fafb' }}>
+                                            <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 14, fontWeight: 'bold', marginBottom: 12 }}>Edit User Details</Text>
+
+                                            <View style={{ gap: 10 }}>
+                                                <View>
+                                                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11, marginBottom: 4 }}>Name</Text>
+                                                    <TextInput
+                                                        style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', color: isDark ? 'white' : '#111827', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: isDark ? '#374151' : '#cbd5e1', fontSize: 13 }}
+                                                        value={editUserName}
+                                                        onChangeText={setEditUserName}
+                                                    />
+                                                </View>
+                                                <View>
+                                                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11, marginBottom: 4 }}>Email</Text>
+                                                    <TextInput
+                                                        style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', color: isDark ? 'white' : '#111827', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: isDark ? '#374151' : '#cbd5e1', fontSize: 13 }}
+                                                        value={editUserEmail}
+                                                        onChangeText={setEditUserEmail}
+                                                        autoCapitalize="none"
+                                                        keyboardType="email-address"
+                                                    />
+                                                </View>
+                                                <View>
+                                                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11, marginBottom: 4 }}>Mobile</Text>
+                                                    <TextInput
+                                                        style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', color: isDark ? 'white' : '#111827', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: isDark ? '#374151' : '#cbd5e1', fontSize: 13 }}
+                                                        value={editUserMobile}
+                                                        onChangeText={setEditUserMobile}
+                                                        keyboardType="numeric"
+                                                    />
+                                                </View>
+                                                <View>
+                                                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11, marginBottom: 4 }}>Change Password (leave blank to keep current)</Text>
+                                                    <TextInput
+                                                        style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', color: isDark ? 'white' : '#111827', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: isDark ? '#374151' : '#cbd5e1', fontSize: 13 }}
+                                                        placeholder="New password"
+                                                        placeholderTextColor={isDark ? '#6b7280' : '#94a3b8'}
+                                                        value={editUserPassword}
+                                                        onChangeText={setEditUserPassword}
+                                                        secureTextEntry
+                                                    />
+                                                </View>
+                                            </View>
+
+                                            <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
+                                                <TouchableOpacity
+                                                    onPress={() => handleUpdateUserDetails(u._id)}
+                                                    disabled={actionLoading === u._id}
+                                                    style={{ flex: 1, padding: 12, borderRadius: 10, backgroundColor: '#2563eb', alignItems: 'center' }}
+                                                >
+                                                    {actionLoading === u._id ? <ActivityIndicator size="small" color="white" /> : <Text style={{ color: 'white', fontWeight: 'bold' }}>Save Changes</Text>}
+                                                </TouchableOpacity>
+                                                <TouchableOpacity
+                                                    onPress={() => { setEditUserId(null); setEditUserName(''); setEditUserEmail(''); setEditUserMobile(''); setEditUserPassword(''); }}
+                                                    disabled={actionLoading === u._id}
+                                                    style={{ flex: 1, padding: 12, borderRadius: 10, backgroundColor: isDark ? '#374151' : '#e5e7eb', alignItems: 'center' }}
+                                                >
+                                                    <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold' }}>Cancel</Text>
+                                                </TouchableOpacity>
+                                            </View>
                                         </View>
                                     )}
-                                    {getStatusBadge(u.subscriptionStatus || 'pending')}
-                                    {u.subscriptionStatus === 'active' && u.role !== 'admin' && (
-                                        <TouchableOpacity
-                                            onPress={() => handleRevoke(u._id)}
-                                            disabled={actionLoading === u._id}
-                                            style={{ marginLeft: 6, backgroundColor: 'rgba(245, 158, 11, 0.1)', padding: 6, borderRadius: 8 }}
-                                        >
-                                            {actionLoading === u._id ? (
-                                                <ActivityIndicator size="small" color="#f59e0b" />
-                                            ) : (
-                                                <Ionicons name="close-circle" size={16} color="#f59e0b" />
-                                            )}
-                                        </TouchableOpacity>
-                                    )}
-                                    {(u.subscriptionStatus === 'pending' || u.subscriptionStatus === 'pending_review') && u.role !== 'admin' && (
-                                        <TouchableOpacity
-                                            onPress={() => handleReject(u._id)}
-                                            disabled={actionLoading === u._id}
-                                            style={{ marginLeft: 6, backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: 6, borderRadius: 8 }}
-                                        >
-                                            {actionLoading === u._id ? (
-                                                <ActivityIndicator size="small" color="#ef4444" />
-                                            ) : (
-                                                <Ionicons name="close-circle" size={16} color="#ef4444" />
-                                            )}
-                                        </TouchableOpacity>
-                                    )}
-                                    {u.role !== 'admin' && (
-                                        <TouchableOpacity
-                                            onPress={() => handleDeleteUser(u._id)}
-                                            disabled={actionLoading === u._id}
-                                            style={{ marginLeft: 3, backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: 6, borderRadius: 8 }}
-                                        >
-                                            {actionLoading === u._id ? (
-                                                <ActivityIndicator size="small" color="#ef4444" />
-                                            ) : (
-                                                <Ionicons name="trash-outline" size={16} color="#ef4444" />
-                                            )}
-                                        </TouchableOpacity>
-                                    )}
-                                </View>
                             </View>
-                            {
-                            editUserId === u._id && (
-                                <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#e5e7eb', backgroundColor: isDark ? '#111827' : '#f9fafb' }}>
-                                    <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 14, fontWeight: 'bold', marginBottom: 12 }}>Edit User Details</Text>
-
-                                    <View style={{ gap: 10 }}>
-                                        <View>
-                                            <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11, marginBottom: 4 }}>Name</Text>
-                                            <TextInput
-                                                style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', color: isDark ? 'white' : '#111827', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: isDark ? '#374151' : '#cbd5e1', fontSize: 13 }}
-                                                value={editUserName}
-                                                onChangeText={setEditUserName}
-                                            />
-                                        </View>
-                                        <View>
-                                            <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11, marginBottom: 4 }}>Email</Text>
-                                            <TextInput
-                                                style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', color: isDark ? 'white' : '#111827', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: isDark ? '#374151' : '#cbd5e1', fontSize: 13 }}
-                                                value={editUserEmail}
-                                                onChangeText={setEditUserEmail}
-                                                autoCapitalize="none"
-                                                keyboardType="email-address"
-                                            />
-                                        </View>
-                                        <View>
-                                            <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11, marginBottom: 4 }}>Mobile</Text>
-                                            <TextInput
-                                                style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', color: isDark ? 'white' : '#111827', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: isDark ? '#374151' : '#cbd5e1', fontSize: 13 }}
-                                                value={editUserMobile}
-                                                onChangeText={setEditUserMobile}
-                                                keyboardType="numeric"
-                                            />
-                                        </View>
-                                        <View>
-                                            <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11, marginBottom: 4 }}>Change Password (leave blank to keep current)</Text>
-                                            <TextInput
-                                                style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', color: isDark ? 'white' : '#111827', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: isDark ? '#374151' : '#cbd5e1', fontSize: 13 }}
-                                                placeholder="New password"
-                                                placeholderTextColor={isDark ? '#6b7280' : '#94a3b8'}
-                                                value={editUserPassword}
-                                                onChangeText={setEditUserPassword}
-                                                secureTextEntry
-                                            />
-                                        </View>
-                                    </View>
-
-                                    <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
-                                        <TouchableOpacity
-                                            onPress={() => handleUpdateUserDetails(u._id)}
-                                            disabled={actionLoading === u._id}
-                                            style={{ flex: 1, padding: 12, borderRadius: 10, backgroundColor: '#2563eb', alignItems: 'center' }}
-                                        >
-                                            {actionLoading === u._id ? <ActivityIndicator size="small" color="white" /> : <Text style={{ color: 'white', fontWeight: 'bold' }}>Save Changes</Text>}
-                                        </TouchableOpacity>
-                                        <TouchableOpacity
-                                            onPress={() => { setEditUserId(null); setEditUserName(''); setEditUserEmail(''); setEditUserMobile(''); setEditUserPassword(''); }}
-                                            disabled={actionLoading === u._id}
-                                            style={{ flex: 1, padding: 12, borderRadius: 10, backgroundColor: isDark ? '#374151' : '#e5e7eb', alignItems: 'center' }}
-                                        >
-                                            <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold' }}>Cancel</Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                </View>
-                            )
-                        }
-                        </View>
+                        );
                     })
                 )}
 
-{/* Payment History Tab */ }
-{
-    activeTab === 'history' && paymentHistory && (
-        <>
-            {/* Summary Bar */}
-            <View style={{
-                backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 16, borderRadius: 14, marginBottom: 16,
-                borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', flexDirection: 'row', gap: 12
-            }}>
-                {[
-                    { label: 'Total', value: paymentHistory.summary?.total || 0, color: '#2563eb' },
-                    { label: 'Approved', value: paymentHistory.summary?.approved || 0, color: '#22c55e' },
-                    { label: 'Rejected', value: paymentHistory.summary?.rejected || 0, color: '#ef4444' },
-                    { label: 'Collected', value: `₹${(paymentHistory.summary?.collected || 0).toLocaleString('en-IN')}`, color: '#f59e0b' },
-                ].map((s, i) => (
-                    <View key={i} style={{ flex: 1, alignItems: 'center' }}>
-                        <Text style={{ color: s.color, fontSize: 18, fontWeight: 'bold' }}>{s.value}</Text>
-                        <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 10, marginTop: 2 }}>{s.label}</Text>
-                    </View>
-                ))}
-            </View>
+                {/* Payment History Tab */}
+                {
+                    activeTab === 'history' && paymentHistory && (
+                        <>
+                            {/* Summary Bar */}
+                            <View style={{
+                                backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 16, borderRadius: 14, marginBottom: 16,
+                                borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', flexDirection: 'row', gap: 12
+                            }}>
+                                {[
+                                    { label: 'Total', value: paymentHistory.summary?.total || 0, color: '#2563eb' },
+                                    { label: 'Approved', value: paymentHistory.summary?.approved || 0, color: '#22c55e' },
+                                    { label: 'Rejected', value: paymentHistory.summary?.rejected || 0, color: '#ef4444' },
+                                    { label: 'Collected', value: `₹${(paymentHistory.summary?.collected || 0).toLocaleString('en-IN')}`, color: '#f59e0b' },
+                                ].map((s, i) => (
+                                    <View key={i} style={{ flex: 1, alignItems: 'center' }}>
+                                        <Text style={{ color: s.color, fontSize: 18, fontWeight: 'bold' }}>{s.value}</Text>
+                                        <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 10, marginTop: 2 }}>{s.label}</Text>
+                                    </View>
+                                ))}
+                            </View>
 
-            {/* Records */}
-            {filterHistory(paymentHistory.records || []).length === 0 ? (
-                <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 40, borderRadius: 16, alignItems: 'center', borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
-                    <Text style={{ fontSize: 40, marginBottom: 12 }}>📋</Text>
-                    <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 18, fontWeight: 'bold' }}>No history found</Text>
-                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 14, marginTop: 4 }}>Adjust the date filter to see more</Text>
-                </View>
-            ) : (
-                filterHistory(paymentHistory.records || []).map((r: any) => (
-                    <TouchableOpacity
-                        key={r._id}
-                        activeOpacity={0.8}
-                        onPress={() => setExpandedUser(expandedUser === r._id ? null : r._id)}
-                        style={{
-                            backgroundColor: isDark ? '#1f2937' : '#ffffff',
-                            borderRadius: 14, marginBottom: 8, overflow: 'hidden',
-                            borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb'
-                        }}
-                    >
-                        <View style={{ padding: 14, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <View style={{ flex: 1 }}>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-                                    <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 14, fontWeight: '600' }}>{r.userName}</Text>
-                                    {r.approvedTier && TIER_INFO[r.approvedTier] && (
-                                        <View style={{ backgroundColor: `${TIER_INFO[r.approvedTier].color}20`, paddingVertical: 1, paddingHorizontal: 6, borderRadius: 6 }}>
-                                            <Text style={{ color: TIER_INFO[r.approvedTier].color, fontSize: 9, fontWeight: 'bold' }}>
-                                                {TIER_INFO[r.approvedTier].icon} {TIER_INFO[r.approvedTier].name}
-                                            </Text>
-                                        </View>
-                                    )}
-                                    <View style={{ backgroundColor: r.status === 'approved' ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', paddingVertical: 1, paddingHorizontal: 6, borderRadius: 6 }}>
-                                        <Text style={{ color: r.status === 'approved' ? '#22c55e' : '#ef4444', fontSize: 9, fontWeight: 'bold', textTransform: 'capitalize' }}>{r.status}</Text>
-                                    </View>
+                            {/* Records */}
+                            {filterHistory(paymentHistory.records || []).length === 0 ? (
+                                <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 40, borderRadius: 16, alignItems: 'center', borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
+                                    <Text style={{ fontSize: 40, marginBottom: 12 }}>📋</Text>
+                                    <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 18, fontWeight: 'bold' }}>No history found</Text>
+                                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 14, marginTop: 4 }}>Adjust the date filter to see more</Text>
                                 </View>
-                                <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11 }}>{r.userEmail}</Text>
-                            </View>
-                            <View style={{ alignItems: 'flex-end' }}>
-                                <Text style={{ color: r.status === 'approved' ? '#22c55e' : '#ef4444', fontSize: 16, fontWeight: 'bold' }}>
-                                    {r.status === 'approved' ? `₹${r.approvedAmount?.toLocaleString('en-IN')}` : '—'}
-                                </Text>
-                                <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 10, marginTop: 2 }}>
-                                    {r.reviewedAt ? new Date(r.reviewedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
-                                </Text>
-                            </View>
-                        </View>
+                            ) : (
+                                filterHistory(paymentHistory.records || []).map((r: any) => (
+                                    <TouchableOpacity
+                                        key={r._id}
+                                        activeOpacity={0.8}
+                                        onPress={() => setExpandedUser(expandedUser === r._id ? null : r._id)}
+                                        style={{
+                                            backgroundColor: isDark ? '#1f2937' : '#ffffff',
+                                            borderRadius: 14, marginBottom: 8, overflow: 'hidden',
+                                            borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb'
+                                        }}
+                                    >
+                                        <View style={{ padding: 14, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <View style={{ flex: 1 }}>
+                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                                                    <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 14, fontWeight: '600' }}>{r.userName}</Text>
+                                                    {r.approvedTier && TIER_INFO[r.approvedTier] && (
+                                                        <View style={{ backgroundColor: `${TIER_INFO[r.approvedTier].color}20`, paddingVertical: 1, paddingHorizontal: 6, borderRadius: 6 }}>
+                                                            <Text style={{ color: TIER_INFO[r.approvedTier].color, fontSize: 9, fontWeight: 'bold' }}>
+                                                                {TIER_INFO[r.approvedTier].icon} {TIER_INFO[r.approvedTier].name}
+                                                            </Text>
+                                                        </View>
+                                                    )}
+                                                    <View style={{ backgroundColor: r.status === 'approved' ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', paddingVertical: 1, paddingHorizontal: 6, borderRadius: 6 }}>
+                                                        <Text style={{ color: r.status === 'approved' ? '#22c55e' : '#ef4444', fontSize: 9, fontWeight: 'bold', textTransform: 'capitalize' }}>{r.status}</Text>
+                                                    </View>
+                                                </View>
+                                                <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11 }}>{r.userEmail}</Text>
+                                            </View>
+                                            <View style={{ alignItems: 'flex-end' }}>
+                                                <Text style={{ color: r.status === 'approved' ? '#22c55e' : '#ef4444', fontSize: 16, fontWeight: 'bold' }}>
+                                                    {r.status === 'approved' ? `₹${r.approvedAmount?.toLocaleString('en-IN')}` : '—'}
+                                                </Text>
+                                                <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 10, marginTop: 2 }}>
+                                                    {r.reviewedAt ? new Date(r.reviewedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                                                </Text>
+                                            </View>
+                                        </View>
 
-                        {/* Expanded details */}
-                        {expandedUser === r._id && (
-                            <View style={{ padding: 14, borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#e5e7eb', backgroundColor: isDark ? '#111827' : '#f9fafb' }}>
-                                <View style={{ gap: 6 }}>
-                                    {r.requestedTier && (
-                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                            <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11 }}>Requested</Text>
-                                            <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 11, fontWeight: '600', textTransform: 'uppercase' }}>
-                                                {r.requestedTier} {r.isAnnual ? '(Annual)' : '(Monthly)'}
-                                            </Text>
-                                        </View>
-                                    )}
-                                    {r.approvedDuration && (
-                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                            <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11 }}>Duration</Text>
-                                            <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 11, fontWeight: '600' }}>{r.approvedDuration} month(s)</Text>
-                                        </View>
-                                    )}
-                                    {r.approvedExpiry && (
-                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                            <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11 }}>Expiry</Text>
-                                            <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 11, fontWeight: '600' }}>
-                                                {new Date(r.approvedExpiry).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                            </Text>
-                                        </View>
-                                    )}
-                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                        <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11 }}>Method</Text>
-                                        <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 11, fontWeight: '600', textTransform: 'capitalize' }}>
-                                            {r.paymentMethod === 'manual' ? '💵' : r.paymentMethod === 'gateway' ? '🔗' : '🎓'} {r.paymentMethod}
-                                        </Text>
-                                    </View>
-                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                        <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11 }}>Reviewed By</Text>
-                                        <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 11, fontWeight: '600' }}>{r.reviewedBy}</Text>
-                                    </View>
-                                    {r.reviewNote && (
-                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                            <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11 }}>Note</Text>
-                                            <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 11, flex: 1, textAlign: 'right' }}>{r.reviewNote}</Text>
-                                        </View>
-                                    )}
-                                    {r.adminNote && (
-                                        <View style={{ marginTop: 6, backgroundColor: isDark ? '#1f2937' : '#fef3cd', padding: 8, borderRadius: 8 }}>
-                                            <Text style={{ color: '#f59e0b', fontSize: 10, fontWeight: 'bold' }}>🔒 Admin Note</Text>
-                                            <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 11, marginTop: 2 }}>{r.adminNote}</Text>
-                                        </View>
-                                    )}
-                                </View>
-                            </View>
-                        )}
-                    </TouchableOpacity>
-                ))
-            )}
-        </>
-    )
-}
+                                        {/* Expanded details */}
+                                        {expandedUser === r._id && (
+                                            <View style={{ padding: 14, borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#e5e7eb', backgroundColor: isDark ? '#111827' : '#f9fafb' }}>
+                                                <View style={{ gap: 6 }}>
+                                                    {r.requestedTier && (
+                                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                                            <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11 }}>Requested</Text>
+                                                            <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 11, fontWeight: '600', textTransform: 'uppercase' }}>
+                                                                {r.requestedTier} {r.isAnnual ? '(Annual)' : '(Monthly)'}
+                                                            </Text>
+                                                        </View>
+                                                    )}
+                                                    {r.approvedDuration && (
+                                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                                            <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11 }}>Duration</Text>
+                                                            <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 11, fontWeight: '600' }}>{r.approvedDuration} month(s)</Text>
+                                                        </View>
+                                                    )}
+                                                    {r.approvedExpiry && (
+                                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                                            <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11 }}>Expiry</Text>
+                                                            <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 11, fontWeight: '600' }}>
+                                                                {new Date(r.approvedExpiry).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                            </Text>
+                                                        </View>
+                                                    )}
+                                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                                        <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11 }}>Method</Text>
+                                                        <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 11, fontWeight: '600', textTransform: 'capitalize' }}>
+                                                            {r.paymentMethod === 'manual' ? '💵' : r.paymentMethod === 'gateway' ? '🔗' : '🎓'} {r.paymentMethod}
+                                                        </Text>
+                                                    </View>
+                                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                                        <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11 }}>Reviewed By</Text>
+                                                        <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 11, fontWeight: '600' }}>{r.reviewedBy}</Text>
+                                                    </View>
+                                                    {r.reviewNote && (
+                                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                                            <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11 }}>Note</Text>
+                                                            <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 11, flex: 1, textAlign: 'right' }}>{r.reviewNote}</Text>
+                                                        </View>
+                                                    )}
+                                                    {r.adminNote && (
+                                                        <View style={{ marginTop: 6, backgroundColor: isDark ? '#1f2937' : '#fef3cd', padding: 8, borderRadius: 8 }}>
+                                                            <Text style={{ color: '#f59e0b', fontSize: 10, fontWeight: 'bold' }}>🔒 Admin Note</Text>
+                                                            <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 11, marginTop: 2 }}>{r.adminNote}</Text>
+                                                        </View>
+                                                    )}
+                                                </View>
+                                            </View>
+                                        )}
+                                    </TouchableOpacity>
+                                ))
+                            )}
+                        </>
+                    )
+                }
             </ScrollView >
         </View >
     );

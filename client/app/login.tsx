@@ -66,7 +66,7 @@ export default function Login() {
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <TouchableOpacity
-                onPress={() => Linking.openURL('https://expo.dev/accounts/madhanmohangopaladas/projects/ias/builds')}
+                onPress={() => Linking.openURL('https://drive.google.com/file/d/1Xt14TVZNIoHMoBAIbJzFiZEksLjup7EW/view?usp=drive_link')}
                 style={{ backgroundColor: 'white', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 }}
               >
                 <Text style={{ color: '#2563eb', fontWeight: 'bold', fontSize: 13 }}>Download</Text>

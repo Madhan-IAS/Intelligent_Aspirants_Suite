@@ -47,6 +47,13 @@
           "backgroundColor": "#1e3a5f"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b3695fbf-ea45-4c0e-906f-d2b3a004d772"
+      }
+    },
+    "owner": "madhanmohangopaladas"
   }
 }

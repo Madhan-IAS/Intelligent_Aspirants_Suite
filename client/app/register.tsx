@@ -71,7 +71,7 @@ export default function Register() {
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <TouchableOpacity
-                onPress={() => Linking.openURL('https://drive.google.com/file/d/1Xt14TVZNIoHMoBAIbJzFiZEksLjup7EW/view?usp=drive_link')}
+                onPress={() => Linking.openURL('https://drive.google.com/file/d/1Bi1ZBjlV2MGeCoVMm7KU1pueompzQTKC/view?usp=drive_link')}
                 style={{ backgroundColor: 'white', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 }}
               >
                 <Text style={{ color: '#2563eb', fontWeight: 'bold', fontSize: 13 }}>Download</Text>

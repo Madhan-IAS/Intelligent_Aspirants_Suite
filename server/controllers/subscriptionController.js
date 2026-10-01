@@ -2,38 +2,11 @@ const Subscription = require('../models/Subscription');
 const User = require('../models/User');
 
 // POST /api/subscription/submit-proof
-// User submits payment proof (UTR + optional screenshot)
+// DEPRECATED: User submits payment proof (UTR + optional screenshot)
 exports.submitProof = async (req, res) => {
-    try {
-        const { utrNumber, screenshot, amount } = req.body;
-
-        if (!utrNumber) {
-            return res.status(400).json({ message: 'UTR number is required' });
-        }
-
-        // Check for duplicate UTR
-        const existing = await Subscription.findOne({ utrNumber });
-        if (existing) {
-            return res.status(400).json({ message: 'This UTR has already been submitted' });
-        }
-
-        const subscription = await Subscription.create({
-            userId: req.user.id,
-            utrNumber,
-            screenshot,
-            amount: amount || 0
-        });
-
-        // Update user status to pending_review
-        await User.findByIdAndUpdate(req.user.id, { subscriptionStatus: 'pending_review' });
-
-        res.status(201).json({
-            message: 'Payment proof submitted. Awaiting admin approval.',
-            subscription
-        });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
+    return res.status(410).json({
+        message: 'This endpoint is deprecated. The platform now uses the automated Request Plan flow without upfront UTR submission. Please update your client.'
+    });
 };
 
 // POST /api/subscription/request

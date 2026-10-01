@@ -34,7 +34,7 @@ router.post('/:id/review', async (req, res) => {
   try {
     const { quality } = req.body; // 0 to 5 (0 = blank, 5 = perfect)
     const card = await Flashcard.findOne({ _id: req.params.id, userId: req.user.id });
-    
+
     if (!card) return res.status(404).json({ error: 'Card not found' });
 
     if (quality < 3) {
@@ -74,7 +74,20 @@ router.get('/topic/:topicId', async (req, res) => {
   }
 });
 
-// Delete a flashcard
+// Delete all flashcards for a specific topic (Delete Deck)
+router.delete('/topic/:topicId', async (req, res) => {
+  try {
+    const result = await Flashcard.deleteMany({
+      userId: req.user.id,
+      topicId: req.params.topicId
+    });
+    res.json({ message: 'Flashcard deck deleted successfully', deletedCount: result.deletedCount });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete a single flashcard
 router.delete('/:id', async (req, res) => {
   try {
     const card = await Flashcard.findOneAndDelete({

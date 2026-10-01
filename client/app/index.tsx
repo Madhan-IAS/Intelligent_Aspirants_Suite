@@ -9,6 +9,7 @@ import PomodoroTimer from '../src/components/Dashboard/PomodoroTimer';
 import NightOwlTimer from '../src/components/Dashboard/NightOwlTimer';
 import SpectrumRadar from '../src/components/Dashboard/SpectrumRadar';
 import Heatmap from '../src/components/Dashboard/Heatmap';
+import Skeleton from '../src/components/Skeleton';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -217,12 +218,33 @@ export default function Dashboard() {
 
   if (authLoading || loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? '#111827' : '#f9fafb' }}>
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator size="large" color="#60a5fa" />
-          <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', marginTop: 16 }}>Loading your workspace...</Text>
+      <View style={{ flex: 1, backgroundColor: isDark ? '#111827' : '#f9fafb', padding: 24 }}>
+        {/* Header Skeleton */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 30 }}>
+          <View>
+            <Skeleton width={120} height={20} style={{ marginBottom: 8 }} />
+            <Skeleton width={200} height={36} />
+          </View>
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <Skeleton width={44} height={44} borderRadius={22} />
+            <Skeleton width={44} height={44} borderRadius={22} />
+          </View>
         </View>
-      </SafeAreaView>
+
+        {/* Dash Mission Skeleton */}
+        <Skeleton width="100%" height={150} borderRadius={16} style={{ marginBottom: 24 }} />
+
+        {/* Stats Grid Skeleton */}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginBottom: 24 }}>
+          <Skeleton width="47%" height={100} borderRadius={16} />
+          <Skeleton width="47%" height={100} borderRadius={16} />
+          <Skeleton width="47%" height={100} borderRadius={16} />
+          <Skeleton width="47%" height={100} borderRadius={16} />
+        </View>
+
+        {/* Charts Skeleton */}
+        <Skeleton width="100%" height={300} borderRadius={16} />
+      </View>
     );
   }
 

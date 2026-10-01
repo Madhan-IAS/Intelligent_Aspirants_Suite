@@ -1,6 +1,9 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const os = require('os');
+const fs = require('fs');
+const path = require('path');
 const cron = require('node-cron');
 const { runScraper } = require('./workers/currentAffairsScraper');
 const Notification = require('./models/Notification');
@@ -14,8 +17,13 @@ console.log('[ENV] GOOGLE_API_KEY present:', !!process.env.GOOGLE_API_KEY);
 console.log('[ENV] MONGO_URI present:', !!process.env.MONGO_URI);
 
 // Middleware
-app.use(cors());
-app.use(express.json());
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production'
+    ? (process.env.FRONTEND_URL || 'https://upsc-kms.onrender.com')
+    : '*',
+  credentials: true
+}));
+app.use(express.json({ limit: '50mb' }));
 
 // Basic Route
 app.get('/', (req, res) => {
@@ -30,10 +38,27 @@ app.get('/api/health', (req, res) => {
     2: 'connecting',
     3: 'disconnecting'
   };
+
+  const memoryInfo = process.memoryUsage();
+
   res.json({
     status: 'running',
     database: states[dbStatus] || 'unknown',
-    uri_configured: !!process.env.MONGO_URI
+    uri_configured: !!process.env.MONGO_URI,
+    uptime_seconds: process.uptime(),
+    system_uptime: os.uptime(),
+    timestamp: new Date(),
+    memory: {
+      rss: `${Math.round(memoryInfo.rss / 1024 / 1024)} MB`,
+      heapTotal: `${Math.round(memoryInfo.heapTotal / 1024 / 1024)} MB`,
+      heapUsed: `${Math.round(memoryInfo.heapUsed / 1024 / 1024)} MB`
+    },
+    system: {
+      totalMem: `${Math.round(os.totalmem() / 1024 / 1024)} MB`,
+      freeMem: `${Math.round(os.freemem() / 1024 / 1024)} MB`,
+      cpus: os.cpus().length,
+      loadAvg: os.loadavg()
+    }
   });
 });
 
@@ -116,6 +141,20 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/bookmarks', require('./routes/bookmarks'));
 app.use('/api/export', require('./routes/export'));
 
+// Global Error Handler
+app.use((err, req, res, next) => {
+  const logMessage = `[${new Date().toISOString()}] ${req.method} ${req.url} - ${err.message}\n${err.stack}\n\n`;
+  console.error(logMessage);
+  fs.appendFile(path.join(__dirname, 'error.log'), logMessage, (fsErr) => {
+    if (fsErr) console.error('Failed to write to error log:', fsErr);
+  });
+  const status = err.status || 500;
+  res.status(status).json({
+    message: 'Internal Server Error',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
@@ -137,6 +176,7 @@ if (MONGO_URI) {
               if (sr.count > 0) {
                 await Notification.create({
                   type: 'current_affairs',
+                  isBroadcast: true,
                   title: `📰 ${sr.count} new article${sr.count > 1 ? 's' : ''} from ${sr.source}`,
                   message: `Topics: ${sr.tags.slice(0, 5).join(', ')}`,
                   metadata: {

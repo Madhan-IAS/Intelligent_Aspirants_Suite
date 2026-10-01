@@ -219,6 +219,17 @@ export default function AnswerWorkspace() {
     }
   };
 
+  const handleDownloadPDF = () => {
+    if (Platform.OS === 'web') {
+      const originalTitle = document.title;
+      document.title = `UPSC_Answer_Evaluated`;
+      window.print();
+      document.title = originalTitle;
+    } else {
+      alert("PDF Export is currently available on the Web platform only.");
+    }
+  };
+
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: isDark ? '#111827' : '#f9fafb', alignItems: 'center', justifyContent: 'center' }}>
@@ -396,9 +407,15 @@ export default function AnswerWorkspace() {
             {aiFeedback ? (
               /* AI Feedback Panel */
               <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: '#8b5cf6' }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-                  <Ionicons name="sparkles" size={24} color="#8b5cf6" />
-                  <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>AI Mentor Feedback</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Ionicons name="sparkles" size={24} color="#8b5cf6" />
+                    <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>AI Mentor Feedback</Text>
+                  </View>
+                  <TouchableOpacity onPress={handleDownloadPDF} style={{ padding: 8, backgroundColor: isDark ? '#374151' : '#f3f4f6', borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Ionicons name="download" size={16} color="#8b5cf6" />
+                    <Text style={{ color: '#8b5cf6', fontSize: 12, fontWeight: 'bold' }}>PDF</Text>
+                  </TouchableOpacity>
                 </View>
 
                 <View style={{ alignItems: 'center', marginBottom: 16 }}>

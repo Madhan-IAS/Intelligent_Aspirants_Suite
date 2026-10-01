@@ -40,6 +40,7 @@ export default function AdminDashboard() {
     const [selectedTier, setSelectedTier] = useState('foundation');
     const [rejectReason, setRejectReason] = useState('');
     const [expandedUser, setExpandedUser] = useState<string | null>(null);
+    const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
 
     const [customExpiryDate, setCustomExpiryDate] = useState('');
     const [customAiLimit, setCustomAiLimit] = useState('');
@@ -92,6 +93,44 @@ export default function AdminDashboard() {
         setExpandedUser(userId);
     };
 
+    const handleBulkApprove = async () => {
+        if (!selectedUsers.length) return;
+        if (Platform.OS === 'web' && !window.confirm(`Bulk Approve ${selectedUsers.length} selected users?\nThey will be approved with 1 month Foundation tier unless they requested otherwise.`)) return;
+
+        setLoading(true);
+        try {
+            await Promise.all(selectedUsers.map(id => api.post(`/admin/approve/${id}`, {
+                durationMonths: 1,
+                tier: 'foundation'
+            })));
+            showToast(`Bulk approved ${selectedUsers.length} users!`, 'success');
+            setSelectedUsers([]);
+            fetchData();
+        } catch (error) {
+            showToast('Some bulk approvals failed.', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleBulkReject = async () => {
+        if (!selectedUsers.length) return;
+        const reason = Platform.OS === 'web' ? window.prompt('Enter rejection reason for all selected:') : 'Bulk rejected';
+        if (reason === null) return;
+
+        setLoading(true);
+        try {
+            await Promise.all(selectedUsers.map(id => api.post(`/admin/reject/${id}`, { reason })));
+            showToast(`Bulk rejected ${selectedUsers.length} users!`, 'success');
+            setSelectedUsers([]);
+            fetchData();
+        } catch (error) {
+            showToast('Some bulk rejections failed.', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // Filter helpers (#8)
     const filterUsers = (users: any[]) => {
         let filtered = users;
@@ -122,6 +161,14 @@ export default function AdminDashboard() {
         const diff = Math.ceil((new Date(expiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
         return diff;
     };
+
+    // Auto-calculate Custom Expiry Date when duration changes
+    useEffect(() => {
+        const months = parseInt(durationMonths) || 1;
+        const expiry = new Date();
+        expiry.setMonth(expiry.getMonth() + months);
+        setCustomExpiryDate(expiry.toISOString().split('T')[0]);
+    }, [durationMonths]);
 
     useEffect(() => {
         if (user?.role !== 'admin') {
@@ -354,8 +401,14 @@ export default function AdminDashboard() {
                             )}
                         </TouchableOpacity>
                         <TouchableOpacity
+                            onPress={() => router.push('/health')}
+                            style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', marginLeft: 8 }}
+                        >
+                            <Ionicons name="pulse" size={20} color="#22c55e" />
+                        </TouchableOpacity>
+                        <TouchableOpacity
                             onPress={() => router.replace('/')}
-                            style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}
+                            style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', marginLeft: 8 }}
                         >
                             <Ionicons name="home" size={20} color={isDark ? '#d1d5db' : '#374151'} />
                         </TouchableOpacity>
@@ -535,269 +588,294 @@ export default function AdminDashboard() {
                             <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 14, marginTop: 4 }}>No pending approvals matching filter</Text>
                         </View>
                     ) : (
-                        filterUsers(pendingUsers).map((u) => (
-                            <View key={u._id} style={{
-                                backgroundColor: isDark ? '#1f2937' : '#ffffff',
-                                borderRadius: 16, marginBottom: 12, overflow: 'hidden',
-                                borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb'
-                            }}>
-                                {/* User Header */}
-                                <TouchableOpacity
-                                    onPress={() => setExpandedUser(expandedUser === u._id ? null : u._id)}
-                                    style={{ padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
-                                >
-                                    <View style={{ flex: 1 }}>
-                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                                            <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 16, fontWeight: 'bold' }}>
-                                                {u.name}
-                                            </Text>
-                                            {getStatusBadge(u.subscriptionStatus)}
-                                        </View>
-                                        <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12 }}>{u.email}</Text>
-                                        <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11, marginTop: 2 }}>
-                                            Registered: {formatDate(u.createdAt)}
-                                        </Text>
+                        <>
+                            {/* Bulk Actions Banner */}
+                            {selectedUsers.length > 0 && (
+                                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: isDark ? '#374151' : '#e0e7ff', padding: 12, borderRadius: 12, marginBottom: 16 }}>
+                                    <Text style={{ color: isDark ? 'white' : '#1e40af', fontWeight: 'bold' }}>{selectedUsers.length} selected</Text>
+                                    <View style={{ flexDirection: 'row', gap: 12 }}>
+                                        <TouchableOpacity onPress={handleBulkReject} style={{ backgroundColor: '#ef4444', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6 }}>
+                                            <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 13 }}>Reject All</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity onPress={handleBulkApprove} style={{ backgroundColor: '#10b981', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6 }}>
+                                            <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 13 }}>Approve All</Text>
+                                        </TouchableOpacity>
                                     </View>
-                                    <Ionicons name={expandedUser === u._id ? 'chevron-up' : 'chevron-down'} size={20} color={isDark ? '#9ca3af' : '#6b7280'} />
-                                </TouchableOpacity>
+                                </View>
+                            )}
 
-                                {/* Expanded Details */}
-                                {expandedUser === u._id && (
-                                    <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#e5e7eb' }}>
-                                        {/* Request Details */}
-                                        {u.latestProof ? (
-                                            <View style={{
-                                                backgroundColor: isDark ? '#111827' : '#f0f9ff',
-                                                padding: 14, borderRadius: 12, marginBottom: 16,
-                                                borderWidth: 1, borderColor: isDark ? '#1e3a5f' : '#bfdbfe'
-                                            }}>
-                                                <Text style={{ color: isDark ? '#60a5fa' : '#2563eb', fontWeight: '600', fontSize: 13, marginBottom: 8 }}>
-                                                    📝 Subscription Request Details
+                            {filterUsers(pendingUsers).map((u) => (
+                                <View key={u._id} style={{
+                                    backgroundColor: isDark ? '#1f2937' : '#ffffff',
+                                    borderRadius: 16, marginBottom: 12, overflow: 'hidden',
+                                    borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb'
+                                }}>
+                                    {'/* User Header */'}
+                                    <View style={{ padding: 16, flexDirection: 'row', alignItems: 'center' }}>
+                                        <TouchableOpacity
+                                            onPress={() => setSelectedUsers(prev => prev.includes(u._id) ? prev.filter(id => id !== u._id) : [...prev, u._id])}
+                                            style={{ width: 24, height: 24, borderRadius: 4, borderWidth: 2, borderColor: '#6b7280', marginRight: 12, backgroundColor: selectedUsers.includes(u._id) ? '#3b82f6' : 'transparent', alignItems: 'center', justifyContent: 'center' }}
+                                        >
+                                            {selectedUsers.includes(u._id) && <Ionicons name="checkmark" size={16} color="white" />}
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            onPress={() => handleExpandUser(u._id, u)}
+                                            style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+                                        >
+                                            <View style={{ flex: 1 }}>
+                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                                                    <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 16, fontWeight: 'bold' }}>
+                                                        {u.name}
+                                                    </Text>
+                                                    {getStatusBadge(u.subscriptionStatus)}
+                                                </View>
+                                                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12 }}>{u.email}</Text>
+                                                <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11, marginTop: 2 }}>
+                                                    Registered: {formatDate(u.createdAt)}
                                                 </Text>
-                                                <View style={{ gap: 6 }}>
-                                                    {u.latestProof.requestedTier && (
+                                            </View>
+                                            <Ionicons name={expandedUser === u._id ? 'chevron-up' : 'chevron-down'} size={20} color={isDark ? '#9ca3af' : '#6b7280'} />
+                                        </TouchableOpacity>
+                                    </View>
+
+                                    {/* Expanded Details */}
+                                    {expandedUser === u._id && (
+                                        <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#e5e7eb' }}>
+                                            {/* Request Details */}
+                                            {u.latestProof ? (
+                                                <View style={{
+                                                    backgroundColor: isDark ? '#111827' : '#f0f9ff',
+                                                    padding: 14, borderRadius: 12, marginBottom: 16,
+                                                    borderWidth: 1, borderColor: isDark ? '#1e3a5f' : '#bfdbfe'
+                                                }}>
+                                                    <Text style={{ color: isDark ? '#60a5fa' : '#2563eb', fontWeight: '600', fontSize: 13, marginBottom: 8 }}>
+                                                        📝 Subscription Request Details
+                                                    </Text>
+                                                    <View style={{ gap: 6 }}>
+                                                        {u.latestProof.requestedTier && (
+                                                            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                                                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12 }}>Requested Tier</Text>
+                                                                <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 13, fontWeight: 'bold', textTransform: 'uppercase' }}>
+                                                                    {u.latestProof.requestedTier} {u.latestProof.isAnnual ? '(Annual)' : '(Monthly)'}
+                                                                </Text>
+                                                            </View>
+                                                        )}
+                                                        {u.latestProof.utrNumber && (
+                                                            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                                                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12 }}>UTR (Legacy)</Text>
+                                                                <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 12, fontWeight: '600' }}>{u.latestProof.utrNumber}</Text>
+                                                            </View>
+                                                        )}
                                                         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                                            <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12 }}>Requested Tier</Text>
-                                                            <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 13, fontWeight: 'bold', textTransform: 'uppercase' }}>
-                                                                {u.latestProof.requestedTier} {u.latestProof.isAnnual ? '(Annual)' : '(Monthly)'}
-                                                            </Text>
+                                                            <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12 }}>Requested On</Text>
+                                                            <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 12 }}>{formatDate(u.latestProof.createdAt)}</Text>
                                                         </View>
-                                                    )}
-                                                    {u.latestProof.utrNumber && (
-                                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                                            <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12 }}>UTR (Legacy)</Text>
-                                                            <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 12, fontWeight: '600' }}>{u.latestProof.utrNumber}</Text>
-                                                        </View>
-                                                    )}
-                                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                                        <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12 }}>Requested On</Text>
-                                                        <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 12 }}>{formatDate(u.latestProof.createdAt)}</Text>
                                                     </View>
                                                 </View>
-                                            </View>
-                                        ) : (
-                                            <View style={{
-                                                backgroundColor: isDark ? '#111827' : '#fef3cd',
-                                                padding: 12, borderRadius: 12, marginBottom: 16
-                                            }}>
-                                                <Text style={{ color: '#f59e0b', fontSize: 13 }}>
-                                                    ⚠️ No formal request log found. Setting manual plan.
+                                            ) : (
+                                                <View style={{
+                                                    backgroundColor: isDark ? '#111827' : '#fef3cd',
+                                                    padding: 12, borderRadius: 12, marginBottom: 16
+                                                }}>
+                                                    <Text style={{ color: '#f59e0b', fontSize: 13 }}>
+                                                        ⚠️ No formal request log found. Setting manual plan.
+                                                    </Text>
+                                                </View>
+                                            )}
+
+                                            {/* Duration Selector */}
+                                            <View style={{ marginBottom: 12 }}>
+                                                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12, marginBottom: 6 }}>
+                                                    Grant access for (months):
                                                 </Text>
-                                            </View>
-                                        )}
-
-                                        {/* Duration Selector */}
-                                        <View style={{ marginBottom: 12 }}>
-                                            <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12, marginBottom: 6 }}>
-                                                Grant access for (months):
-                                            </Text>
-                                            <View style={{ flexDirection: 'row', gap: 8 }}>
-                                                {['1', '3', '6', '12'].map((m) => (
-                                                    <TouchableOpacity
-                                                        key={m}
-                                                        onPress={() => setDurationMonths(m)}
-                                                        style={{
-                                                            flex: 1, padding: 10, borderRadius: 10, alignItems: 'center',
-                                                            backgroundColor: durationMonths === m ? '#2563eb' : (isDark ? '#111827' : '#f3f4f6'),
-                                                            borderWidth: 1, borderColor: durationMonths === m ? '#2563eb' : (isDark ? '#374151' : '#e5e7eb')
-                                                        }}
-                                                    >
-                                                        <Text style={{
-                                                            color: durationMonths === m ? 'white' : (isDark ? '#d1d5db' : '#374151'),
-                                                            fontWeight: '600', fontSize: 13
-                                                        }}>
-                                                            {m}
-                                                        </Text>
-                                                    </TouchableOpacity>
-                                                ))}
-                                            </View>
-                                        </View>
-
-                                        {/* Tier Selector */}
-                                        <View style={{ marginBottom: 12 }}>
-                                            <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12, marginBottom: 6 }}>
-                                                Subscription tier:
-                                            </Text>
-                                            <View style={{ flexDirection: 'row', gap: 8 }}>
-                                                {(['foundation', 'aspirant', 'topper'] as const).map((t) => {
-                                                    const info = TIER_INFO[t];
-                                                    return (
+                                                <View style={{ flexDirection: 'row', gap: 8 }}>
+                                                    {['1', '3', '6', '12'].map((m) => (
                                                         <TouchableOpacity
-                                                            key={t}
-                                                            onPress={() => setSelectedTier(t)}
+                                                            key={m}
+                                                            onPress={() => setDurationMonths(m)}
                                                             style={{
                                                                 flex: 1, padding: 10, borderRadius: 10, alignItems: 'center',
-                                                                backgroundColor: selectedTier === t ? info.color : (isDark ? '#111827' : '#f3f4f6'),
-                                                                borderWidth: 1, borderColor: selectedTier === t ? info.color : (isDark ? '#374151' : '#e5e7eb')
+                                                                backgroundColor: durationMonths === m ? '#2563eb' : (isDark ? '#111827' : '#f3f4f6'),
+                                                                borderWidth: 1, borderColor: durationMonths === m ? '#2563eb' : (isDark ? '#374151' : '#e5e7eb')
                                                             }}
                                                         >
-                                                            <Text style={{ fontSize: 14 }}>{info.icon}</Text>
                                                             <Text style={{
-                                                                color: selectedTier === t ? 'white' : (isDark ? '#d1d5db' : '#374151'),
-                                                                fontWeight: '600', fontSize: 10, marginTop: 2
+                                                                color: durationMonths === m ? 'white' : (isDark ? '#d1d5db' : '#374151'),
+                                                                fontWeight: '600', fontSize: 13
                                                             }}>
-                                                                {info.name}
-                                                            </Text>
-                                                            <Text style={{
-                                                                color: selectedTier === t ? 'rgba(255,255,255,0.8)' : (isDark ? '#6b7280' : '#9ca3af'),
-                                                                fontSize: 9, marginTop: 1
-                                                            }}>
-                                                                {info.price}/mo
+                                                                {m}
                                                             </Text>
                                                         </TouchableOpacity>
-                                                    );
-                                                })}
-                                            </View>
-                                        </View>
-
-                                        {/* CUSTOM APPROVAL SECTION */}
-                                        <View style={{ padding: 16, backgroundColor: isDark ? '#111827' : '#f8fafc', borderRadius: 12, marginBottom: 16, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
-                                            <Text style={{ color: isDark ? '#d1d5db' : '#475569', fontSize: 13, fontWeight: 'bold', marginBottom: 12 }}>⚙️ Custom Approval Overrides</Text>
-
-                                            <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
-                                                <View style={{ flex: 1 }}>
-                                                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11, marginBottom: 4 }}>Custom Expiry Date</Text>
-                                                    <TextInput
-                                                        style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', color: isDark ? 'white' : '#111827', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: isDark ? '#374151' : '#cbd5e1', fontSize: 12 }}
-                                                        placeholder="YYYY-MM-DD (e.g. 2027-05-25)"
-                                                        placeholderTextColor={isDark ? '#6b7280' : '#94a3b8'}
-                                                        value={customExpiryDate}
-                                                        onChangeText={setCustomExpiryDate}
-                                                    />
-                                                </View>
-                                                <View style={{ flex: 1 }}>
-                                                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11, marginBottom: 4 }}>Bonus AI Essay Credits</Text>
-                                                    <TextInput
-                                                        style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', color: isDark ? 'white' : '#111827', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: isDark ? '#374151' : '#cbd5e1', fontSize: 12 }}
-                                                        placeholder="e.g. 50"
-                                                        placeholderTextColor={isDark ? '#6b7280' : '#94a3b8'}
-                                                        value={customAiLimit}
-                                                        onChangeText={setCustomAiLimit}
-                                                        keyboardType="numeric"
-                                                    />
+                                                    ))}
                                                 </View>
                                             </View>
-                                            <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11, marginBottom: 4 }}>Private Admin Note</Text>
-                                            <TextInput
-                                                style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', color: isDark ? 'white' : '#111827', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: isDark ? '#374151' : '#cbd5e1', fontSize: 12 }}
-                                                placeholder="Reason for custom plan or 100% scholarship..."
-                                                placeholderTextColor={isDark ? '#6b7280' : '#94a3b8'}
-                                                value={adminNote}
-                                                onChangeText={setAdminNote}
-                                            />
 
-                                            <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
-                                                <View style={{ flex: 1 }}>
-                                                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11, marginBottom: 4 }}>Amount (₹)</Text>
-                                                    <TextInput
-                                                        style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', color: isDark ? 'white' : '#111827', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: isDark ? '#374151' : '#cbd5e1', fontSize: 12 }}
-                                                        placeholder="Auto from tier"
-                                                        placeholderTextColor={isDark ? '#6b7280' : '#94a3b8'}
-                                                        value={approvedAmount}
-                                                        onChangeText={setApprovedAmount}
-                                                        keyboardType="numeric"
-                                                    />
-                                                </View>
-                                                <View style={{ flex: 1 }}>
-                                                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11, marginBottom: 4 }}>Payment Method</Text>
-                                                    <View style={{ flexDirection: 'row', gap: 4 }}>
-                                                        {(['manual', 'gateway', 'scholarship'] as const).map((m) => (
+                                            {/* Tier Selector */}
+                                            <View style={{ marginBottom: 12 }}>
+                                                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12, marginBottom: 6 }}>
+                                                    Subscription tier:
+                                                </Text>
+                                                <View style={{ flexDirection: 'row', gap: 8 }}>
+                                                    {(['foundation', 'aspirant', 'topper'] as const).map((t) => {
+                                                        const info = TIER_INFO[t];
+                                                        return (
                                                             <TouchableOpacity
-                                                                key={m}
-                                                                onPress={() => setPaymentMethod(m)}
+                                                                key={t}
+                                                                onPress={() => setSelectedTier(t)}
                                                                 style={{
-                                                                    flex: 1, padding: 6, borderRadius: 6, alignItems: 'center',
-                                                                    backgroundColor: paymentMethod === m ? '#2563eb' : (isDark ? '#1f2937' : '#f3f4f6'),
-                                                                    borderWidth: 1, borderColor: paymentMethod === m ? '#2563eb' : (isDark ? '#374151' : '#e5e7eb')
+                                                                    flex: 1, padding: 10, borderRadius: 10, alignItems: 'center',
+                                                                    backgroundColor: selectedTier === t ? info.color : (isDark ? '#111827' : '#f3f4f6'),
+                                                                    borderWidth: 1, borderColor: selectedTier === t ? info.color : (isDark ? '#374151' : '#e5e7eb')
                                                                 }}
                                                             >
-                                                                <Text style={{ color: paymentMethod === m ? 'white' : (isDark ? '#9ca3af' : '#6b7280'), fontSize: 9, fontWeight: '600' }}>
-                                                                    {m === 'manual' ? '💵' : m === 'gateway' ? '🔗' : '🎓'} {m.charAt(0).toUpperCase() + m.slice(1)}
+                                                                <Text style={{ fontSize: 14 }}>{info.icon}</Text>
+                                                                <Text style={{
+                                                                    color: selectedTier === t ? 'white' : (isDark ? '#d1d5db' : '#374151'),
+                                                                    fontWeight: '600', fontSize: 10, marginTop: 2
+                                                                }}>
+                                                                    {info.name}
+                                                                </Text>
+                                                                <Text style={{
+                                                                    color: selectedTier === t ? 'rgba(255,255,255,0.8)' : (isDark ? '#6b7280' : '#9ca3af'),
+                                                                    fontSize: 9, marginTop: 1
+                                                                }}>
+                                                                    {info.price}/mo
                                                                 </Text>
                                                             </TouchableOpacity>
-                                                        ))}
+                                                        );
+                                                    })}
+                                                </View>
+                                            </View>
+
+                                            {/* CUSTOM APPROVAL SECTION */}
+                                            <View style={{ padding: 16, backgroundColor: isDark ? '#111827' : '#f8fafc', borderRadius: 12, marginBottom: 16, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
+                                                <Text style={{ color: isDark ? '#d1d5db' : '#475569', fontSize: 13, fontWeight: 'bold', marginBottom: 12 }}>⚙️ Custom Approval Overrides</Text>
+
+                                                <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
+                                                    <View style={{ flex: 1 }}>
+                                                        <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11, marginBottom: 4 }}>Custom Expiry Date</Text>
+                                                        <TextInput
+                                                            style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', color: isDark ? 'white' : '#111827', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: isDark ? '#374151' : '#cbd5e1', fontSize: 12 }}
+                                                            placeholder="YYYY-MM-DD (e.g. 2027-05-25)"
+                                                            placeholderTextColor={isDark ? '#6b7280' : '#94a3b8'}
+                                                            value={customExpiryDate}
+                                                            onChangeText={setCustomExpiryDate}
+                                                        />
+                                                    </View>
+                                                    <View style={{ flex: 1 }}>
+                                                        <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11, marginBottom: 4 }}>Bonus AI Essay Credits</Text>
+                                                        <TextInput
+                                                            style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', color: isDark ? 'white' : '#111827', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: isDark ? '#374151' : '#cbd5e1', fontSize: 12 }}
+                                                            placeholder="e.g. 50"
+                                                            placeholderTextColor={isDark ? '#6b7280' : '#94a3b8'}
+                                                            value={customAiLimit}
+                                                            onChangeText={setCustomAiLimit}
+                                                            keyboardType="numeric"
+                                                        />
+                                                    </View>
+                                                </View>
+                                                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11, marginBottom: 4 }}>Private Admin Note</Text>
+                                                <TextInput
+                                                    style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', color: isDark ? 'white' : '#111827', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: isDark ? '#374151' : '#cbd5e1', fontSize: 12 }}
+                                                    placeholder="Reason for custom plan or 100% scholarship..."
+                                                    placeholderTextColor={isDark ? '#6b7280' : '#94a3b8'}
+                                                    value={adminNote}
+                                                    onChangeText={setAdminNote}
+                                                />
+
+                                                <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
+                                                    <View style={{ flex: 1 }}>
+                                                        <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11, marginBottom: 4 }}>Amount (₹)</Text>
+                                                        <TextInput
+                                                            style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', color: isDark ? 'white' : '#111827', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: isDark ? '#374151' : '#cbd5e1', fontSize: 12 }}
+                                                            placeholder="Auto from tier"
+                                                            placeholderTextColor={isDark ? '#6b7280' : '#94a3b8'}
+                                                            value={approvedAmount}
+                                                            onChangeText={setApprovedAmount}
+                                                            keyboardType="numeric"
+                                                        />
+                                                    </View>
+                                                    <View style={{ flex: 1 }}>
+                                                        <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11, marginBottom: 4 }}>Payment Method</Text>
+                                                        <View style={{ flexDirection: 'row', gap: 4 }}>
+                                                            {(['manual', 'gateway', 'scholarship'] as const).map((m) => (
+                                                                <TouchableOpacity
+                                                                    key={m}
+                                                                    onPress={() => setPaymentMethod(m)}
+                                                                    style={{
+                                                                        flex: 1, padding: 6, borderRadius: 6, alignItems: 'center',
+                                                                        backgroundColor: paymentMethod === m ? '#2563eb' : (isDark ? '#1f2937' : '#f3f4f6'),
+                                                                        borderWidth: 1, borderColor: paymentMethod === m ? '#2563eb' : (isDark ? '#374151' : '#e5e7eb')
+                                                                    }}
+                                                                >
+                                                                    <Text style={{ color: paymentMethod === m ? 'white' : (isDark ? '#9ca3af' : '#6b7280'), fontSize: 9, fontWeight: '600' }}>
+                                                                        {m === 'manual' ? '💵' : m === 'gateway' ? '🔗' : '🎓'} {m.charAt(0).toUpperCase() + m.slice(1)}
+                                                                    </Text>
+                                                                </TouchableOpacity>
+                                                            ))}
+                                                        </View>
                                                     </View>
                                                 </View>
                                             </View>
-                                        </View>
 
-                                        {/* Action Buttons */}
-                                        <View style={{ flexDirection: 'row', gap: 10 }}>
-                                            <TouchableOpacity
-                                                onPress={() => handleApprove(u._id)}
-                                                disabled={actionLoading === u._id}
-                                                style={{
-                                                    flex: 1, padding: 14, borderRadius: 12, alignItems: 'center',
-                                                    backgroundColor: '#22c55e', flexDirection: 'row', justifyContent: 'center', gap: 6
-                                                }}
-                                            >
-                                                {actionLoading === u._id ? (
-                                                    <ActivityIndicator color="white" size="small" />
-                                                ) : (
-                                                    <>
-                                                        <Ionicons name="checkmark-circle" size={18} color="white" />
-                                                        <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 14 }}>Approve</Text>
-                                                    </>
-                                                )}
-                                            </TouchableOpacity>
-                                            <TouchableOpacity
-                                                onPress={() => handleReject(u._id)}
-                                                disabled={actionLoading === u._id}
-                                                style={{
-                                                    flex: 1, padding: 14, borderRadius: 12, alignItems: 'center',
-                                                    backgroundColor: '#ef4444', flexDirection: 'row', justifyContent: 'center', gap: 6
-                                                }}
-                                            >
-                                                {actionLoading === u._id ? (
-                                                    <ActivityIndicator color="white" size="small" />
-                                                ) : (
-                                                    <>
-                                                        <Ionicons name="close-circle" size={18} color="white" />
-                                                        <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 14 }}>Reject</Text>
-                                                    </>
-                                                )}
-                                            </TouchableOpacity>
-                                        </View>
+                                            {/* Action Buttons */}
+                                            <View style={{ flexDirection: 'row', gap: 10 }}>
+                                                <TouchableOpacity
+                                                    onPress={() => handleApprove(u._id)}
+                                                    disabled={actionLoading === u._id}
+                                                    style={{
+                                                        flex: 1, padding: 14, borderRadius: 12, alignItems: 'center',
+                                                        backgroundColor: '#22c55e', flexDirection: 'row', justifyContent: 'center', gap: 6
+                                                    }}
+                                                >
+                                                    {actionLoading === u._id ? (
+                                                        <ActivityIndicator color="white" size="small" />
+                                                    ) : (
+                                                        <>
+                                                            <Ionicons name="checkmark-circle" size={18} color="white" />
+                                                            <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 14 }}>Approve</Text>
+                                                        </>
+                                                    )}
+                                                </TouchableOpacity>
+                                                <TouchableOpacity
+                                                    onPress={() => handleReject(u._id)}
+                                                    disabled={actionLoading === u._id}
+                                                    style={{
+                                                        flex: 1, padding: 14, borderRadius: 12, alignItems: 'center',
+                                                        backgroundColor: '#ef4444', flexDirection: 'row', justifyContent: 'center', gap: 6
+                                                    }}
+                                                >
+                                                    {actionLoading === u._id ? (
+                                                        <ActivityIndicator color="white" size="small" />
+                                                    ) : (
+                                                        <>
+                                                            <Ionicons name="close-circle" size={18} color="white" />
+                                                            <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 14 }}>Reject</Text>
+                                                        </>
+                                                    )}
+                                                </TouchableOpacity>
+                                            </View>
 
-                                        {/* Reject Reason Input */}
-                                        <TextInput
-                                            style={{
-                                                backgroundColor: isDark ? '#111827' : '#f9fafb',
-                                                color: isDark ? 'white' : '#111827',
-                                                padding: 12, borderRadius: 10, marginTop: 10,
-                                                borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb',
-                                                fontSize: 13,
-                                                ...(Platform.OS === 'web' ? { outlineStyle: 'none' } : {})
-                                            } as any}
-                                            placeholder="Rejection reason (optional)"
-                                            placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
-                                            value={rejectReason}
-                                            onChangeText={setRejectReason}
-                                        />
-                                    </View>
-                                )}
-                            </View>
-                        ))
+                                            {/* Reject Reason Input */}
+                                            <TextInput
+                                                style={{
+                                                    backgroundColor: isDark ? '#111827' : '#f9fafb',
+                                                    color: isDark ? 'white' : '#111827',
+                                                    padding: 12, borderRadius: 10, marginTop: 10,
+                                                    borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb',
+                                                    fontSize: 13,
+                                                    ...(Platform.OS === 'web' ? { outlineStyle: 'none' } : {})
+                                                } as any}
+                                                placeholder="Rejection reason (optional)"
+                                                placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
+                                                value={rejectReason}
+                                                onChangeText={setRejectReason}
+                                            />
+                                        </View>
+                                    )}
+                                </View>
+                            ))}
+                        </>
                     )
                 )}
 

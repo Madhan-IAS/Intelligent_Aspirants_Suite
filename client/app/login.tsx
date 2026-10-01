@@ -27,7 +27,7 @@ export default function Login() {
     setError('');
     try {
       const res = await api.post('/auth/login', { email, password, mobile });
-      await login(res.data.token, res.data.user);
+      await login(res.data.token, res.data.refreshToken, res.data.user);
       router.replace('/');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Login failed');
@@ -41,7 +41,7 @@ export default function Login() {
     setError('');
     try {
       const res = await api.post('/auth/dev-login');
-      await login(res.data.token, res.data.user);
+      await login(res.data.token, res.data.refreshToken, res.data.user);
       router.replace('/');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Dev Login failed');
@@ -97,7 +97,12 @@ export default function Login() {
           </View>
 
           <View>
-            <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', marginBottom: 8, fontWeight: '500' }}>Password</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', fontWeight: '500' }}>Password</Text>
+              <TouchableOpacity onPress={() => router.push('/forgot-password')}>
+                <Text style={{ color: '#2563eb', fontSize: 12, fontWeight: 'bold' }}>Forgot Password?</Text>
+              </TouchableOpacity>
+            </View>
             <TextInput
               style={{ backgroundColor: isDark ? '#111827' : '#f9fafb', color: isDark ? 'white' : '#111827', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', outlineStyle: 'none' } as any}
               placeholder="••••••••"

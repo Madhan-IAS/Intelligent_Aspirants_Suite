@@ -30,6 +30,8 @@ export default function Profile() {
     mockTest: 'Sunday'
   });
   const [exporting, setExporting] = useState(false);
+  const [passwords, setPasswords] = useState({ oldPassword: '', newPassword: '' });
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -71,6 +73,27 @@ export default function Profile() {
       showToast('error', 'Failed to export backup data.');
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    if (!passwords.oldPassword || !passwords.newPassword) {
+      showToast('error', 'Please fill in both current and new passwords.');
+      return;
+    }
+    if (passwords.newPassword.length < 6) {
+      showToast('error', 'New password must be at least 6 characters.');
+      return;
+    }
+    setChangingPassword(true);
+    try {
+      await api.put('/auth/change-password', passwords);
+      showToast('success', 'Password updated successfully!');
+      setPasswords({ oldPassword: '', newPassword: '' });
+    } catch (error: any) {
+      showToast('error', error.response?.data?.message || 'Failed to update password.');
+    } finally {
+      setChangingPassword(false);
     }
   };
 
@@ -311,6 +334,44 @@ export default function Profile() {
                 <View style={{ width: 20, height: 20, backgroundColor: 'white', borderRadius: 10 }} />
               </TouchableOpacity>
             </View>
+          </View>
+
+          {/* Security Settings Card */}
+          <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', borderRadius: 16, padding: 24, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, marginBottom: 24 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}>
+              <Ionicons name="lock-closed" size={20} color="#f43f5e" style={{ marginRight: 8 }} />
+              <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 20, fontWeight: 'bold' }}>Security Settings</Text>
+            </View>
+            <View style={{ marginBottom: 16 }}>
+              <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', fontSize: 13, fontWeight: '600', marginBottom: 6 }}>Current Password</Text>
+              <TextInput
+                secureTextEntry
+                placeholder="Enter current password"
+                placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
+                value={passwords.oldPassword}
+                onChangeText={(t) => setPasswords({ ...passwords, oldPassword: t })}
+                style={{ backgroundColor: isDark ? '#374151' : '#f9fafb', color: isDark ? 'white' : '#111827', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: isDark ? '#4b5563' : '#e5e7eb' }}
+              />
+            </View>
+            <View style={{ marginBottom: 20 }}>
+              <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', fontSize: 13, fontWeight: '600', marginBottom: 6 }}>New Password</Text>
+              <TextInput
+                secureTextEntry
+                placeholder="Enter new password (min 6 chars)"
+                placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
+                value={passwords.newPassword}
+                onChangeText={(t) => setPasswords({ ...passwords, newPassword: t })}
+                style={{ backgroundColor: isDark ? '#374151' : '#f9fafb', color: isDark ? 'white' : '#111827', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: isDark ? '#4b5563' : '#e5e7eb' }}
+              />
+            </View>
+            <TouchableOpacity
+              onPress={handlePasswordChange}
+              disabled={changingPassword}
+              style={{ backgroundColor: changingPassword ? '#be123c' : '#f43f5e', paddingVertical: 12, borderRadius: 8, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}
+            >
+              {changingPassword ? <ActivityIndicator size="small" color="white" /> : <Ionicons name="key-outline" size={18} color="white" style={{ marginRight: 8 }} />}
+              <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 15 }}>{changingPassword ? 'Updating...' : 'Change Password'}</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Backup & Export Card */}

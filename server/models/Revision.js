@@ -9,4 +9,6 @@ const revisionSchema = new mongoose.Schema({
   completedDate: { type: Date }
 }, { timestamps: true });
 
+revisionSchema.index({ userId: 1, scheduledDate: 1, status: 1 });
+
 module.exports = mongoose.model('Revision', revisionSchema);

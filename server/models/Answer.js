@@ -17,4 +17,6 @@ const answerSchema = new mongoose.Schema({
   upvotedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 }, { timestamps: true });
 
+answerSchema.index({ userId: 1, pyqId: 1 });
+
 module.exports = mongoose.model('Answer', answerSchema);

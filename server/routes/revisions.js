@@ -9,5 +9,7 @@ router.get('/', revisionController.getPendingRevisions);
 router.get('/pending', revisionController.getPendingRevisions);
 router.post('/initial', revisionController.scheduleInitialRevision);
 router.post('/:id/complete', revisionController.completeRevision);
+router.post('/:id/skip', revisionController.skipRevision);
+router.post('/:id/reschedule', revisionController.rescheduleRevision);
 
 module.exports = router;

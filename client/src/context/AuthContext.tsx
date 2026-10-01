@@ -25,7 +25,7 @@ type UserProfile = {
 type AuthContextType = {
   user: UserProfile | null;
   loading: boolean;
-  login: (token: string, userData: UserProfile) => Promise<void>;
+  login: (token: string, refreshToken: string | null | undefined, userData: UserProfile) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (data: any) => Promise<void>;
 };
@@ -63,14 +63,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const login = async (token: string, userData: UserProfile) => {
+  const login = async (token: string, refreshToken: string | null | undefined, userData: UserProfile) => {
     await AsyncStorage.setItem('token', token);
+    if (refreshToken) await AsyncStorage.setItem('refreshToken', refreshToken);
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     setUser(userData);
   };
 
   const logout = async () => {
     await AsyncStorage.removeItem('token');
+    await AsyncStorage.removeItem('refreshToken');
     delete api.defaults.headers.common['Authorization'];
     setUser(null);
     router.replace('/login');

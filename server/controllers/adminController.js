@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const Subscription = require('../models/Subscription');
+const AuditLog = require('../models/AuditLog');
 
 // GET /api/admin/pending
 // List all users with pending_review subscription status
@@ -32,9 +33,15 @@ exports.getPendingUsers = async (req, res) => {
 // List all users for admin overview
 exports.getAllUsers = async (req, res) => {
     try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 100;
+        const skip = (page - 1) * limit;
+
         const users = await User.find()
             .select('-passwordHash')
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
         res.json(users);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -128,6 +135,14 @@ exports.approveUser = async (req, res) => {
         );
 
         res.json({ message: `User approved for ${months} month(s)`, user });
+
+        // Log the action
+        await AuditLog.create({
+            adminId: req.user.id,
+            action: 'APPROVE',
+            targetUserId: user._id,
+            details: { finalTier, months, manualAmount, paymentMethod: finalMethod }
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -158,6 +173,13 @@ exports.rejectUser = async (req, res) => {
         );
 
         res.json({ message: 'User subscription rejected', user });
+
+        await AuditLog.create({
+            adminId: req.user.id,
+            action: 'REJECT',
+            targetUserId: user._id,
+            details: { reason }
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -189,6 +211,13 @@ exports.revokeUser = async (req, res) => {
         );
 
         res.json({ message: 'User subscription has been revoked successfully', user });
+
+        await AuditLog.create({
+            adminId: req.user.id,
+            action: 'REVOKE',
+            targetUserId: user._id,
+            details: { reason: 'Manual Revoke' }
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -208,6 +237,13 @@ exports.deleteUser = async (req, res) => {
         await Subscription.deleteMany({ userId: req.params.id });
 
         res.json({ message: 'User permanently deleted from the platform', deletedUserId: req.params.id });
+
+        await AuditLog.create({
+            adminId: req.user.id,
+            action: 'DELETE',
+            targetUserId: req.params.id,
+            details: { email: user.email, name: user.name }
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -233,6 +269,13 @@ exports.updateUserName = async (req, res) => {
         }
 
         res.json({ message: 'User name updated successfully', user });
+
+        await AuditLog.create({
+            adminId: req.user.id,
+            action: 'UPDATE',
+            targetUserId: user._id,
+            details: { field: 'name', newValue: name.trim() }
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -324,6 +367,27 @@ exports.getPaymentHistory = async (req, res) => {
             summary: { total: records.length, approved: totalApproved, rejected: totalRejected, collected: totalCollected },
             records
         });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// GET /api/admin/audit-logs
+// View chronological admin actions
+exports.getAuditLogs = async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 50;
+        const skip = (page - 1) * limit;
+
+        const logs = await AuditLog.find()
+            .populate('adminId', 'name email')
+            .populate('targetUserId', 'name email')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+
+        res.json(logs);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

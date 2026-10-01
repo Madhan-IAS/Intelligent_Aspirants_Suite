@@ -18,4 +18,6 @@ const quizSchema = new mongoose.Schema({
   selectedAnswers: { type: Map, of: String }
 }, { timestamps: true });
 
+quizSchema.index({ userId: 1, date: -1, type: 1 });
+
 module.exports = mongoose.model('Quiz', quizSchema);

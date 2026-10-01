@@ -1,10 +1,13 @@
 const mongoose = require('mongoose');
 
 const notificationSchema = new mongoose.Schema({
-  type: { 
-    type: String, 
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  isBroadcast: { type: Boolean, default: false },
+  readBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  type: {
+    type: String,
     enum: ['current_affairs', 'revision_due', 'system', 'achievement'],
-    default: 'system' 
+    default: 'system'
   },
   title: { type: String, required: true },
   message: { type: String },

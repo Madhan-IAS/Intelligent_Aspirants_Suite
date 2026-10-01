@@ -4,6 +4,13 @@ const ChecklistItem = require('../models/ChecklistItem');
 const WeeklySchedule = require('../models/WeeklySchedule');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
+
+const generateTokens = (userId) => {
+  const accessToken = jwt.sign({ id: userId }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '15m' });
+  const refreshToken = jwt.sign({ id: userId }, process.env.JWT_REFRESH_SECRET || 'refresh_fallback_secret', { expiresIn: '7d' });
+  return { accessToken, refreshToken };
+};
 
 // Master Seeding Arrays to initialize new registered users with the exact same data
 const MASTER_TIMETABLE = [
@@ -104,8 +111,11 @@ exports.devLogin = async (req, res) => {
       await user.save();
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '30d' });
-    res.json({ token, user });
+    const { accessToken, refreshToken } = generateTokens(user._id);
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    res.json({ token: accessToken, refreshToken, user });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -155,8 +165,11 @@ exports.register = async (req, res) => {
     const weeklyWithUser = WEEKLY_SCHEDULE.map((w, i) => ({ ...w, userId: user._id, order: i }));
     await WeeklySchedule.insertMany(weeklyWithUser);
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '30d' });
-    res.status(201).json({ token, user });
+    const { accessToken, refreshToken } = generateTokens(user._id);
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    res.status(201).json({ token: accessToken, refreshToken, user });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -212,10 +225,35 @@ exports.login = async (req, res) => {
       await WeeklySchedule.insertMany(weeklyWithUser);
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '30d' });
-    res.json({ token, user });
+    const { accessToken, refreshToken } = generateTokens(user._id);
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    res.json({ token: accessToken, refreshToken, user });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+exports.refreshToken = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken) return res.status(401).json({ message: 'Refresh token required' });
+
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || 'refresh_fallback_secret');
+    const user = await User.findById(decoded.id);
+
+    if (!user || user.refreshToken !== refreshToken) {
+      return res.status(403).json({ message: 'Invalid refresh token' });
+    }
+
+    const tokens = generateTokens(user._id);
+    user.refreshToken = tokens.refreshToken;
+    await user.save();
+
+    res.json({ token: tokens.accessToken, refreshToken: tokens.refreshToken });
+  } catch (error) {
+    res.status(403).json({ message: 'Refresh token expired or invalid' });
   }
 };
 
@@ -263,5 +301,28 @@ exports.updateProfile = async (req, res) => {
     res.json(user);
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+exports.changePassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+
+    // We need bcrypt to hash the password
+    const bcrypt = require('bcryptjs');
+
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const isMatch = await bcrypt.compare(oldPassword, user.passwordHash);
+    if (!isMatch) return res.status(400).json({ message: 'Incorrect current password' });
+
+    const salt = await bcrypt.genSalt(10);
+    user.passwordHash = await bcrypt.hash(newPassword, salt);
+    await user.save();
+
+    res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to update password', error: error.message });
   }
 };

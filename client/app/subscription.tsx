@@ -128,6 +128,33 @@ export default function SubscriptionScreen() {
                 </View>
             ) : null}
 
+            {/* Current Plan Card (If Active) */}
+            {user?.subscriptionStatus === 'active' && user?.subscriptionTier && (
+                <View style={{
+                    backgroundColor: isDark ? '#1f2937' : '#ffffff',
+                    borderRadius: 16, padding: 24, marginBottom: 24, width: '100%', maxWidth: 800,
+                    borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb',
+                }}>
+                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 8 }}>My Active Plan</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Text style={{ fontSize: 32, marginRight: 12 }}>{TIER_INFO[user.subscriptionTier as keyof typeof TIER_INFO]?.icon || '🛡️'}</Text>
+                            <View>
+                                <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 24, fontWeight: 'bold' }}>
+                                    {TIER_INFO[user.subscriptionTier as keyof typeof TIER_INFO]?.name || user.subscriptionTier.toUpperCase()}
+                                </Text>
+                                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 14, marginTop: 4 }}>
+                                    Valid until {user.subscriptionExpiry ? new Date(user.subscriptionExpiry).toLocaleDateString() : 'N/A'}
+                                </Text>
+                            </View>
+                        </View>
+                        <View style={{ backgroundColor: '#10b981', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 }}>
+                            <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12 }}>ACTIVE</Text>
+                        </View>
+                    </View>
+                </View>
+            )}
+
             {/* Pricing Toggle */}
             {!showPayment && (
                 <View style={{

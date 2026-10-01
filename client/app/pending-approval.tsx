@@ -59,7 +59,7 @@ export default function PendingApprovalScreen() {
                 const profileRes = await api.get('/auth/profile');
                 const token = await (await import('@react-native-async-storage/async-storage')).default.getItem('token');
                 if (token) {
-                    await login(token, profileRes.data);
+                    await login(token, null, profileRes.data);
                 }
                 router.replace('/');
             } else if (res.data.subscriptionStatus === 'rejected') {

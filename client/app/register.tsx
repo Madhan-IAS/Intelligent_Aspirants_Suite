@@ -46,7 +46,7 @@ export default function Register() {
         password,
         mobile
       });
-      await login(res.data.token, res.data.user);
+      await login(res.data.token, res.data.refreshToken, res.data.user);
       router.replace('/');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Registration failed');

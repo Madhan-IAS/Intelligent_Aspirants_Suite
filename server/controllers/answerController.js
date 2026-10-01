@@ -2,7 +2,15 @@ const Answer = require('../models/Answer');
 
 exports.getAnswers = async (req, res) => {
   try {
-    const answers = await Answer.find({ userId: req.user.id }).populate('pyqId').sort({ createdAt: -1 });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const skip = (page - 1) * limit;
+
+    const answers = await Answer.find({ userId: req.user.id })
+      .populate('pyqId')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
     res.json(answers);
   } catch (error) {
     res.status(500).json({ message: error.message });

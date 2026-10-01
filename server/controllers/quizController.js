@@ -59,6 +59,11 @@ exports.generateDailyQuiz = async (req, res) => {
     const userId = req.user.id;
     const today = getTodayIST();
 
+    const existingQuiz = await Quiz.findOne({ userId, type: 'Daily', date: today, status: 'Pending' });
+    if (existingQuiz) {
+      return res.status(400).json({ message: 'You already have a pending daily quiz for today. Please complete it first.' });
+    }
+
     // 1. Get today's Daily Plan to extract the GS topics
     const dailyPlan = await DailyPlan.findOne({ userId, date: today })
       .populate('gsTopicIds', 'title subjectName chapter notes');
@@ -177,6 +182,11 @@ exports.generateTopicQuiz = async (req, res) => {
     const userId = req.user.id;
     const today = getTodayIST();
     const { topicIds } = req.body;
+
+    const existingQuiz = await Quiz.findOne({ userId, type: 'Subject', date: today, status: 'Pending' });
+    if (existingQuiz) {
+      return res.status(400).json({ message: 'You already have a pending topic quiz. Please complete it before generating another.' });
+    }
 
     if (!topicIds || !Array.isArray(topicIds) || topicIds.length < 5) {
       return res.status(400).json({ message: 'Please select at least 5 topics to generate a quiz.' });

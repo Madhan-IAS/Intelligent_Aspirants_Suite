@@ -4,13 +4,24 @@
     "slug": "ias",
     "scheme": "ias-kms",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "orientation": "portrait",
     "icon": "./assets/ias_logo.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ias.upsc"
     },
     "android": {
+      "package": "com.ias.upsc",
+      "versionCode": 1,
+      "permissions": [
+        "INTERNET",
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -25,7 +36,17 @@
       "favicon": "./assets/ias_logo.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-notifications",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#1e3a5f"
+        }
+      ]
     ]
   }
 }

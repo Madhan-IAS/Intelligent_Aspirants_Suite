@@ -19,7 +19,15 @@ console.log('[ENV] MONGO_URI present:', !!process.env.MONGO_URI);
 // Middleware
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
-    ? [process.env.FRONTEND_URL, 'https://upsc-kms.onrender.com', 'https://iasuite.onrender.com'].filter(Boolean)
+    ? function (origin, callback) {
+      const allowed = [process.env.FRONTEND_URL, 'https://upsc-kms.onrender.com', 'https://iasuite.onrender.com'].filter(Boolean);
+      // Allow requests with no origin (mobile apps, curl, server-to-server)
+      if (!origin || allowed.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    }
     : '*',
   credentials: true
 }));
@@ -29,6 +37,9 @@ app.use(express.json({ limit: '50mb' }));
 app.get('/', (req, res) => {
   res.send('Intelligent Aspirant\'s Suite API is running...');
 });
+
+// Public Pages (no rate limit, no auth)
+app.use('/privacy', require('./routes/privacy'));
 
 app.get('/api/health', (req, res) => {
   const dbStatus = mongoose.connection.readyState;

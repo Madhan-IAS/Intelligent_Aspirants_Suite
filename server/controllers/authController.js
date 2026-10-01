@@ -325,3 +325,56 @@ exports.changePassword = async (req, res) => {
     res.status(500).json({ message: 'Failed to update password', error: error.message });
   }
 };
+
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Generate 6 digit mock OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    user.resetOtp = otp;
+    user.otpExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+    await user.save();
+
+    // Since this is MVP without email service, we return the OTP in response
+    // In production, NEVER return OTP in API response. Send via Email/SMS.
+    res.json({
+      message: 'OTP generated. Check your email (Simulated).',
+      devOtp: otp // Simulated for dev
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.resetOtp !== otp || new Date() > new Date(user.otpExpiry)) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
+
+    // We need bcrypt to hash the password
+    const bcrypt = require('bcryptjs');
+
+    user.passwordHash = await bcrypt.hash(newPassword, 10);
+    user.resetOtp = undefined;
+    user.otpExpiry = undefined;
+    await user.save();
+
+    res.json({ message: 'Password reset successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

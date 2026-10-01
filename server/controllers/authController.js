@@ -4,7 +4,6 @@ const ChecklistItem = require('../models/ChecklistItem');
 const WeeklySchedule = require('../models/WeeklySchedule');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const jwt = require('jsonwebtoken');
 
 const generateTokens = (userId) => {
   const accessToken = jwt.sign({ id: userId }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '15m' });

@@ -85,9 +85,9 @@ export default function HealthDashboard() {
                                 <Ionicons name="hardware-chip" size={24} color="#8b5cf6" />
                                 <Text style={{ fontSize: 16, fontWeight: 'bold', color: isDark ? 'white' : 'black' }}>Node.js Memory (V8)</Text>
                             </View>
-                            <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 14 }}>RSS: <Text style={{ fontWeight: 'bold' }}>{healthData.memory.rss}</Text></Text>
-                            <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 14, marginTop: 8 }}>Heap Total: {healthData.memory.heapTotal}</Text>
-                            <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 14, marginTop: 8 }}>Heap Used: {healthData.memory.heapUsed}</Text>
+                            <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 14 }}>RSS: <Text style={{ fontWeight: 'bold' }}>{healthData.memory?.rss || 'N/A'}</Text></Text>
+                            <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 14, marginTop: 8 }}>Heap Total: {healthData.memory?.heapTotal || 'N/A'}</Text>
+                            <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 14, marginTop: 8 }}>Heap Used: {healthData.memory?.heapUsed || 'N/A'}</Text>
                         </View>
 
                         {/* System OS Resources */}
@@ -96,9 +96,9 @@ export default function HealthDashboard() {
                                 <Ionicons name="speedometer" size={24} color="#ef4444" />
                                 <Text style={{ fontSize: 16, fontWeight: 'bold', color: isDark ? 'white' : 'black' }}>System OS (VM)</Text>
                             </View>
-                            <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 14 }}>Total Mem: {healthData.system.totalMem}</Text>
-                            <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 14, marginTop: 8 }}>Free Mem: {healthData.system.freeMem}</Text>
-                            <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 14, marginTop: 8 }}>CPU Cores: {healthData.system.cpus}</Text>
+                            <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 14 }}>Total Mem: {healthData.system?.totalMem || 'N/A'}</Text>
+                            <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 14, marginTop: 8 }}>Free Mem: {healthData.system?.freeMem || 'N/A'}</Text>
+                            <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 14, marginTop: 8 }}>CPU Cores: {healthData.system?.cpus || 'N/A'}</Text>
                         </View>
 
                         {/* UPTIME */}

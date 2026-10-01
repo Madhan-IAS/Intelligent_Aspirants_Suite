@@ -17,7 +17,7 @@
                 "buildType": "apk"
             },
             "env": {
-                "EXPO_PUBLIC_API_URL": "https://iasuite.onrender.com/api"
+                "EXPO_PUBLIC_API_URL": "https://ias-backend-8gll.onrender.com/api"
             }
         },
         "production": {
@@ -29,7 +29,7 @@
                 "autoIncrement": true
             },
             "env": {
-                "EXPO_PUBLIC_API_URL": "https://iasuite.onrender.com/api"
+                "EXPO_PUBLIC_API_URL": "https://ias-backend-8gll.onrender.com/api"
             }
         }
     },

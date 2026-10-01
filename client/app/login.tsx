@@ -80,6 +80,8 @@ export default function Login() {
               onChangeText={setEmail}
               autoCapitalize="none"
               keyboardType="email-address"
+              id="email"
+              autoComplete="email"
             />
           </View>
 
@@ -93,6 +95,8 @@ export default function Login() {
               onChangeText={(val) => setMobile(val.replace(/[^0-9]/g, '').slice(0, 10))}
               keyboardType="phone-pad"
               maxLength={10}
+              id="mobile"
+              autoComplete="tel"
             />
           </View>
 
@@ -110,6 +114,8 @@ export default function Login() {
               value={password}
               onChangeText={setPassword}
               secureTextEntry
+              id="password"
+              autoComplete="current-password"
             />
           </View>
         </View>

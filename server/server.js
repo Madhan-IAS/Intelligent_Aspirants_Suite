@@ -19,7 +19,7 @@ console.log('[ENV] MONGO_URI present:', !!process.env.MONGO_URI);
 // Middleware
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
-    ? (process.env.FRONTEND_URL || 'https://upsc-kms.onrender.com')
+    ? [process.env.FRONTEND_URL, 'https://upsc-kms.onrender.com', 'https://iasuite.onrender.com'].filter(Boolean)
     : '*',
   credentials: true
 }));

@@ -249,18 +249,38 @@ exports.deleteUser = async (req, res) => {
     }
 };
 
-// PUT /api/admin/update-name/:id
-// Admin updates a user's display name
-exports.updateUserName = async (req, res) => {
+// PUT /api/admin/update-user/:id
+// Admin updates a user's details (name, email, mobile, password)
+exports.updateUserDetails = async (req, res) => {
     try {
-        const { name } = req.body;
+        const { name, email, mobile, password } = req.body;
+
         if (!name || name.trim().length === 0) {
             return res.status(400).json({ message: 'Name cannot be empty' });
         }
 
+        const updateFields = { name: name.trim() };
+
+        if (email) {
+            const existingEmail = await User.findOne({ email: email.trim(), _id: { $ne: req.params.id } });
+            if (existingEmail) return res.status(400).json({ message: 'Email is already in use by another user' });
+            updateFields.email = email.trim();
+        }
+
+        if (mobile) {
+            // Optional DB check for mobile duplication, currently just adding it
+            updateFields.mobile = mobile.trim();
+        }
+
+        if (password) {
+            const bcrypt = require('bcryptjs');
+            const salt = await bcrypt.genSalt(10);
+            updateFields.passwordHash = await bcrypt.hash(password, salt);
+        }
+
         const user = await User.findByIdAndUpdate(
             req.params.id,
-            { name: name.trim() },
+            updateFields,
             { new: true }
         ).select('-passwordHash');
 
@@ -268,13 +288,13 @@ exports.updateUserName = async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        res.json({ message: 'User name updated successfully', user });
+        res.json({ message: 'User details updated successfully', user });
 
         await AuditLog.create({
             adminId: req.user.id,
             action: 'UPDATE',
             targetUserId: user._id,
-            details: { field: 'name', newValue: name.trim() }
+            details: { updatedFields: Object.keys(updateFields).filter(k => k !== 'passwordHash') }
         });
     } catch (error) {
         res.status(500).json({ message: error.message });

@@ -27,10 +27,13 @@ router.post('/reject/:id', auth, adminAuth, validate([
 router.post('/revoke/:id', auth, adminAuth, validate(idValidation), adminController.revokeUser);
 router.delete('/user/:id', auth, adminAuth, validate(idValidation), adminController.deleteUser);
 
-router.put('/update-name/:id', auth, adminAuth, validate([
+router.put('/update-user/:id', auth, adminAuth, validate([
     ...idValidation,
-    body('name').trim().notEmpty().withMessage('Name cannot be empty')
-]), adminController.updateUserName);
+    body('name').trim().notEmpty().withMessage('Name cannot be empty'),
+    body('email').optional().isEmail().withMessage('Invalid email format'),
+    body('mobile').optional().matches(/^[0-9]{10}$/).withMessage('Invalid mobile number'),
+    body('password').optional().isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
+]), adminController.updateUserDetails);
 router.get('/revenue', auth, adminAuth, adminController.getRevenueAnalytics);
 router.get('/payment-history', auth, adminAuth, adminController.getPaymentHistory);
 router.get('/audit-logs', auth, adminAuth, adminController.getAuditLogs);

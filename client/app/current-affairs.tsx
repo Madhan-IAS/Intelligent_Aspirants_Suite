@@ -4,10 +4,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import api from '../src/services/api';
 import { useTheme } from '../src/context/ThemeContext';
+import { useAuth } from '../src/context/AuthContext';
 
 export default function CurrentAffairs() {
   const router = useRouter();
   const { mode } = useTheme();
+  const { user } = useAuth();
   const isDark = mode === 'dark';
 
   const [articles, setArticles] = useState<any[]>([]);
@@ -218,49 +220,55 @@ export default function CurrentAffairs() {
             </View>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <TouchableOpacity
-              onPress={handleAutoLink}
-              disabled={autoLinking}
-              style={{ backgroundColor: autoLinking ? (isDark ? '#374151' : '#d1d5db') : '#8b5cf6', paddingHorizontal: 14, paddingVertical: 12, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
-            >
-              {autoLinking ? (
-                <ActivityIndicator size="small" color="white" />
-              ) : (
-                <Ionicons name="sparkles" size={18} color="white" />
-              )}
-              {Platform.OS === 'web' && window.innerWidth > 768 && (
+            {user?.role === 'admin' && (
+              <TouchableOpacity
+                onPress={handleAutoLink}
+                disabled={autoLinking}
+                style={{ backgroundColor: autoLinking ? (isDark ? '#374151' : '#d1d5db') : '#8b5cf6', paddingHorizontal: 14, paddingVertical: 12, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
+              >
+                {autoLinking ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <Ionicons name="sparkles" size={18} color="white" />
+                )}
+                {Platform.OS === 'web' && window.innerWidth > 768 && (
+                  <Text style={{ color: 'white', fontWeight: 'bold', marginLeft: 6 }}>
+                    {autoLinking ? 'Mapping...' : 'Auto-Link AI'}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            )}
+
+            {user?.role === 'admin' && (
+              <TouchableOpacity
+                onPress={handleRefreshNews}
+                disabled={refreshingNews}
+                style={{ backgroundColor: refreshingNews ? (isDark ? '#374151' : '#d1d5db') : '#10b981', paddingHorizontal: 14, paddingVertical: 12, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
+              >
+                {refreshingNews ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <Ionicons name="refresh" size={18} color="white" />
+                )}
                 <Text style={{ color: 'white', fontWeight: 'bold', marginLeft: 6 }}>
-                  {autoLinking ? 'Mapping...' : 'Auto-Link AI'}
+                  {refreshingNews ? 'Refreshing...' : "Refresh Today's News"}
                 </Text>
-              )}
-            </TouchableOpacity>
+              </TouchableOpacity>
+            )}
 
-            <TouchableOpacity
-              onPress={handleRefreshNews}
-              disabled={refreshingNews}
-              style={{ backgroundColor: refreshingNews ? (isDark ? '#374151' : '#d1d5db') : '#10b981', paddingHorizontal: 14, paddingVertical: 12, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
-            >
-              {refreshingNews ? (
-                <ActivityIndicator size="small" color="white" />
-              ) : (
-                <Ionicons name="refresh" size={18} color="white" />
-              )}
-              <Text style={{ color: 'white', fontWeight: 'bold', marginLeft: 6 }}>
-                {refreshingNews ? 'Refreshing...' : "Refresh Today's News"}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => setShowAddForm(!showAddForm)}
-              style={{ backgroundColor: '#2563eb', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
-            >
-              <Ionicons name={showAddForm ? "close" : "add"} size={20} color="white" />
-              {(Platform.OS === 'web' && window.innerWidth > 768) && (
-                <Text style={{ color: 'white', fontWeight: 'bold', marginLeft: 8 }}>
-                  {showAddForm ? 'Cancel' : 'Log Article'}
-                </Text>
-              )}
-            </TouchableOpacity>
+            {user?.role === 'admin' && (
+              <TouchableOpacity
+                onPress={() => setShowAddForm(!showAddForm)}
+                style={{ backgroundColor: '#2563eb', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Ionicons name={showAddForm ? "close" : "add"} size={20} color="white" />
+                {(Platform.OS === 'web' && window.innerWidth > 768) && (
+                  <Text style={{ color: 'white', fontWeight: 'bold', marginLeft: 8 }}>
+                    {showAddForm ? 'Cancel' : 'Log Article'}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
@@ -491,29 +499,31 @@ export default function CurrentAffairs() {
                       />
                     </TouchableOpacity>
 
-                    {/* Delete Toggle */}
-                    {deleteConfirmId === article._id ? (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    {/* Delete Toggle (Admin only) */}
+                    {user?.role === 'admin' && (
+                      deleteConfirmId === article._id ? (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <TouchableOpacity
+                            onPress={(e) => { e.stopPropagation(); setDeleteConfirmId(''); }}
+                            style={{ backgroundColor: isDark ? '#374151' : '#e5e7eb', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
+                          >
+                            <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', fontSize: 10, fontWeight: 'bold' }}>Cancel</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={(e) => { e.stopPropagation(); handleDeleteArticle(article._id); }}
+                            style={{ backgroundColor: '#ef4444', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
+                          >
+                            <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>Delete</Text>
+                          </TouchableOpacity>
+                        </View>
+                      ) : (
                         <TouchableOpacity
-                          onPress={(e) => { e.stopPropagation(); setDeleteConfirmId(''); }}
-                          style={{ backgroundColor: isDark ? '#374151' : '#e5e7eb', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
+                          onPress={(e) => { e.stopPropagation(); setDeleteConfirmId(article._id); }}
+                          style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: 'rgba(239, 68, 68, 0.1)', alignItems: 'center', justifyContent: 'center' }}
                         >
-                          <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', fontSize: 10, fontWeight: 'bold' }}>Cancel</Text>
+                          <Ionicons name="trash" size={14} color="#ef4444" />
                         </TouchableOpacity>
-                        <TouchableOpacity
-                          onPress={(e) => { e.stopPropagation(); handleDeleteArticle(article._id); }}
-                          style={{ backgroundColor: '#ef4444', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
-                        >
-                          <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>Delete</Text>
-                        </TouchableOpacity>
-                      </View>
-                    ) : (
-                      <TouchableOpacity
-                        onPress={(e) => { e.stopPropagation(); setDeleteConfirmId(article._id); }}
-                        style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: 'rgba(239, 68, 68, 0.1)', alignItems: 'center', justifyContent: 'center' }}
-                      >
-                        <Ionicons name="trash" size={14} color="#ef4444" />
-                      </TouchableOpacity>
+                      )
                     )}
                   </View>
                 </View>

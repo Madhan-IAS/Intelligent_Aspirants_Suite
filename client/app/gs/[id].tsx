@@ -4,11 +4,13 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../src/services/api';
 import { useTheme } from '../../src/context/ThemeContext';
+import { useAuth } from '../../src/context/AuthContext';
 
 export default function GSModule() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const { mode } = useTheme();
+  const { user } = useAuth();
   const isDark = mode === 'dark';
 
   const [loading, setLoading] = useState(true);
@@ -164,15 +166,17 @@ export default function GSModule() {
           </View>
         </View>
 
-        <TouchableOpacity
-          onPress={() => setShowAddForm(!showAddForm)}
-          style={{ backgroundColor: '#2563eb', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, flexDirection: 'row', alignItems: 'center' }}
-        >
-          <Ionicons name={showAddForm ? "close" : "add"} size={16} color="white" />
-          <Text style={{ color: 'white', fontWeight: 'bold', marginLeft: 6 }}>
-            {showAddForm ? 'Cancel' : 'Add Topic'}
-          </Text>
-        </TouchableOpacity>
+        {user?.role === 'admin' && (
+          <TouchableOpacity
+            onPress={() => setShowAddForm(!showAddForm)}
+            style={{ backgroundColor: '#2563eb', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, flexDirection: 'row', alignItems: 'center' }}
+          >
+            <Ionicons name={showAddForm ? "close" : "add"} size={16} color="white" />
+            <Text style={{ color: 'white', fontWeight: 'bold', marginLeft: 6 }}>
+              {showAddForm ? 'Cancel' : 'Add Topic'}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Syllabus Completion Tracker */}

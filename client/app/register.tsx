@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Image, Platform, Linking } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Image, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../src/context/AuthContext';
@@ -18,7 +18,7 @@ export default function Register() {
   const [mobile, setMobile] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [showBanner, setShowBanner] = useState(true);
+
 
   const handleRegister = async () => {
     if (!name || !username || !password || !mobile) {
@@ -60,28 +60,6 @@ export default function Register() {
   return (
     <View style={{ flex: 1, backgroundColor: isDark ? '#111827' : '#f3f4f6', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24 }}>
       <View style={{ width: '100%', maxWidth: 448, backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 32, borderRadius: 16, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 6 }}>
-        {showBanner && (
-          <View style={{ backgroundColor: '#2563eb', padding: 16, borderRadius: 12, marginBottom: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 12 }}>
-              <Ionicons name="logo-android" size={28} color="white" style={{ marginRight: 12 }} />
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 14 }}>IAS Android App (Beta) is here!</Text>
-                <Text style={{ color: '#dbeafe', fontSize: 12, marginTop: 4 }}>Download the APK directly while we finalize our Play Store launch.</Text>
-              </View>
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <TouchableOpacity
-                onPress={() => Linking.openURL('https://drive.google.com/file/d/1Bi1ZBjlV2MGeCoVMm7KU1pueompzQTKC/view?usp=drive_link')}
-                style={{ backgroundColor: 'white', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 }}
-              >
-                <Text style={{ color: '#2563eb', fontWeight: 'bold', fontSize: 13 }}>Download</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => setShowBanner(false)}>
-                <Ionicons name="close-circle" size={24} color="rgba(255,255,255,0.7)" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
 
         {/* Header/Logo */}
         <View style={{ alignItems: 'center', marginBottom: 28 }}>

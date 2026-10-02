@@ -193,7 +193,7 @@ export default function AdminDashboard() {
 
     const fetchData = async () => {
         try {
-            const [pendingRes, allRes, revenueRes, historyRes, trafficRes, demographicsRes] = await Promise.all([
+            const results = await Promise.allSettled([
                 api.get('/admin/pending'),
                 api.get('/admin/all-users'),
                 api.get('/admin/revenue'),
@@ -201,12 +201,14 @@ export default function AdminDashboard() {
                 api.get('/admin/traffic'),
                 api.get('/admin/demographics')
             ]);
-            setPendingUsers(pendingRes.data);
-            setAllUsers(allRes.data);
-            setRevenueData(revenueRes.data);
-            setPaymentHistory(historyRes.data);
-            setTrafficData(trafficRes.data);
-            setDemographicsData(demographicsRes.data);
+
+            if (results[0].status === 'fulfilled') setPendingUsers(results[0].value.data);
+            if (results[1].status === 'fulfilled') setAllUsers(results[1].value.data);
+            if (results[2].status === 'fulfilled') setRevenueData(results[2].value.data);
+            if (results[3].status === 'fulfilled') setPaymentHistory(results[3].value.data);
+            if (results[4].status === 'fulfilled') setTrafficData(results[4].value.data);
+            if (results[5].status === 'fulfilled') setDemographicsData(results[5].value.data);
+
         } catch (e) {
             console.error('Failed to fetch admin data:', e);
         } finally {

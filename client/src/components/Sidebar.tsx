@@ -137,6 +137,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
           <SidebarItem icon="home" label="Dashboard" href="/" onNavigate={onNavigate} />
           <SidebarItem icon="person" label="Profile" href="/profile" onNavigate={onNavigate} />
           <SidebarItem icon="calendar" label="Daily Planner" href="/planner" onNavigate={onNavigate} />
+          <SidebarItem icon="trophy" label="Leaderboard" href="/leaderboard" onNavigate={onNavigate} />
           {user?.role === 'admin' && (
             <SidebarItem icon="shield-checkmark" label="Admin Panel" href="/admin" onNavigate={onNavigate} />
           )}

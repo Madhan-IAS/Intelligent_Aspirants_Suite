@@ -21,6 +21,7 @@ exports.getGlobalLeaderboard = async (req, res) => {
                 }
             },
             { $unwind: '$user' },
+            { $match: { 'user.role': { $ne: 'admin' } } },
             {
                 $project: {
                     _id: 1,

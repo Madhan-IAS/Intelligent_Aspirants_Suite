@@ -941,7 +941,6 @@ export default function AdminDashboard() {
                                                     {isExpiringSoon ? `Expires in ${daysLeft}d` : `Exp: ${new Date(u.subscriptionExpiry).toLocaleDateString('en-IN')}`}
                                                 </Text>
                                             </View>
-                                            )}
                                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                                                 <Ionicons name="people" size={12} color={isDark ? '#6b7280' : '#9ca3af'} />
                                                 <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 12, fontWeight: 'bold' }}>{u.followers?.length || 0} Followers</Text>

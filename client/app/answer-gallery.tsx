@@ -161,7 +161,7 @@ export default function AnswerGalleryPage() {
 
                                 return (
                                     <View key={answer._id} style={{
-                                        width: isDesktop ? 'calc(50% - 12px)' : '100%',
+                                        width: (isDesktop ? '48%' : '100%') as any,
                                         backgroundColor: themeColors.cardBg,
                                         borderRadius: 16,
                                         borderWidth: 1,

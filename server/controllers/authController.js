@@ -71,54 +71,7 @@ const WEEKLY_SCHEDULE = [
   { day: 'Sunday Evening', task: 'Mock Analysis, Mistake Book Update, Weekly KMS Cleanup & Planning', duration: '2 Hours', isSpecial: true },
 ];
 
-// Dev auto-login helper: Automatically create/return the dev user
-exports.devLogin = async (req, res) => {
-  try {
-    let user = await User.findOne({ email: 'madhan@upsc.kms' });
-    if (!user) {
-      const passwordHash = await bcrypt.hash('password123', 10);
-      user = await User.create({
-        name: 'Madhan Mohan',
-        email: 'madhan@upsc.kms',
-        mobile: '9999999999',
-        passwordHash,
-        role: 'admin',
-        subscriptionStatus: 'active',
-        targetAttempt: 2027,
-        dailyTargetHours: 14,
-        optionalSubject: 'Sociology'
-      });
 
-      // Seed data for dev user too if they were just created
-      const slotsWithUser = MASTER_TIMETABLE.map((s, i) => ({ ...s, userId: user._id, order: i }));
-      await TimetableSlot.insertMany(slotsWithUser);
-
-      const allChecklist = [...DAILY_TARGETS, ...END_OF_DAY_CHECKLIST].map((item, i) => ({
-        ...item, userId: user._id, order: i
-      }));
-      await ChecklistItem.insertMany(allChecklist);
-
-      const weeklyWithUser = WEEKLY_SCHEDULE.map((w, i) => ({ ...w, userId: user._id, order: i }));
-      await WeeklySchedule.insertMany(weeklyWithUser);
-    }
-
-    // Ensure admin account always has admin role, active subscription, and topper tier
-    if (user.role !== 'admin' || user.subscriptionStatus !== 'active' || user.subscriptionTier !== 'topper') {
-      user.role = 'admin';
-      user.subscriptionStatus = 'active';
-      user.subscriptionTier = 'topper';
-      await user.save();
-    }
-
-    const { accessToken, refreshToken } = generateTokens(user._id);
-    user.refreshToken = refreshToken;
-    await user.save();
-
-    res.json({ token: accessToken, refreshToken, user });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
 
 exports.register = async (req, res) => {
   try {

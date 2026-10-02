@@ -6,7 +6,7 @@ const auth = require('../middleware/auth');
 const { validate } = require('../middleware/validator');
 const { body } = require('express-validator');
 
-router.post('/dev-login', authController.devLogin);
+
 router.post('/register', validate([
     body('name').trim().notEmpty().withMessage('Name is required'),
     body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),

@@ -37,19 +37,7 @@ export default function Login() {
     }
   };
 
-  const handleDevLogin = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const res = await api.post('/auth/dev-login');
-      await login(res.data.token, res.data.refreshToken, res.data.user);
-      router.replace('/');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Dev Login failed');
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   return (
     <View style={{ flex: 1, backgroundColor: isDark ? '#111827' : '#f3f4f6', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24 }}>

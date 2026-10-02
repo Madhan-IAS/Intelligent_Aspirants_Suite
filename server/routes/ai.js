@@ -10,7 +10,7 @@ router.get('/daily-question', auth, checkTrialLimit('aiQuestionGenerated', 1), a
 router.post('/generate-outline', auth, checkTrialLimit('aiTopicSummaries', 3), aiController.generateModelOutline);
 router.post('/generate-topic-notes', auth, checkTrialLimit('aiTopicSummaries', 3), aiController.generateTopicNotes);
 router.post('/generate-analysis-prompts', auth, checkTrialLimit('aiAnalyticPrompts', 2), aiController.generateAnalysisPrompts);
-router.post('/auto-link-current-affairs', auth, aiController.autoLinkCurrentAffairs); // Admin only, needs different guard if user
+router.post('/auto-link-current-affairs', auth, requireAdmin, aiController.autoLinkCurrentAffairs);
 router.post('/evaluate-essay', auth, checkTrialLimit('aiEssayEvaluations', 1), aiController.evaluateEssay);
 router.post('/recommend-next', auth, checkTrialLimit('aiRecommendations', 3), aiController.recommendNextTopics);
 

@@ -494,3 +494,108 @@ exports.getTrafficStats = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+const Notification = require('../models/Notification');
+
+// GET /api/admin/export-users
+// Export all users to a CSV string
+exports.exportUsersCSV = async (req, res) => {
+    try {
+        const users = await User.find().select('-passwordHash').sort({ createdAt: -1 });
+
+        // Define CSV headers
+        const headers = ["ID", "Name", "Email", "Mobile", "Role", "Subscription Status", "Tier", "Optional Subject", "Target Attempt", "Attempt Number", "Onboarding Complete", "Created At"];
+        const csvRows = [headers.join(',')];
+
+        for (const u of users) {
+            const row = [
+                u._id,
+                `"${(u.name || '').replace(/"/g, '""')}"`,
+                u.email,
+                u.mobile || '',
+                u.role,
+                u.subscriptionStatus || 'free',
+                u.subscriptionTier || 'foundation',
+                u.optionalSubject || 'Not decided yet',
+                u.targetAttempt || '',
+                u.attemptNumber || 1,
+                u.onboardingComplete ? 'Yes' : 'No',
+                u.createdAt ? new Date(u.createdAt).toISOString() : ''
+            ];
+            csvRows.push(row.join(','));
+        }
+
+        const csvString = csvRows.join('\n');
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=users_export.csv');
+        res.status(200).send(csvString);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// POST /api/admin/broadcast
+// Send a mass notification to all users
+exports.broadcastNotification = async (req, res) => {
+    try {
+        const { title, message, type } = req.body;
+        if (!title || !message) return res.status(400).json({ message: 'Title and message are required' });
+
+        const users = await User.find({ role: 'user' }).select('_id');
+
+        // Batch insertion for performance
+        const notifications = users.map(u => ({
+            userId: u._id,
+            title,
+            message,
+            type: type || 'system',
+            read: false,
+            createdAt: new Date()
+        }));
+
+        if (notifications.length > 0) {
+            await Notification.insertMany(notifications);
+        }
+
+        // Log the action
+        await AuditLog.create({
+            adminId: req.user.id,
+            action: 'BROADCAST',
+            targetUserId: req.user.id, // Self-targeted since it's global
+            details: { title, userCount: notifications.length }
+        });
+
+        res.json({ message: `Successfully broadcasted to ${notifications.length} users` });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// GET /api/admin/demographics
+// Aggregate user data representing Optionals and Targets
+exports.getDemographics = async (req, res) => {
+    try {
+        // Aggregate Optionals
+        const optionalsAgg = await User.aggregate([
+            { $match: { role: 'user' } },
+            { $group: { _id: { $ifNull: ["$optionalSubject", "Not decided yet"] }, count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 10 } // Top 10
+        ]);
+
+        // Aggregate Target Years
+        const targetsAgg = await User.aggregate([
+            { $match: { role: 'user' } },
+            { $group: { _id: { $ifNull: ["$targetAttempt", 2026] }, count: { $sum: 1 } } },
+            { $sort: { _id: 1 } }
+        ]);
+
+        res.json({
+            optionals: optionalsAgg.map(o => ({ subject: o._id, count: o.count })),
+            targetYears: targetsAgg.map(t => ({ year: t._id, count: t.count }))
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

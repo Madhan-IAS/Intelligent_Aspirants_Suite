@@ -16,6 +16,9 @@ router.post('/track-visit', adminController.trackVisit);
 router.get('/pending', auth, adminAuth, adminController.getPendingUsers);
 router.get('/all-users', auth, adminAuth, adminController.getAllUsers);
 router.get('/traffic', auth, adminAuth, adminController.getTrafficStats);
+router.get('/export-users', auth, adminAuth, adminController.exportUsersCSV);
+router.post('/broadcast', auth, adminAuth, adminController.broadcastNotification);
+router.get('/demographics', auth, adminAuth, adminController.getDemographics);
 
 router.post('/approve/:id', auth, adminAuth, validate([
     ...idValidation,

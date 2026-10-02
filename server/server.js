@@ -10,6 +10,7 @@ const Notification = require('./models/Notification');
 require('dotenv').config();
 
 const app = express();
+app.set('trust proxy', 1); // Crucial for Render/Heroku to prevent global rate-limiter lockouts
 
 // Startup env check
 console.log('[ENV] GEMINI_API_KEY present:', !!process.env.GEMINI_API_KEY);

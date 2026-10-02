@@ -10,6 +10,8 @@ import { ErrorBoundary } from '../src/components/ErrorBoundary';
 import { registerForPushNotificationsAsync } from '../src/services/notifications';
 import FeatureGate from '../src/components/FeatureGate';
 import { useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import api from '../src/services/api';
 
 function AppContent() {
   const { mode } = useTheme();
@@ -30,6 +32,21 @@ function AppContent() {
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
       document.title = "IAS — Intelligent Aspirant's Suite";
     }
+
+    const trackAnonymousVisit = async () => {
+      try {
+        const lastVisit = await AsyncStorage.getItem('ias_last_visit');
+        const now = Date.now();
+        if (!lastVisit || (now - parseInt(lastVisit)) > 30 * 60 * 1000) {
+          await api.post('/admin/track-visit');
+          await AsyncStorage.setItem('ias_last_visit', now.toString());
+        }
+      } catch (e) {
+        // Fail silently
+      }
+    };
+    trackAnonymousVisit();
+
     // Delay redirect logic to let Expo Router finish mounting its route tree
     const timer = setTimeout(() => setRouterReady(true), 100);
     return () => clearTimeout(timer);

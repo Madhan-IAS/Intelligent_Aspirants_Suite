@@ -9,9 +9,13 @@ const { body, param } = require('express-validator');
 
 const idValidation = [param('id').isMongoId().withMessage('Invalid ID format')];
 
+// Public route (Anonymous Traffic Tracking)
+router.post('/track-visit', adminController.trackVisit);
+
 // All admin routes require both auth + admin check
 router.get('/pending', auth, adminAuth, adminController.getPendingUsers);
 router.get('/all-users', auth, adminAuth, adminController.getAllUsers);
+router.get('/traffic', auth, adminAuth, adminController.getTrafficStats);
 
 router.post('/approve/:id', auth, adminAuth, validate([
     ...idValidation,

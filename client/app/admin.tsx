@@ -58,6 +58,7 @@ export default function AdminDashboard() {
 
     const [revenueData, setRevenueData] = useState<any>(null);
     const [paymentHistory, setPaymentHistory] = useState<any>(null);
+    const [trafficData, setTrafficData] = useState<any>(null);
 
     // Toast notification state (#2)
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -185,16 +186,18 @@ export default function AdminDashboard() {
 
     const fetchData = async () => {
         try {
-            const [pendingRes, allRes, revenueRes, historyRes] = await Promise.all([
+            const [pendingRes, allRes, revenueRes, historyRes, trafficRes] = await Promise.all([
                 api.get('/admin/pending'),
                 api.get('/admin/all-users'),
                 api.get('/admin/revenue'),
-                api.get('/admin/payment-history')
+                api.get('/admin/payment-history'),
+                api.get('/admin/traffic')
             ]);
             setPendingUsers(pendingRes.data);
             setAllUsers(allRes.data);
             setRevenueData(revenueRes.data);
             setPaymentHistory(historyRes.data);
+            setTrafficData(trafficRes.data);
         } catch (e) {
             console.error('Failed to fetch admin data:', e);
         } finally {
@@ -450,6 +453,27 @@ export default function AdminDashboard() {
                         </View>
                     ))}
                 </View>
+
+                {/* 📈 Traffic & Growth Dashboard Card */}
+                {trafficData && (
+                    <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 20, borderRadius: 16, marginBottom: 24, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
+                        <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 16, fontWeight: 'bold', marginBottom: 16 }}>📈 Traffic & Growth</Text>
+                        <View style={{ flexDirection: 'row', gap: 12, marginBottom: 4 }}>
+                            <View style={{ flex: 1, backgroundColor: isDark ? '#111827' : '#f5f3ff', padding: 14, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: isDark ? '#374151' : '#ddd6fe' }}>
+                                <Text style={{ color: '#8b5cf6', fontSize: 22, fontWeight: 'bold' }}>{trafficData.summary?.visitsToday || 0}</Text>
+                                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11, marginTop: 4 }}>Visits Today</Text>
+                            </View>
+                            <View style={{ flex: 1, backgroundColor: isDark ? '#111827' : '#fdf4ff', padding: 14, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: isDark ? '#374151' : '#fbcfe8' }}>
+                                <Text style={{ color: '#d946ef', fontSize: 22, fontWeight: 'bold' }}>{trafficData.summary?.registrationsToday || 0}</Text>
+                                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11, marginTop: 4 }}>Signups Today</Text>
+                            </View>
+                            <View style={{ flex: 1, backgroundColor: isDark ? '#111827' : '#fff7ed', padding: 14, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: isDark ? '#374151' : '#fed7aa' }}>
+                                <Text style={{ color: '#f97316', fontSize: 22, fontWeight: 'bold' }}>{trafficData.summary?.conversionRateToday || 0}%</Text>
+                                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11, marginTop: 4 }}>Conversion Rate</Text>
+                            </View>
+                        </View>
+                    </View>
+                )}
 
 
                 {/* 💰 Revenue Dashboard Card */}

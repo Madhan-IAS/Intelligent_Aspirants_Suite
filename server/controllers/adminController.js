@@ -415,3 +415,82 @@ exports.getAuditLogs = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+const Visit = require('../models/Visit');
+
+// POST /api/admin/track-visit (Public)
+// Silently increment daily visit count
+exports.trackVisit = async (req, res) => {
+    try {
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+        await Visit.findOneAndUpdate(
+            { date: today },
+            { $inc: { count: 1 } },
+            { upsert: true, new: true }
+        );
+        res.status(200).json({ success: true });
+    } catch (error) {
+        // Fail silently so we don't spam client
+        res.status(500).json({ success: false });
+    }
+};
+
+// GET /api/admin/traffic
+// Get the last 30 days of traffic mapped with new registrations
+exports.getTrafficStats = async (req, res) => {
+    try {
+        const now = new Date();
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
+
+        // 1. Get raw visits
+        const visits = await Visit.find({ date: { $gte: thirtyDaysAgoStr } }).sort({ date: 1 });
+
+        // 2. Get registrations within last 30 days
+        const recentUsers = await User.find({ createdAt: { $gte: thirtyDaysAgo } }).select('createdAt');
+
+        // Compile a map of Registrations by YYYY-MM-DD
+        const regMap = {};
+        recentUsers.forEach(u => {
+            const d = new Date(u.createdAt).toISOString().split('T')[0];
+            regMap[d] = (regMap[d] || 0) + 1;
+        });
+
+        // 3. Construct chronological timeline
+        const timeline = [];
+        let totalVisitsToday = 0;
+        let regsToday = 0;
+        const todayStr = now.toISOString().split('T')[0];
+
+        // Ensure we supply 30 days back explicitly even if missing jumps
+        for (let i = 29; i >= 0; i--) {
+            const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+            const dStr = d.toISOString().split('T')[0];
+            const vRecord = visits.find(v => v.date === dStr);
+            const vCount = vRecord ? vRecord.count : 0;
+            const rCount = regMap[dStr] || 0;
+
+            timeline.push({
+                date: dStr,
+                visits: vCount,
+                registrations: rCount
+            });
+
+            if (dStr === todayStr) {
+                totalVisitsToday = vCount;
+                regsToday = rCount;
+            }
+        }
+
+        res.json({
+            timeline,
+            summary: {
+                visitsToday: totalVisitsToday,
+                registrationsToday: regsToday,
+                conversionRateToday: totalVisitsToday > 0 ? ((regsToday / totalVisitsToday) * 100).toFixed(1) : 0
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

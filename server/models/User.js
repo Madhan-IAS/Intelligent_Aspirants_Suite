@@ -23,6 +23,9 @@ const userSchema = new mongoose.Schema({
   preferredRevisionPattern: { type: String, enum: ['3-5-7', '1-7-30'], default: '3-5-7' },
   examStage: { type: String, enum: ['Beginner', 'First Reading', 'Revision', 'Test Phase', 'Interview'], default: 'Beginner' },
   onboardingComplete: { type: Boolean, default: false },
+  currentStreak: { type: Number, default: 0 },
+  lastActiveDate: { type: Date },
+  isShadowBanned: { type: Boolean, default: false },
   theme: { type: String, enum: ['Dark', 'Light'], default: 'Dark' },
   studyPreferences: {
     preferredSession: { type: String, enum: ['Morning', 'Afternoon', 'Night'], default: 'Morning' },

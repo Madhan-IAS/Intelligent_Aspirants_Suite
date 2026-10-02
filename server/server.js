@@ -223,6 +223,30 @@ if (MONGO_URI) {
           console.error('[CRON] Subscription auto-expire failed:', err.message);
         }
       });
+
+      // Phase 11: Active Streak Decay & Anti-Abuse Sweep (Midnight IST)
+      cron.schedule('30 18 * * *', async () => {
+        console.log('[CRON] Running gamification streak decay script...');
+        try {
+          const User = require('./models/User');
+          const users = await User.find({ role: { $ne: 'admin' }, currentStreak: { $gt: 0 } });
+
+          let streakResetCount = 0;
+          const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
+
+          for (const u of users) {
+            // If they haven't triggered any API activity in 48 hours, their streak perishes!
+            if (!u.lastActiveDate || u.lastActiveDate < fortyEightHoursAgo) {
+              u.currentStreak = 0;
+              streakResetCount++;
+              await u.save();
+            }
+          }
+          console.log(`[CRON] Streak Decay completed. Streaks obliterated: ${streakResetCount}`);
+        } catch (err) {
+          console.error('[CRON] Gamification sweep failed:', err.message);
+        }
+      });
     })
     .catch((err) => {
       console.error('Error connecting to MongoDB:', err.message);

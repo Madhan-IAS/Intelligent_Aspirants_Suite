@@ -85,6 +85,17 @@ export default function LeaderboardScreen() {
                                             <View style={{ backgroundColor: isDark ? '#374151' : '#e5e7eb', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
                                                 <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', fontSize: 10 }}>CSE {user.targetYear || 'TBD'}</Text>
                                             </View>
+                                            {user.currentStreak > 0 && (
+                                                <View style={{ backgroundColor: '#f97316', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                                                    <Ionicons name="flame" size={10} color="white" />
+                                                    <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>{user.currentStreak} Day</Text>
+                                                </View>
+                                            )}
+                                            {user.streakMultiplier > 1 && (
+                                                <View style={{ backgroundColor: '#8b5cf6', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
+                                                    <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>{user.streakMultiplier}x XP</Text>
+                                                </View>
+                                            )}
                                         </View>
                                     </View>
 

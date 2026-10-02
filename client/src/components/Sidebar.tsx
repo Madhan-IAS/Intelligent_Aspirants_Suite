@@ -41,6 +41,7 @@ const SidebarItem = ({ icon, label, href, onNavigate }: { icon: any, label: stri
 };
 
 export default function Sidebar({ onNavigate }: SidebarProps) {
+  const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false);
   const { mode, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
@@ -153,8 +154,18 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
         </View>
 
         <View style={{ marginBottom: 20 }}>
-          <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10, paddingHorizontal: 8 }}>Optionals & CA</Text>
-          <SidebarItem icon="people" label="Sociology" href="/gs/Sociology" onNavigate={onNavigate} />
+          <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10, paddingHorizontal: 8 }}>Optional & CA</Text>
+          {user?.optionalSubject && user.optionalSubject !== 'Not decided yet' ? (
+            <SidebarItem icon="school" label={user.optionalSubject} href={`/gs/${user.optionalSubject}`} onNavigate={onNavigate} />
+          ) : (
+            <TouchableOpacity
+              onPress={() => { if (onNavigate) onNavigate(); router.push('/profile' as any); }}
+              style={{ flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 12, marginBottom: 4, backgroundColor: isDark ? 'rgba(245, 158, 11, 0.1)' : '#fffbeb', borderWidth: 1, borderColor: isDark ? '#92400e' : '#fde68a', borderStyle: 'dashed' }}
+            >
+              <Ionicons name="add-circle-outline" size={20} color="#f59e0b" />
+              <Text style={{ marginLeft: 12, fontWeight: '500', color: '#f59e0b', flex: 1, fontSize: 13 }}>Set your Optional →</Text>
+            </TouchableOpacity>
+          )}
           <SidebarItem icon="newspaper" label="Current Affairs" href="/current-affairs" onNavigate={onNavigate} />
         </View>
 

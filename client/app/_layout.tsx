@@ -20,7 +20,7 @@ function AppContent() {
   const router = useRouter();
   const { user, loading } = useAuth();
 
-  const isAuthPage = pathname === '/login' || pathname === '/welcome' || pathname === '/register' || pathname === '/subscription' || pathname === '/pending-approval' || pathname === '/admin';
+  const isAuthPage = pathname === '/login' || pathname === '/welcome' || pathname === '/register' || pathname === '/subscription' || pathname === '/pending-approval' || pathname === '/admin' || pathname === '/onboarding';
 
   const [welcomeCompleted, setWelcomeCompleted] = useState(false);
   const [routerReady, setRouterReady] = useState(false);
@@ -39,18 +39,24 @@ function AppContent() {
     if (!loading && routerReady && !welcomeCompleted) {
       setWelcomeCompleted(true);
       if (user) {
-        // Subscription-based routing
-        const subStatus = user.subscriptionStatus || 'pending';
-        if (subStatus === 'pending' && pathname !== '/subscription' && user.role !== 'admin') {
-          router.replace('/subscription');
-        } else if (subStatus === 'pending_review' && pathname !== '/pending-approval' && user.role !== 'admin') {
-          router.replace('/pending-approval');
-        } else if (subStatus === 'rejected' && pathname !== '/subscription' && user.role !== 'admin') {
-          router.replace('/subscription');
-        } else if (subStatus === 'expired' && pathname !== '/subscription' && user.role !== 'admin') {
-          router.replace('/subscription');
-        } else if (pathname === '/welcome' || pathname === '/login' || pathname === '/register') {
-          router.replace('/');
+        // Onboarding gate — only for brand-new users who have never completed setup
+        // Existing users (onboardingComplete === undefined) are NOT affected
+        if (user.onboardingComplete === false && pathname !== '/onboarding' && user.role !== 'admin') {
+          router.replace('/onboarding');
+        } else {
+          // Subscription-based routing
+          const subStatus = user.subscriptionStatus || 'pending';
+          if (subStatus === 'pending' && pathname !== '/subscription' && user.role !== 'admin') {
+            router.replace('/subscription');
+          } else if (subStatus === 'pending_review' && pathname !== '/pending-approval' && user.role !== 'admin') {
+            router.replace('/pending-approval');
+          } else if (subStatus === 'rejected' && pathname !== '/subscription' && user.role !== 'admin') {
+            router.replace('/subscription');
+          } else if (subStatus === 'expired' && pathname !== '/subscription' && user.role !== 'admin') {
+            router.replace('/subscription');
+          } else if (pathname === '/welcome' || pathname === '/login' || pathname === '/register') {
+            router.replace('/');
+          }
         }
       } else {
         if (pathname !== '/welcome' && pathname !== '/login' && pathname !== '/register') {

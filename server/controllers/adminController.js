@@ -253,7 +253,7 @@ exports.deleteUser = async (req, res) => {
 // Admin updates a user's details (name, email, mobile, password)
 exports.updateUserDetails = async (req, res) => {
     try {
-        const { name, email, mobile, password } = req.body;
+        const { name, email, mobile, password, attemptNumber, onboardingComplete } = req.body;
 
         if (!name || name.trim().length === 0) {
             return res.status(400).json({ message: 'Name cannot be empty' });
@@ -277,6 +277,9 @@ exports.updateUserDetails = async (req, res) => {
             const salt = await bcrypt.genSalt(10);
             updateFields.passwordHash = await bcrypt.hash(password, salt);
         }
+
+        if (attemptNumber !== undefined) updateFields.attemptNumber = attemptNumber;
+        if (onboardingComplete !== undefined) updateFields.onboardingComplete = onboardingComplete;
 
         const user = await User.findByIdAndUpdate(
             req.params.id,

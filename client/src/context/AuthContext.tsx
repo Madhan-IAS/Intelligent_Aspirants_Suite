@@ -14,12 +14,14 @@ type UserProfile = {
   subscriptionExpiry?: string;
   bio?: string;
   targetAttempt?: number;
+  attemptNumber?: number;
   optionalSubject?: string;
   dailyTargetHours?: number;
   preferredRevisionPattern?: string;
   examStage?: string;
   theme?: string;
   studyPreferences?: any;
+  onboardingComplete?: boolean;
 };
 
 type AuthContextType = {

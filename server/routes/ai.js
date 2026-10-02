@@ -3,6 +3,7 @@ const router = express.Router();
 const aiController = require('../controllers/aiController');
 const { checkTrialLimit } = require('../middleware/aiLimits');
 const auth = require('../middleware/auth');
+const adminAuth = require('../middleware/adminAuth');
 
 router.post('/evaluate', auth, checkTrialLimit('aiAnswerEvaluations', 2), aiController.evaluateAnswer);
 router.get('/daily-quiz', auth, checkTrialLimit('aiQuizGenerated', 1), aiController.generateDailyQuiz);

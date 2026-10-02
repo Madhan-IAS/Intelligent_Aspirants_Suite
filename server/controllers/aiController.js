@@ -17,6 +17,10 @@ exports.evaluateAnswer = async (req, res) => {
       return res.status(404).json({ message: 'Answer not found' });
     }
 
+    if (answer.userId && answer.userId.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'You are not authorized to evaluate this answer.' });
+    }
+
     if (!process.env.GEMINI_API_KEY) {
       return res.status(500).json({
         message: 'GEMINI_API_KEY is not set. Please add it to your server/.env file (locally) or as an Environment Variable in the Render Dashboard.'
@@ -589,6 +593,7 @@ exports.improveAnswer = async (req, res) => {
     const { answerId } = req.body;
     const answer = await Answer.findById(answerId).populate('pyqId');
     if (!answer) return res.status(404).json({ message: 'Answer not found' });
+    if (answer.userId && answer.userId.toString() !== req.user.id) return res.status(403).json({ message: 'You are not authorized to improve this answer.' });
     if (!process.env.GEMINI_API_KEY) return res.status(500).json({ message: 'GEMINI_API_KEY is not set.' });
 
     const pyq = answer.pyqId;

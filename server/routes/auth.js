@@ -33,6 +33,7 @@ router.post('/reset-password', validate([
 ]), authController.resetPassword);
 
 router.get('/profile', auth, authController.getProfile);
+router.get('/network', auth, authController.getNetwork);
 router.put('/profile', auth, validate([
     body('name').trim().optional().notEmpty().withMessage('Name cannot be empty'),
     body('mobile').trim().optional().isLength({ min: 10, max: 15 }).withMessage('Valid mobile number required')

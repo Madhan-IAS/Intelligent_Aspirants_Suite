@@ -11,18 +11,18 @@ export default function MobileNavigation() {
   const isDark = mode === 'dark';
   const insets = useSafeAreaInsets();
 
-  const topPadding = Platform.OS === 'android' 
-    ? (StatusBar.currentHeight || insets.top || 24) + 6 
+  const topPadding = Platform.OS === 'android'
+    ? (StatusBar.currentHeight || insets.top || 24) + 6
     : (insets.top || 12);
 
   return (
     <>
       {/* Top Mobile Header Navigation Bar */}
-      <View 
+      <View
         style={[
-          styles.topHeader, 
-          { 
-            backgroundColor: isDark ? '#111827' : '#ffffff', 
+          styles.topHeader,
+          {
+            backgroundColor: isDark ? '#111827' : '#ffffff',
             borderColor: isDark ? '#1f2937' : '#e5e7eb',
             paddingTop: topPadding,
             paddingBottom: 10,
@@ -32,9 +32,9 @@ export default function MobileNavigation() {
       >
         {/* Logo & Brand Name */}
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Image 
-            source={require('../../assets/ias_logo.png')} 
-            style={{ width: 36, height: 36, marginRight: 10 }} 
+          <Image
+            source={require('../../assets/ias_logo.png')}
+            style={{ width: 36, height: 36, marginRight: 10 }}
             resizeMode="contain"
           />
           <Text style={{ color: isDark ? '#ffffff' : '#111827', fontSize: 22, fontWeight: 'bold', letterSpacing: 0.5 }}>
@@ -47,7 +47,7 @@ export default function MobileNavigation() {
           onPress={() => setDrawerOpen(true)}
           activeOpacity={0.7}
           style={[
-            styles.menuButton, 
+            styles.menuButton,
             { backgroundColor: isDark ? '#1f2937' : '#f3f4f6', borderColor: isDark ? '#374151' : '#e5e7eb' }
           ]}
         >
@@ -66,9 +66,9 @@ export default function MobileNavigation() {
           {/* Drawer Top Bar */}
           <View style={[styles.drawerHeader, { borderColor: isDark ? '#1f2937' : '#e5e7eb', paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 12) : 12 }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Image 
-                source={require('../../assets/ias_logo.png')} 
-                style={{ width: 36, height: 36, marginRight: 10 }} 
+              <Image
+                source={require('../../assets/ias_logo.png')}
+                style={{ width: 36, height: 36, marginRight: 10 }}
                 resizeMode="contain"
               />
               <Text style={[styles.drawerTitle, { color: isDark ? '#ffffff' : '#111827' }]}>
@@ -84,8 +84,8 @@ export default function MobileNavigation() {
           </View>
 
           {/* Drawer Scrollable Content */}
-          <ScrollView 
-            style={{ flex: 1 }} 
+          <ScrollView
+            style={{ flex: 1 }}
             contentContainerStyle={{ paddingBottom: 40 }}
           >
             <Sidebar onNavigate={() => setDrawerOpen(false)} />

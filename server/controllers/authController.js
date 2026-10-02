@@ -94,14 +94,12 @@ exports.register = async (req, res) => {
       email,
       mobile,
       passwordHash,
-      targetAttempt: 2027,
-      dailyTargetHours: 14,
-      optionalSubject: 'Sociology',
       // Grant 24-hour Free Trial
       subscriptionStatus: 'active',
       subscriptionTier: 'topper',
       subscriptionExpiry: expiry24h,
-      isTrial: true
+      isTrial: true,
+      onboardingComplete: false
     });
     await user.save();
 
@@ -226,12 +224,26 @@ exports.getProfile = async (req, res) => {
   }
 };
 
+exports.getNetwork = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id)
+      .populate('followers', 'name role')
+      .populate('following', 'name role')
+      .select('followers following'); // Only send back network data
+
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 exports.updateProfile = async (req, res) => {
   try {
     const {
-      name, bio, mobile, targetAttempt, optionalSubject,
+      name, bio, mobile, targetAttempt, attemptNumber, optionalSubject,
       dailyTargetHours, preferredRevisionPattern,
-      examStage, theme, studyPreferences
+      examStage, theme, studyPreferences, onboardingComplete
     } = req.body;
 
     if (mobile && !/^[0-9]{10}$/.test(mobile)) {
@@ -242,9 +254,9 @@ exports.updateProfile = async (req, res) => {
       req.user.id,
       {
         $set: {
-          name, bio, mobile, targetAttempt, optionalSubject,
+          name, bio, mobile, targetAttempt, attemptNumber, optionalSubject,
           dailyTargetHours, preferredRevisionPattern,
-          examStage, theme, studyPreferences
+          examStage, theme, studyPreferences, onboardingComplete
         }
       },
       { new: true, runValidators: true }

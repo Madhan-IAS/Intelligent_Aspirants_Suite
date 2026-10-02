@@ -17,10 +17,12 @@ const userSchema = new mongoose.Schema({
   following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   bio: { type: String, default: 'UPSC CSE Aspirant' },
   targetAttempt: { type: Number },
+  attemptNumber: { type: Number, min: 1, max: 6, default: 1 },
   optionalSubject: { type: String },
   dailyTargetHours: { type: Number },
   preferredRevisionPattern: { type: String, enum: ['3-5-7', '1-7-30'], default: '3-5-7' },
-  examStage: { type: String, enum: ['Foundation', 'Prelims', 'Mains', 'Interview'], default: 'Foundation' },
+  examStage: { type: String, enum: ['Beginner', 'First Reading', 'Revision', 'Test Phase', 'Interview'], default: 'Beginner' },
+  onboardingComplete: { type: Boolean, default: false },
   theme: { type: String, enum: ['Dark', 'Light'], default: 'Dark' },
   studyPreferences: {
     preferredSession: { type: String, enum: ['Morning', 'Afternoon', 'Night'], default: 'Morning' },

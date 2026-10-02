@@ -2,22 +2,26 @@ const DailyPlan = require('../models/DailyPlan');
 const Topic = require('../models/Topic');
 const Revision = require('../models/Revision');
 const UserTopicProgress = require('../models/UserTopicProgress');
+const User = require('../models/User');
 
 // Simple In-Memory Cache for expensive stats queries
 const statsCache = new Map();
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
-// 8-Day Rotation Schedule (mirrors planner.tsx ROTATION_SCHEDULE)
-const ROTATION_SCHEDULE = [
-  { gsPaper: 'GS I', optPaper: 'Sociology Paper I' },
-  { gsPaper: 'GS II', optPaper: 'Sociology Paper II' },
-  { gsPaper: 'GS III', optPaper: 'Sociology Paper I' },
-  { gsPaper: 'GS IV', optPaper: 'Sociology Paper II' },
-  { gsPaper: 'GS I', optPaper: 'Sociology Paper I' },
-  { gsPaper: 'GS II', optPaper: 'Sociology Paper II' },
-  { gsPaper: 'GS III', optPaper: 'Sociology Paper I' },
-  { gsPaper: 'GS IV', optPaper: 'Sociology Paper II' },
-];
+// Dynamic 8-Day Rotation Schedule — adapts to user's optional subject
+const getRotationSchedule = (optionalSubject) => {
+  const opt = optionalSubject || 'Sociology';
+  return [
+    { gsPaper: 'GS I', optPaper: `${opt} Paper I` },
+    { gsPaper: 'GS II', optPaper: `${opt} Paper II` },
+    { gsPaper: 'GS III', optPaper: `${opt} Paper I` },
+    { gsPaper: 'GS IV', optPaper: `${opt} Paper II` },
+    { gsPaper: 'GS I', optPaper: `${opt} Paper I` },
+    { gsPaper: 'GS II', optPaper: `${opt} Paper II` },
+    { gsPaper: 'GS III', optPaper: `${opt} Paper I` },
+    { gsPaper: 'GS IV', optPaper: `${opt} Paper II` },
+  ];
+};
 
 // Helper: Get IST date string
 const getTodayIST = () => {
@@ -72,7 +76,12 @@ exports.getTodayPlan = async (req, res) => {
     }
 
     const rotationIndex = getRotationDay();
-    const rotation = ROTATION_SCHEDULE[rotationIndex];
+
+    // Fetch user's optional subject for dynamic rotation
+    const userData = await User.findById(userId).select('optionalSubject').lean();
+    const isUndecided = !userData?.optionalSubject || userData.optionalSubject === 'Not decided yet';
+    const rotationSchedule = getRotationSchedule(userData?.optionalSubject);
+    const rotation = rotationSchedule[rotationIndex];
 
     // Get all topic IDs user has already completed
     const completedProgress = await UserTopicProgress.find({ userId, completed: true }).select('topicId');
@@ -92,16 +101,20 @@ exports.getTodayPlan = async (req, res) => {
       gsTopics = [...gsTopics, ...extraGs];
     }
 
-    // 2. Pick next 8 uncompleted Sociology topics (per THIS user)
-    let optTopics = await Topic.find({
-      tags: rotation.optPaper,
-      _id: { $nin: completedTopicIds }
-    }).sort({ _id: 1 }).limit(8).select('_id');
+    // 2. Pick next 8 uncompleted Optional topics (per THIS user)
+    // ONLY query optional topics if they have actively selected one.
+    let optTopics = [];
+    if (!isUndecided) {
+      optTopics = await Topic.find({
+        tags: rotation.optPaper,
+        _id: { $nin: completedTopicIds }
+      }).sort({ _id: 1 }).limit(8).select('_id');
+    }
 
     if (optTopics.length < 8) {
       const extraForOpt = await Topic.find({
         paper: { $in: ['GS I', 'GS II', 'GS III', 'GS IV'] },
-        _id: { $nin: [...gsTopics.map(t => t._id), ...completedTopicIds] }
+        _id: { $nin: [...gsTopics.map(t => t._id), ...optTopics.map(t => t._id), ...completedTopicIds] }
       }).sort({ _id: 1 }).limit(8 - optTopics.length).select('_id');
       optTopics = [...optTopics, ...extraForOpt];
     }

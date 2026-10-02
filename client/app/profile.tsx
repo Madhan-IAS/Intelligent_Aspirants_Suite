@@ -16,6 +16,11 @@ export default function Profile() {
 
   const [saving, setSaving] = useState(false);
 
+  // Network State
+  const [activeTab, setActiveTab] = useState<'followers' | 'following'>('followers');
+  const [network, setNetwork] = useState<{ followers: any[]; following: any[] }>({ followers: [], following: [] });
+  const [networkLoading, setNetworkLoading] = useState(true);
+
   // Profile Form State
   const [formData, setFormData] = useState({
     name: '',
@@ -47,10 +52,44 @@ export default function Profile() {
         answerWriting: user.studyPreferences?.answerWriting || 'Daily',
         mockTest: user.studyPreferences?.mockTest || 'Sunday',
       });
+      fetchNetwork();
     } else if (!authLoading) {
       router.replace('/login');
     }
   }, [user, authLoading]);
+
+  const fetchNetwork = async () => {
+    try {
+      setNetworkLoading(true);
+      const res = await api.get('/auth/network');
+      setNetwork(res.data);
+    } catch (error) {
+      console.error('Error fetching network:', error);
+    } finally {
+      setNetworkLoading(false);
+    }
+  };
+
+  const handleToggleFollow = async (targetId: string, currentIsFollowing: boolean) => {
+    try {
+      // Optimistic UI Update
+      setNetwork((prev) => {
+        const newData = { ...prev };
+        if (currentIsFollowing) {
+          newData.following = newData.following.filter((u: any) => u._id !== targetId);
+        } else {
+          const targetUser = newData.followers.find((u: any) => u._id === targetId) || { _id: targetId, name: 'Loading...' };
+          newData.following = [...newData.following, targetUser];
+        }
+        return newData;
+      });
+
+      await api.post(`/auth/${targetId}/follow`);
+    } catch (error) {
+      console.error('Error toggling follow:', error);
+      fetchNetwork(); // Revert
+    }
+  };
 
   const handleExportBackup = async () => {
     setExporting(true);
@@ -188,6 +227,95 @@ export default function Profile() {
             placeholder="UPSC CSE Aspirant"
             placeholderTextColor={isDark ? '#4b5563' : '#9ca3af'}
           />
+        </View>
+
+        {/* Network Stats Inside Header */}
+        <View style={{ flexDirection: 'row', gap: 24, marginLeft: 'auto', borderLeftWidth: 1, borderLeftColor: isDark ? '#374151' : '#e5e7eb', paddingLeft: 24 }}>
+          <View style={{ alignItems: 'center' }}>
+            <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 24, fontWeight: 'bold' }}>{network.followers.length}</Text>
+            <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1 }}>Followers</Text>
+          </View>
+          <View style={{ alignItems: 'center' }}>
+            <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 24, fontWeight: 'bold' }}>{network.following.length}</Text>
+            <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1 }}>Following</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Social Network Section */}
+      <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', borderRadius: 16, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', overflow: 'hidden', marginBottom: 32, elevation: 3 }}>
+
+        {/* Tabs */}
+        <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: isDark ? '#374151' : '#e5e7eb' }}>
+          <TouchableOpacity
+            onPress={() => setActiveTab('followers')}
+            style={{ flex: 1, paddingVertical: 16, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: activeTab === 'followers' ? '#3b82f6' : 'transparent', backgroundColor: activeTab === 'followers' ? (isDark ? 'rgba(59, 130, 246, 0.1)' : '#eff6ff') : 'transparent' }}
+          >
+            <Text style={{ color: activeTab === 'followers' ? '#3b82f6' : (isDark ? '#9ca3af' : '#6b7280'), fontWeight: 'bold', fontSize: 15 }}>
+              Followers
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setActiveTab('following')}
+            style={{ flex: 1, paddingVertical: 16, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: activeTab === 'following' ? '#3b82f6' : 'transparent', backgroundColor: activeTab === 'following' ? (isDark ? 'rgba(59, 130, 246, 0.1)' : '#eff6ff') : 'transparent' }}
+          >
+            <Text style={{ color: activeTab === 'following' ? '#3b82f6' : (isDark ? '#9ca3af' : '#6b7280'), fontWeight: 'bold', fontSize: 15 }}>
+              Following
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* List Content */}
+        <View style={{ minHeight: 120 }}>
+          {networkLoading ? (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 }}>
+              <ActivityIndicator color="#3b82f6" />
+            </View>
+          ) : network[activeTab].length === 0 ? (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 30 }}>
+              <Ionicons name="people-outline" size={36} color={isDark ? '#374151' : '#e5e7eb'} style={{ marginBottom: 12 }} />
+              <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', textAlign: 'center', fontSize: 13 }}>
+                {activeTab === 'followers' ? "You don't have any followers yet." : "You aren't following anyone yet."}
+              </Text>
+            </View>
+          ) : (
+            <View>
+              {network[activeTab].map((item, index) => {
+                const isFollowingThemBack = network.following.some(u => u._id === item._id);
+
+                return (
+                  <View key={item._id} style={{
+                    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                    padding: 16, borderBottomWidth: index === network[activeTab].length - 1 ? 0 : 1,
+                    borderBottomColor: isDark ? '#374151' : '#f3f4f6'
+                  }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                      <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(59,130,246,0.15)', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                        <Text style={{ color: '#3b82f6', fontWeight: 'bold', fontSize: 14 }}>{item.name?.charAt(0).toUpperCase()}</Text>
+                      </View>
+                      <View>
+                        <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: '600', fontSize: 14 }}>{item.name}</Text>
+                        <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11 }}>{item.role === 'admin' ? 'Admin' : 'UPSC Aspirant'}</Text>
+                      </View>
+                    </View>
+
+                    <TouchableOpacity
+                      onPress={() => handleToggleFollow(item._id, isFollowingThemBack)}
+                      style={{
+                        backgroundColor: isFollowingThemBack ? (isDark ? '#374151' : '#e5e7eb') : '#3b82f6',
+                        paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16,
+                        borderWidth: 1, borderColor: isFollowingThemBack ? (isDark ? '#4b5563' : '#d1d5db') : '#3b82f6'
+                      }}
+                    >
+                      <Text style={{ color: isFollowingThemBack ? (isDark ? 'white' : '#111827') : 'white', fontWeight: 'bold', fontSize: 11 }}>
+                        {isFollowingThemBack ? 'Following' : 'Follow'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                );
+              })}
+            </View>
+          )}
         </View>
       </View>
 

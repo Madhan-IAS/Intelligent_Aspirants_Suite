@@ -49,7 +49,7 @@ export default function Register() {
         mobile
       });
       await login(res.data.token, res.data.refreshToken, res.data.user);
-      router.replace('/');
+      router.replace('/onboarding');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Registration failed');
     } finally {

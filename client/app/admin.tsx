@@ -53,6 +53,8 @@ export default function AdminDashboard() {
     const [editUserEmail, setEditUserEmail] = useState('');
     const [editUserMobile, setEditUserMobile] = useState('');
     const [editUserPassword, setEditUserPassword] = useState('');
+    const [editUserAttempt, setEditUserAttempt] = useState('');
+    const [editUserOnboarding, setEditUserOnboarding] = useState(false);
 
     const [revenueData, setRevenueData] = useState<any>(null);
     const [paymentHistory, setPaymentHistory] = useState<any>(null);
@@ -282,13 +284,17 @@ export default function AdminDashboard() {
                 name: editUserName.trim(),
                 email: editUserEmail.trim() || undefined,
                 mobile: editUserMobile.trim() || undefined,
-                password: editUserPassword || undefined
+                password: editUserPassword || undefined,
+                attemptNumber: editUserAttempt ? parseInt(editUserAttempt) : undefined,
+                onboardingComplete: editUserOnboarding
             });
             setEditUserId(null);
             setEditUserName('');
             setEditUserEmail('');
             setEditUserMobile('');
             setEditUserPassword('');
+            setEditUserAttempt('');
+            setEditUserOnboarding(false);
             await fetchData();
             showToast('✏️ User details updated');
         } catch (e: any) {
@@ -915,6 +921,8 @@ export default function AdminDashboard() {
                                                 setEditUserEmail(u.email);
                                                 setEditUserMobile(u.mobile || '');
                                                 setEditUserPassword('');
+                                                setEditUserAttempt(u.attemptNumber?.toString() || '');
+                                                setEditUserOnboarding(u.onboardingComplete || false);
                                             }}>
                                                 <Ionicons name="pencil" size={14} color={isDark ? '#9ca3af' : '#6b7280'} />
                                             </TouchableOpacity>
@@ -1041,6 +1049,24 @@ export default function AdminDashboard() {
                                                         secureTextEntry
                                                     />
                                                 </View>
+                                                <View>
+                                                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11, marginBottom: 4 }}>Attempt Number</Text>
+                                                    <TextInput
+                                                        style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', color: isDark ? 'white' : '#111827', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: isDark ? '#374151' : '#cbd5e1', fontSize: 13 }}
+                                                        value={editUserAttempt}
+                                                        onChangeText={setEditUserAttempt}
+                                                        keyboardType="numeric"
+                                                        placeholder="e.g. 1, 2, 3"
+                                                        placeholderTextColor={isDark ? '#4b5563' : '#9ca3af'}
+                                                    />
+                                                </View>
+                                                <TouchableOpacity
+                                                    onPress={() => setEditUserOnboarding(!editUserOnboarding)}
+                                                    style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: isDark ? '#1f2937' : '#f3f4f6', borderRadius: 8, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}
+                                                >
+                                                    <Ionicons name={editUserOnboarding ? "checkmark-circle" : "ellipse-outline"} size={20} color={editUserOnboarding ? "#10b981" : (isDark ? '#6b7280' : '#9ca3af')} />
+                                                    <Text style={{ marginLeft: 8, color: isDark ? 'white' : '#111827', fontWeight: '500', fontSize: 13 }}>Onboarding Complete</Text>
+                                                </TouchableOpacity>
                                             </View>
 
                                             <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
@@ -1052,7 +1078,7 @@ export default function AdminDashboard() {
                                                     {actionLoading === u._id ? <ActivityIndicator size="small" color="white" /> : <Text style={{ color: 'white', fontWeight: 'bold' }}>Save Changes</Text>}
                                                 </TouchableOpacity>
                                                 <TouchableOpacity
-                                                    onPress={() => { setEditUserId(null); setEditUserName(''); setEditUserEmail(''); setEditUserMobile(''); setEditUserPassword(''); }}
+                                                    onPress={() => { setEditUserId(null); setEditUserName(''); setEditUserEmail(''); setEditUserMobile(''); setEditUserPassword(''); setEditUserAttempt(''); setEditUserOnboarding(false); }}
                                                     disabled={actionLoading === u._id}
                                                     style={{ flex: 1, padding: 12, borderRadius: 10, backgroundColor: isDark ? '#374151' : '#e5e7eb', alignItems: 'center' }}
                                                 >

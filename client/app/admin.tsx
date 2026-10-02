@@ -935,14 +935,17 @@ export default function AdminDashboard() {
                                                     <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 12 }}>{u.mobile}</Text>
                                                 </View>
                                             )}
-                                            {u.subscriptionStatus === 'active' && u.subscriptionExpiry && (
-                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                                                    <Ionicons name={isExpiringSoon ? "warning" : "calendar"} size={12} color={isExpiringSoon ? "#f59e0b" : (isDark ? '#6b7280' : '#9ca3af')} />
-                                                    <Text style={{ color: isExpiringSoon ? "#f59e0b" : (isDark ? '#6b7280' : '#9ca3af'), fontSize: 12, fontWeight: isExpiringSoon ? 'bold' : 'normal' }}>
-                                                        {isExpiringSoon ? `Expires in ${daysLeft}d` : `Exp: ${new Date(u.subscriptionExpiry).toLocaleDateString('en-IN')}`}
-                                                    </Text>
-                                                </View>
+                                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                                <Ionicons name={isExpiringSoon ? "warning" : "calendar"} size={12} color={isExpiringSoon ? "#f59e0b" : (isDark ? '#6b7280' : '#9ca3af')} />
+                                                <Text style={{ color: isExpiringSoon ? "#f59e0b" : (isDark ? '#6b7280' : '#9ca3af'), fontSize: 12, fontWeight: isExpiringSoon ? 'bold' : 'normal' }}>
+                                                    {isExpiringSoon ? `Expires in ${daysLeft}d` : `Exp: ${new Date(u.subscriptionExpiry).toLocaleDateString('en-IN')}`}
+                                                </Text>
+                                            </View>
                                             )}
+                                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                                <Ionicons name="people" size={12} color={isDark ? '#6b7280' : '#9ca3af'} />
+                                                <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 12, fontWeight: 'bold' }}>{u.followers?.length || 0} Followers</Text>
+                                            </View>
                                         </View>
                                     </View>
                                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>

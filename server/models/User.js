@@ -13,6 +13,8 @@ const userSchema = new mongoose.Schema({
   subscriptionTier: { type: String, enum: ['foundation', 'aspirant', 'topper'], default: 'foundation' },
   subscriptionExpiry: { type: Date },
   isTrial: { type: Boolean, default: false },
+  followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   bio: { type: String, default: 'UPSC CSE Aspirant' },
   targetAttempt: { type: Number },
   optionalSubject: { type: String },

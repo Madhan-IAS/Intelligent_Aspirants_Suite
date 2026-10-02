@@ -43,4 +43,6 @@ router.put('/change-password', auth, validate([
     body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters')
 ]), authController.changePassword);
 
+router.post('/:id/follow', auth, authController.toggleFollow);
+
 module.exports = router;

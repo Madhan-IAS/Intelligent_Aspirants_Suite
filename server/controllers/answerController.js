@@ -91,3 +91,34 @@ exports.updateAnswer = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
+
+exports.getTopAnswersGlobal = async (req, res) => {
+  try {
+    const paper = req.query.paper; // e.g., 'GS I', 'GS II'
+
+    let answers = await Answer.find({ status: 'Evaluated' })
+      .sort({ 'aiEvaluation.score': -1 })
+      .populate({
+        path: 'pyqId',
+        select: 'question year marks directive',
+        populate: {
+          path: 'topicId',
+          select: 'paper subjectName title'
+        }
+      })
+      .populate({
+        path: 'userId',
+        select: 'name role followers'
+      })
+      .lean(); // Faster for filtering
+
+    // Filter by paper post-query (safest approach given the double-nested schema)
+    if (paper) {
+      answers = answers.filter(a => a.pyqId && a.pyqId.topicId && a.pyqId.topicId.paper === paper);
+    }
+
+    res.json(answers);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

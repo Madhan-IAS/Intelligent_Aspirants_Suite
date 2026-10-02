@@ -42,9 +42,9 @@ exports.getAllUsers = async (req, res) => {
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
-        res.json(stats);
+        res.json(users);
     } catch (e) {
-        res.status(500).json({ message: 'Error aggregating demographics' });
+        res.status(500).json({ message: e.message });
     }
 };
 

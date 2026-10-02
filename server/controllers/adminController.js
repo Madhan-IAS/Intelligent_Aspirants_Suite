@@ -450,13 +450,20 @@ exports.getAuditLogs = async (req, res) => {
 const Visit = require('../models/Visit');
 
 // POST /api/admin/track-visit (Public)
-// Silently increment daily visit count
+// Silently increment daily visit count and current specific hourly block
 exports.trackVisit = async (req, res) => {
     try {
         const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+        const currentHour = new Date().getHours().toString();
+
         await Visit.findOneAndUpdate(
             { date: today },
-            { $inc: { count: 1 } },
+            {
+                $inc: {
+                    count: 1,
+                    [`hourlyMap.${currentHour}`]: 1
+                }
+            },
             { upsert: true, new: true }
         );
         res.status(200).json({ success: true });
@@ -504,7 +511,8 @@ exports.getTrafficStats = async (req, res) => {
             timeline.push({
                 date: dStr,
                 visits: vCount,
-                registrations: rCount
+                registrations: rCount,
+                hourlyMap: vRecord?.hourlyMap || {}
             });
 
             if (dStr === todayStr) {
@@ -519,7 +527,8 @@ exports.getTrafficStats = async (req, res) => {
                 visitsToday: totalVisitsToday,
                 registrationsToday: regsToday,
                 conversionRateToday: totalVisitsToday > 0 ? ((regsToday / totalVisitsToday) * 100).toFixed(1) : 0
-            }
+            },
+            todayHourlyMap: visits.find(v => v.date === todayStr)?.hourlyMap || {}
         });
     } catch (error) {
         res.status(500).json({ message: error.message });

@@ -9,6 +9,11 @@ const visitSchema = new mongoose.Schema({
     count: {
         type: Number,
         default: 0
+    },
+    hourlyMap: {
+        type: Map,
+        of: Number,
+        default: {} // Stores traffic by hour e.g., '0' to '23'
     }
 }, { timestamps: true });
 

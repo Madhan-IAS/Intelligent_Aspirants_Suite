@@ -542,6 +542,37 @@ export default function AdminDashboard() {
                                     </View>
                                 </View>
 
+                                {trafficData.todayHourlyMap && (
+                                    <View style={{ marginTop: 24, paddingBottom: 8 }}>
+                                        <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', fontSize: 12, fontWeight: 'bold', marginBottom: 16, textTransform: 'uppercase' }}>24-Hour Traffic Heatmap</Text>
+                                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 4 }}>
+                                            <View style={{ flexDirection: 'row', gap: 6, height: 75, alignItems: 'flex-end' }}>
+                                                {Array.from({ length: 24 }, (_, i) => i.toString()).map(hour => {
+                                                    const count = trafficData.todayHourlyMap[hour] || 0;
+                                                    const maxCount = Math.max(1, ...(Object.values(trafficData.todayHourlyMap).filter(v => typeof v === 'number') as number[]));
+                                                    const heightPercent = count === 0 ? 0 : (count / maxCount) * 100;
+
+                                                    return (
+                                                        <View key={hour} style={{ alignItems: 'center', width: 26 }}>
+                                                            <View style={{
+                                                                width: 16,
+                                                                height: count === 0 ? 4 : `${heightPercent}%`,
+                                                                minHeight: 4,
+                                                                backgroundColor: count > 0 ? '#3b82f6' : (isDark ? '#374151' : '#f3f4f6'),
+                                                                borderRadius: 4,
+                                                                opacity: count > 0 ? Math.max(0.4, count / maxCount) : 1
+                                                            }} />
+                                                            <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 9, marginTop: 6, fontWeight: 'bold' }}>
+                                                                {hour}h
+                                                            </Text>
+                                                        </View>
+                                                    );
+                                                })}
+                                            </View>
+                                        </ScrollView>
+                                    </View>
+                                )}
+
                                 {demographicsData && (
                                     <View style={{ marginTop: 24, borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#e5e7eb', paddingTop: 16 }}>
                                         <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', fontSize: 12, fontWeight: 'bold', marginBottom: 12, textTransform: 'uppercase' }}>Demographics: Subject Distribution</Text>

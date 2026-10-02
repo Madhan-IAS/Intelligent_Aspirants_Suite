@@ -37,7 +37,8 @@ function AppContent() {
       try {
         const lastVisit = await AsyncStorage.getItem('ias_last_visit');
         const now = Date.now();
-        if (!lastVisit || (now - parseInt(lastVisit)) > 30 * 60 * 1000) {
+        // Shifted from 30 minutes to 24 hours (24 * 60 * 60 * 1000) for authentic Phase 12 Unique Daily hits
+        if (!lastVisit || (now - parseInt(lastVisit)) > 24 * 60 * 60 * 1000) {
           await api.post('/admin/track-visit');
           await AsyncStorage.setItem('ias_last_visit', now.toString());
         }

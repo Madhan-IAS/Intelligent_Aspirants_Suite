@@ -1,12 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const Quote = require('../models/Quote');
-
+const auth = require('../middleware/auth');
+const adminAuth = require('../middleware/adminAuth');
 // Recommend quotes based on question text tokens & subject category
 router.get('/recommend', async (req, res) => {
   try {
     const { subject, question } = req.query;
-    
+
     // 1. Get subject category mapping
     let category = 'Polity';
     if (subject) {
@@ -42,8 +43,8 @@ router.get('/recommend', async (req, res) => {
           { $text: { $search: searchString } },
           { score: { $meta: "textScore" } }
         )
-        .sort({ score: { $meta: "textScore" } })
-        .limit(5);
+          .sort({ score: { $meta: "textScore" } })
+          .limit(5);
       } catch (err) {
         // Fallback to regex match
         const orConditions = tokens.map(t => ({ text: new RegExp(t, 'i') }));
@@ -55,12 +56,12 @@ router.get('/recommend', async (req, res) => {
     if (quotes.length < 5) {
       const needed = 5 - quotes.length;
       const excludeIds = quotes.map(q => q._id);
-      
+
       const additional = await Quote.aggregate([
         { $match: { category, _id: { $nin: excludeIds } } },
         { $sample: { size: needed } }
       ]);
-      
+
       quotes = [...quotes, ...additional];
     }
 
@@ -80,6 +81,39 @@ router.get('/', async (req, res) => {
     }
     const quotes = await Quote.find(filter).sort({ index: 1 });
     res.json(quotes);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Admin: Add a new quote
+router.post('/', auth, adminAuth, async (req, res) => {
+  try {
+    const quote = new Quote(req.body);
+    await quote.save();
+    res.status(201).json(quote);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Admin: Update a quote
+router.put('/:id', auth, adminAuth, async (req, res) => {
+  try {
+    const quote = await Quote.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    if (!quote) return res.status(404).json({ message: 'Quote not found' });
+    res.json(quote);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Admin: Delete a quote
+router.delete('/:id', auth, adminAuth, async (req, res) => {
+  try {
+    const quote = await Quote.findByIdAndDelete(req.params.id);
+    if (!quote) return res.status(404).json({ message: 'Quote not found' });
+    res.json({ message: 'Quote deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -3,39 +3,49 @@ const User = require('../models/User');
 
 exports.getGlobalLeaderboard = async (req, res) => {
     try {
-        // Aggregate users by completed topics to calculate Gamified XP (1 Topic = 10 XP)
+        // Aggregate directly from Users so even 0 XP users appear
         const pipeline = [
-            { $match: { completed: true } },
-            {
-                $group: {
-                    _id: '$userId',
-                    completedTopics: { $sum: 1 }
-                }
-            },
+            { $match: { role: { $ne: 'admin' } } },
             {
                 $lookup: {
-                    from: 'users', // Mongoose collections are pluralized by default
+                    from: 'usertopicprogresses',
                     localField: '_id',
-                    foreignField: '_id',
-                    as: 'user'
+                    foreignField: 'userId',
+                    as: 'progress'
                 }
             },
-            { $unwind: '$user' },
-            { $match: { 'user.role': { $ne: 'admin' } } },
             {
                 $project: {
                     _id: 1,
-                    name: '$user.name',
-                    targetYear: '$user.targetYear',
-                    optionalSubject: '$user.optionalSubject',
-                    score: { $multiply: ['$completedTopics', 10] }, // Mathematical XP derivation
+                    name: 1,
+                    targetYear: 1,
+                    optionalSubject: 1,
+                    // Count only elements where `completed: true`
+                    completedTopics: {
+                        $size: {
+                            $filter: {
+                                input: '$progress',
+                                as: 'p',
+                                cond: { $eq: ['$$p.completed', true] }
+                            }
+                        }
+                    }
                 }
             },
-            { $sort: { score: -1 } },
-            { $limit: 50 } // Top 50 Aspirants
+            {
+                $project: {
+                    _id: 1,
+                    name: 1,
+                    targetYear: 1,
+                    optionalSubject: 1,
+                    score: { $multiply: ['$completedTopics', 10] }, // 10 XP per completion
+                }
+            },
+            { $sort: { score: -1, name: 1 } },
+            { $limit: 100 } // Top 100
         ];
 
-        const leaderboard = await UserTopicProgress.aggregate(pipeline);
+        const leaderboard = await User.aggregate(pipeline);
 
         res.json({ leaderboard });
     } catch (e) {

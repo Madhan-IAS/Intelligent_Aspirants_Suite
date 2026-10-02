@@ -101,6 +101,7 @@ const essaysRoutes = require('./routes/essays');
 const mindMapsRoutes = require('./routes/mindMaps');
 const subscriptionRoutes = require('./routes/subscription');
 const adminRoutes = require('./routes/admin');
+const gamificationRoutes = require('./routes/gamification');
 const rateLimit = require('express-rate-limit');
 
 // Rate Limiters
@@ -149,6 +150,7 @@ app.use('/api/mind-maps', mindMapsRoutes);
 app.use('/api/answers/gallery', require('./routes/answerGallery'));
 app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/gamification', gamificationRoutes);
 app.use('/api/bookmarks', require('./routes/bookmarks'));
 app.use('/api/export', require('./routes/export'));
 

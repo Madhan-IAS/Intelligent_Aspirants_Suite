@@ -5,20 +5,21 @@ const auth = require('../middleware/auth');
 
 const { validate } = require('../middleware/validator');
 const { body } = require('express-validator');
+const { authLimiter } = require('../middleware/rateLimiter');
 
 
-router.post('/register', validate([
+router.post('/register', authLimiter, validate([
     body('name').trim().notEmpty().withMessage('Name is required'),
     body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
 ]), authController.register);
 
-router.post('/login', validate([
+router.post('/login', authLimiter, validate([
     body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
     body('password').notEmpty().withMessage('Password cannot be empty')
 ]), authController.login);
 
-router.post('/refresh', validate([
+router.post('/refresh', authLimiter, validate([
     body('refreshToken').notEmpty().withMessage('Refresh token is required')
 ]), authController.refreshToken);
 

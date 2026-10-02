@@ -14,7 +14,8 @@ const answerSchema = new mongoose.Schema({
   timeTaken: { type: Number, default: 0 },
   status: { type: String, enum: ['Draft', 'Submitted', 'Evaluated'], default: 'Draft' },
   upvotes: { type: Number, default: 0 },
-  upvotedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+  upvotedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  isFeatured: { type: Boolean, default: false }
 }, { timestamps: true });
 
 answerSchema.index({ userId: 1, pyqId: 1 });

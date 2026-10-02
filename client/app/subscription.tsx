@@ -71,21 +71,77 @@ export default function SubscriptionScreen() {
         return () => clearInterval(interval);
     }, []);
 
-    const handleRequestPlan = async () => {
+    const loadRazorpayScript = () => {
+        return new Promise((resolve) => {
+            if (Platform.OS !== 'web') return resolve(false);
+            const script = document.createElement('script');
+            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+            script.onload = () => resolve(true);
+            script.onerror = () => resolve(false);
+            document.body.appendChild(script);
+        });
+    };
+
+    const handleRazorpayCheckout = async () => {
+        if (Platform.OS !== 'web') {
+            setError('Payments are currently only supported via Desktop Web Browser.');
+            return;
+        }
+
         setLoading(true);
         setError('');
+
         try {
-            await api.post('/subscription/request', {
-                requestedTier: selectedTier,
-                isAnnual
+            const isLoaded = await loadRazorpayScript();
+            if (!isLoaded) throw new Error('Razorpay SDK failed to load. Check your internet connection.');
+
+            const planAmount = isAnnual ? TIER_INFO[selectedTier].annualPrice : TIER_INFO[selectedTier].price;
+            const durationMonths = isAnnual ? 12 : 1;
+            // Extract numbers from "₹999" -> 999
+            const numericAmount = parseInt(planAmount.replace(/[^0-9]/g, ''));
+
+            // 1. Create order
+            const orderRes = await api.post('/subscription/create-order', {
+                amount: numericAmount,
+                tier: selectedTier,
+                durationMonths
             });
-            setSuccess(true);
-            setTimeout(() => {
-                // Instantly send them to their dashboard because they get 3-day proxy access!
-                router.replace('/');
-            }, 1500);
+
+            // 2. Open Razorpay Interface
+            const options = {
+                key: 'rzp_test_123456789', // Match mock backend
+                amount: orderRes.data.order.amount,
+                currency: 'INR',
+                name: 'IAS Suite',
+                description: `${TIER_INFO[selectedTier].name} Subscription`,
+                image: 'https://i.imgur.com/your-logo.png',
+                order_id: orderRes.data.order.id,
+                handler: async function (response: any) {
+                    try {
+                        await api.post('/subscription/verify', {
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature,
+                            tier: selectedTier,
+                            durationMonths
+                        });
+                        setSuccess(true);
+                        setTimeout(() => router.replace('/'), 1500);
+                    } catch (e: any) {
+                        alert(e.response?.data?.message || 'Payment Verification Failed');
+                    }
+                },
+                theme: { color: TIER_INFO[selectedTier].color }
+            };
+
+            const rzp = new (window as any).Razorpay(options);
+            rzp.on('payment.failed', function (response: any) {
+                setError(response.error.description || 'Payment Failed');
+            });
+            rzp.open();
+
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to request plan');
+            setError(err.response?.data?.message || err.message);
         } finally {
             setLoading(false);
         }
@@ -281,7 +337,7 @@ export default function SubscriptionScreen() {
 
                     {/* Continue / Request Button */}
                     <TouchableOpacity
-                        onPress={handleRequestPlan}
+                        onPress={handleRazorpayCheckout}
                         disabled={loading}
                         style={{
                             marginTop: 24, width: '100%', maxWidth: 400,

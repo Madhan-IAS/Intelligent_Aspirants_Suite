@@ -42,9 +42,40 @@ exports.getAllUsers = async (req, res) => {
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
-        res.json(users);
+        res.json(stats);
+    } catch (e) {
+        res.status(500).json({ message: 'Error aggregating demographics' });
+    }
+};
+
+// Phase 10: Curate Gallery Answers
+exports.getUnfeaturedAnswers = async (req, res) => {
+    try {
+        const Answer = require('../models/Answer');
+        const answers = await Answer.find({ isFeatured: { $ne: true }, status: 'Evaluated' })
+            .sort({ createdAt: -1 })
+            .limit(20)
+            .populate('userId', 'name')
+            .populate('pyqId', 'title');
+        res.json(answers);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: 'Error fetching curate records' });
+    }
+};
+
+exports.featureAnswer = async (req, res) => {
+    try {
+        const Answer = require('../models/Answer');
+        const { id } = req.params;
+        const answer = await Answer.findById(id);
+        if (!answer) return res.status(404).json({ message: 'Answer not found' });
+
+        answer.isFeatured = true;
+        await answer.save();
+
+        res.json({ message: 'Answer successfully promoted to Hall of Fame!' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error featuring answer' });
     }
 };
 

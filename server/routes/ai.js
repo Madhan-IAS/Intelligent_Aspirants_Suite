@@ -4,6 +4,10 @@ const aiController = require('../controllers/aiController');
 const { checkTrialLimit } = require('../middleware/aiLimits');
 const auth = require('../middleware/auth');
 const adminAuth = require('../middleware/adminAuth');
+const { apiLimiter } = require('../middleware/rateLimiter');
+
+// Protect all AI routes globally against abuse/spam 
+router.use(apiLimiter);
 
 router.post('/evaluate', auth, checkTrialLimit('aiAnswerEvaluations', 2), aiController.evaluateAnswer);
 router.get('/daily-quiz', auth, checkTrialLimit('aiQuizGenerated', 1), aiController.generateDailyQuiz);

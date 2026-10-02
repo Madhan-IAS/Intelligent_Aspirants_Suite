@@ -20,6 +20,10 @@ router.get('/export-users', auth, adminAuth, adminController.exportUsersCSV);
 router.post('/broadcast', auth, adminAuth, adminController.broadcastNotification);
 router.get('/demographics', auth, adminAuth, adminController.getDemographics);
 
+// Phase 10: Answer Curations
+router.get('/gallery-curation', auth, adminAuth, adminController.getUnfeaturedAnswers);
+router.post('/feature-answer/:id', auth, adminAuth, adminController.featureAnswer);
+
 router.post('/approve/:id', auth, adminAuth, validate([
     ...idValidation,
     body('durationMonths').optional().isInt({ min: 1 }),

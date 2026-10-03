@@ -424,12 +424,51 @@ exports.forgotPassword = async (req, res) => {
     user.otpExpiry = expiry;
     await user.save();
 
-    // 🚀 Simulated Email Gateway (Nodemailer could be attached here)
-    console.log(`[SECURE MAIL] -> Dispatching Password Reset OTP [ ${otp} ] to -> ${email}`);
+    // 🚀 Authentic Nodemailer Email Gateway 
+    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+      const nodemailer = require('nodemailer');
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+        },
+      });
+
+      const mailOptions = {
+        from: `"IASuite Security" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: 'Password Reset Request',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;">
+            <h2 style="color: #ef4444;">Password Reset Request</h2>
+            <p>Hello,</p>
+            <p>We received a request to reset your IASuite password. Your 6-digit Reset OTP is:</p>
+            <div style="margin: 24px 0; padding: 16px; background-color: #f3f4f6; border-radius: 8px; text-align: center;">
+              <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #ef4444;">${otp}</span>
+            </div>
+            <p>This code will explicitly expire in 15 minutes. If you did not request this, please ignore this email.</p>
+          </div>
+        `,
+      };
+
+      try {
+        await transporter.sendMail(mailOptions);
+        console.log(`[SECURE MAIL] -> Dispatching Password Reset OTP to -> ${email}`);
+      } catch (mailError) {
+        console.error('[EMAIL] Failed to send Reset OTP', mailError);
+        return res.status(400).json({
+          message: 'Failed to send reset email. Verify provider settings.',
+          provider_error: mailError.message
+        });
+      }
+    } else {
+      console.log(`[DEVELOPMENT MOCK EMAIL] -> Dispatching Password Reset OTP [ ${otp} ] to -> ${email}`);
+    }
 
     res.json({
       message: `Reset OTP sent successfully to ${email}`,
-      devOtp: otp // Pass directly to frontend for easy testing during Beta phase
+      devOtp: !(process.env.EMAIL_USER && process.env.EMAIL_PASS) ? otp : undefined
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

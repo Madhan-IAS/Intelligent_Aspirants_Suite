@@ -183,7 +183,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
         <View style={{ marginBottom: 20 }}>
           <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10, paddingHorizontal: 8 }}>Resources</Text>
           <SidebarItem icon="book" label="Book List" href="/book-list" onNavigate={onNavigate} />
-          <SidebarItem icon="document-text" label="AI Notes" href="/ai-notes" onNavigate={onNavigate} />
+          <SidebarItem icon="document-text" label="IASuite Notes" href="/ai-notes" onNavigate={onNavigate} />
         </View>
       </ScrollView>
 

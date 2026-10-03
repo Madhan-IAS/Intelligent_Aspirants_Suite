@@ -497,7 +497,7 @@ export default function AdminDashboard() {
                             style={{ flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 10, backgroundColor: adminTab === tab ? (isDark ? '#374151' : 'white') : 'transparent' }}
                         >
                             <Text style={{ fontWeight: 'bold', fontSize: 13, color: adminTab === tab ? (isDark ? 'white' : '#111827') : (isDark ? '#9ca3af' : '#6b7280') }}>
-                                {tab === 'cms' ? 'CONTENT (CMS)' : tab === 'ai-notes' ? 'AI NOTES' : tab.toUpperCase()}
+                                {tab === 'cms' ? 'CONTENT (CMS)' : tab === 'ai-notes' ? 'IASUITE NOTES' : tab.toUpperCase()}
                             </Text>
                         </TouchableOpacity>
                     ))}

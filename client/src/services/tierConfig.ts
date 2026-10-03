@@ -105,7 +105,7 @@ export const TIER_FEATURES: Record<string, string[]> = {
         'CSAT (Paper II)',
         '3-5-7 Spaced Revision',
         'Mind Maps',
-        'AI Notes',
+        'IASuite Notes',
         'Answer Gallery',
         'Current Affairs',
         'Flashcards',

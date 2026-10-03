@@ -257,7 +257,7 @@ export default function AINotesPage() {
                 </TouchableOpacity>
                 <View>
                     <Text style={{ color: textMuted, fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 4 }}>IAS Knowledge Hub</Text>
-                    <Text style={{ color: textPrimary, fontSize: 26, fontWeight: 'bold' }}>📝 AI Notes</Text>
+                    <Text style={{ color: textPrimary, fontSize: 26, fontWeight: 'bold' }}>📝 IASuite Notes</Text>
                 </View>
             </View>
 
@@ -357,7 +357,7 @@ export default function AINotesPage() {
                         <Ionicons name="document-text" size={32} color={paperColor} />
                     </View>
                     <Text style={{ color: textPrimary, fontSize: 18, fontWeight: 'bold', marginBottom: 8 }}>No notes yet</Text>
-                    <Text style={{ color: textSecondary, fontSize: 14, textAlign: 'center', maxWidth: 320 }}>AI Notes for {activePaper} will appear here once uploaded by the admin.</Text>
+                    <Text style={{ color: textSecondary, fontSize: 14, textAlign: 'center', maxWidth: 320 }}>IASuite Notes for {activePaper} will appear here once uploaded by the admin.</Text>
                 </View>
             ) : (
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16 }}>

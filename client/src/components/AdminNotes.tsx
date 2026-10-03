@@ -115,7 +115,7 @@ export default function AdminNotes() {
                 <View style={{ flex: 1, backgroundColor: cardBg, borderRadius: 16, padding: 24, borderWidth: 1, borderColor: border }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
                         <Text style={{ color: textPrimary, fontSize: 18, fontWeight: 'bold' }}>
-                            {editingNote ? 'Edit AI Note' : 'Create New AI Note'}
+                            {editingNote ? 'Edit IASuite Note' : 'Create New IASuite Note'}
                         </Text>
                         {editingNote && (
                             <TouchableOpacity onPress={() => { setEditingNote(null); setPaper('GS I'); setSubject(''); setTitle(''); setContent(''); setTags(''); }} style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#ef444420', borderRadius: 8 }}>

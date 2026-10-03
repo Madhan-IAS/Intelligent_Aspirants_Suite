@@ -309,7 +309,7 @@ export default function PYQDatabase() {
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-          {['All', 'GS I', 'GS II', 'GS III', 'GS IV', 'Sociology'].map(filter => {
+          {['All', 'GS I', 'GS II', 'GS III', 'GS IV', user?.optionalSubject && user.optionalSubject !== 'Not decided yet' ? user.optionalSubject : 'Optional'].map(filter => {
             const isActive = activeFilter === filter;
             return (
               <TouchableOpacity

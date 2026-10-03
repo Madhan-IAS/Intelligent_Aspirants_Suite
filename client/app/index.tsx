@@ -138,7 +138,7 @@ export default function Dashboard() {
         api.get('/topics/subject/GS II').catch(() => ({ data: [] })),
         api.get(`/topics/subject/${encodeURIComponent('GS III')}`).catch(() => ({ data: [] })),
         api.get('/topics/subject/GS IV').catch(() => ({ data: [] })),
-        api.get('/topics/subject/Sociology').catch(() => ({ data: [] })),
+        api.get(`/topics/subject/${encodeURIComponent(user?.optionalSubject && user.optionalSubject !== 'Not decided yet' ? user.optionalSubject : 'Sociology')}`).catch(() => ({ data: [] })),
         api.get('/topics/subject/CSAT').catch(() => ({ data: [] })),
         api.get('/pyqs').catch(() => ({ data: [] })),
         api.get('/revisions/pending').catch(() => ({ data: [] })),
@@ -152,7 +152,7 @@ export default function Dashboard() {
         { name: 'GS II', data: gs2Res.data, color: '#10b981' },
         { name: 'GS III', data: gs3Res.data, color: '#f59e0b' },
         { name: 'GS IV', data: gs4Res.data, color: '#ec4899' },
-        { name: 'Sociology', data: socioRes.data, color: '#8b5cf6' },
+        { name: user?.optionalSubject && user.optionalSubject !== 'Not decided yet' ? user.optionalSubject : 'Optional', data: socioRes.data, color: '#8b5cf6' },
         { name: 'CSAT', data: csatRes.data, color: '#06b6d4' }
       ];
 

@@ -14,28 +14,20 @@ const generateTokens = (userId) => {
 
 const getSecureTransporter = async () => {
   const nodemailer = require('nodemailer');
-  const dns = require('dns');
-  const { promisify } = require('util');
-  const lookup = promisify(dns.lookup);
-
-  let hostName = process.env.SMTP_HOST || 'smtp.gmail.com';
-  let resolvedAddress = hostName;
-  try {
-    const { address } = await lookup(hostName, { family: 4 });
-    resolvedAddress = address;
-  } catch (e) {
-    console.error("[EMAIL] DNS lookup fallback:", e.message);
-  }
 
   return nodemailer.createTransport({
-    host: resolvedAddress,
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: process.env.SMTP_HOST ? (parseInt(process.env.SMTP_PORT) || 587) : 587,
     secure: process.env.SMTP_HOST ? (parseInt(process.env.SMTP_PORT) === 465) : false,
     auth: {
       user: process.env.SMTP_HOST ? process.env.SMTP_USER : process.env.EMAIL_USER,
       pass: process.env.SMTP_HOST ? process.env.SMTP_PASS : process.env.EMAIL_PASS,
     },
-    tls: { rejectUnauthorized: false, servername: hostName },
+    tls: { rejectUnauthorized: false },
+    family: 4, // 🛡️ Force IPv4 natively without statically hacking process DNS
+    pool: true, // ♻️ Reuse the same TLS connection (fixes second-OTP hanging)
+    maxConnections: 1, // Only open one connection to Gmail at a time
+    maxMessages: 100
   });
 };
 

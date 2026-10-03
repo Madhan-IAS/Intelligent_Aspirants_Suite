@@ -34,9 +34,8 @@ const getSecureTransporter = async () => {
     maxMessages: 100,
     // 🛡️ Iron-clad IPv4 Enforcement at the OS level
     lookup: (hostname, options, callback) => {
-      dns.lookup(hostname, { family: 4 }, (err, address, family) => {
-        callback(err, address, family);
-      });
+      // Must pass original options (like all: true) while enforcing family 4
+      dns.lookup(hostname, Object.assign({}, options || {}, { family: 4 }), callback);
     }
   });
 

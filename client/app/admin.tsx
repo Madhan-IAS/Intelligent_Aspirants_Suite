@@ -506,6 +506,23 @@ export default function AdminDashboard() {
                                         </View>
                                     ))}
                                 </View>
+
+                                {/* Paper Breakdown Analytics */}
+                                {progressData.paperBreakdown && progressData.paperBreakdown.length > 0 && (
+                                    <View style={{ marginTop: 8, backgroundColor: isDark ? '#111827' : '#f9fafb', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
+                                        <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11, fontWeight: 'bold', marginBottom: 12, textTransform: 'uppercase' }}>Paper-Wise Topic Mastery</Text>
+                                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                                            {progressData.paperBreakdown.sort((a: any, b: any) => b.count - a.count).map((item: any, index: number) => (
+                                                <View key={index} style={{ backgroundColor: isDark ? '#374151' : '#e5e7eb', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8, flexDirection: 'row', alignItems: 'center' }}>
+                                                    <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', fontSize: 12, fontWeight: 'bold', marginRight: 6 }}>{item.paper}</Text>
+                                                    <View style={{ backgroundColor: '#2563eb', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10 }}>
+                                                        <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>{item.count}</Text>
+                                                    </View>
+                                                </View>
+                                            ))}
+                                        </View>
+                                    </View>
+                                )}
                             </View>
                         ) : (
                             <Text style={{ color: '#ef4444', textAlign: 'center', padding: 20 }}>No records found.</Text>

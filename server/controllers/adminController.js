@@ -695,8 +695,14 @@ exports.getUserProgress = async (req, res) => {
         const targetUser = await User.findById(userId).select('score currentStreak');
         if (!targetUser) return res.status(404).json({ message: 'User not found' });
 
-        const [topicsCompleted, focusSessions, answersEvaluated, answersFeatured] = await Promise.all([
-            UserTopicProgress.countDocuments({ userId, completed: true }),
+        const [topicsAggregation, focusSessions, answersEvaluated, answersFeatured] = await Promise.all([
+            UserTopicProgress.aggregate([
+                { $match: { userId: new mongoose.Types.ObjectId(userId), completed: true } },
+                { $lookup: { from: 'topics', localField: 'topicId', foreignField: '_id', as: 'topic' } },
+                { $unwind: '$topic' },
+                { $group: { _id: '$topic.paper', count: { $sum: 1 } } },
+                { $sort: { _id: 1 } }
+            ]),
             FocusSession.aggregate([
                 { $match: { userId: new mongoose.Types.ObjectId(userId) } },
                 { $group: { _id: null, totalMinutes: { $sum: "$durationMinutes" } } }
@@ -706,11 +712,14 @@ exports.getUserProgress = async (req, res) => {
         ]);
 
         const totalFocusMinutes = focusSessions.length > 0 ? focusSessions[0].totalMinutes : 0;
+        const topicsCompleted = topicsAggregation.reduce((acc, curr) => acc + curr.count, 0);
+        const paperBreakdown = topicsAggregation.map(item => ({ paper: item._id || 'Unknown', count: item.count }));
 
         res.json({
             score: targetUser.score || 0,
             streak: targetUser.currentStreak || 0,
             topicsCompleted,
+            paperBreakdown,
             totalFocusMinutes,
             answersEvaluated,
             answersFeatured

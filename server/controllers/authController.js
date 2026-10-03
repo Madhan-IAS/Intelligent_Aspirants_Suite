@@ -12,10 +12,15 @@ const generateTokens = (userId) => {
   return { accessToken, refreshToken };
 };
 
+let globalTransporter = null;
 const getSecureTransporter = async () => {
-  const nodemailer = require('nodemailer');
+  if (globalTransporter) return globalTransporter;
 
-  return nodemailer.createTransport({
+  const nodemailer = require('nodemailer');
+  const dns = require('dns');
+
+  // Cache a single pooled connection so Gmail doesn't drop us
+  globalTransporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: process.env.SMTP_HOST ? (parseInt(process.env.SMTP_PORT) || 587) : 587,
     secure: process.env.SMTP_HOST ? (parseInt(process.env.SMTP_PORT) === 465) : false,
@@ -24,11 +29,18 @@ const getSecureTransporter = async () => {
       pass: process.env.SMTP_HOST ? process.env.SMTP_PASS : process.env.EMAIL_PASS,
     },
     tls: { rejectUnauthorized: false },
-    family: 4, // 🛡️ Force IPv4 natively without statically hacking process DNS
-    pool: true, // ♻️ Reuse the same TLS connection (fixes second-OTP hanging)
-    maxConnections: 1, // Only open one connection to Gmail at a time
-    maxMessages: 100
+    pool: true, // Reuse the same TLS connection 
+    maxConnections: 1,
+    maxMessages: 100,
+    // 🛡️ Iron-clad IPv4 Enforcement at the OS level
+    lookup: (hostname, options, callback) => {
+      dns.lookup(hostname, { family: 4 }, (err, address, family) => {
+        callback(err, address, family);
+      });
+    }
   });
+
+  return globalTransporter;
 };
 
 // Master Seeding Arrays to initialize new registered users with the exact same data

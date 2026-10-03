@@ -113,11 +113,11 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: 'Please provide a valid 10-digit mobile number' });
     }
 
-    // Require OTP Verification before allowing signup
-    const verifiedOtp = await Otp.findOne({ email, verified: true });
-    if (!verifiedOtp) {
-      return res.status(400).json({ message: 'Email not verified or OTP expired. Please verify your email first.' });
-    }
+    // TEMPORARILY BYPASSED FOR LAUNCH TO ALLOW SIGNUPS WITHOUT DOMAIN RESTRICTIONS
+    // const verifiedOtp = await Otp.findOne({ email, verified: true });
+    // if (!verifiedOtp) {
+    //   return res.status(400).json({ message: 'Email not verified or OTP expired. Please verify your email first.' });
+    // }
 
     let user = await User.findOne({ email });
     if (user) return res.status(400).json({ message: 'User already exists' });
@@ -157,8 +157,8 @@ exports.register = async (req, res) => {
     user.refreshToken = refreshToken;
     await user.save();
 
-    // Consume the OTP so it cannot be reused
-    await Otp.deleteOne({ _id: verifiedOtp._id });
+    // Consume the OTP so it cannot be reused (Bypassed)
+    // await Otp.deleteOne({ _id: verifiedOtp._id });
 
     res.status(201).json({ token: accessToken, refreshToken, user });
   } catch (error) {
@@ -303,13 +303,12 @@ exports.updateProfile = async (req, res) => {
     if (!userToUpdate) return res.status(404).json({ message: 'User not found' });
 
     if (email && email !== userToUpdate.email) {
-      // Security Enforcement: Ensure they verified this new email via OTP
-      const verifiedOtp = await Otp.findOne({ email, verified: true });
-      if (!verifiedOtp) {
-        return res.status(403).json({ message: 'Unauthorized email modification. You must verify the new email first.' });
-      }
-      // Consume OTP so it cannot be reused
-      await Otp.deleteOne({ _id: verifiedOtp._id });
+      // SECURITY BYPASS: Allow email modifications without OTP
+      // const verifiedOtp = await Otp.findOne({ email, verified: true });
+      // if (!verifiedOtp) {
+      //   return res.status(403).json({ message: 'Unauthorized email modification. You must verify the new email first.' });
+      // }
+      // await Otp.deleteOne({ _id: verifiedOtp._id });
     }
 
     const user = await User.findByIdAndUpdate(

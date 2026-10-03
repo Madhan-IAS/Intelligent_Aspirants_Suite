@@ -27,20 +27,8 @@ export default function Register() {
       setError('Please enter a valid email address');
       return;
     }
-    setLoading(true);
-    setError('');
-    try {
-      const res = await api.post('/auth/send-otp', { email });
-      // If devOtp is provided via backend, we could console.log it or auto-fill for dev convenience.
-      if (res.data.devOtp) {
-        console.log("Dev OTP:", res.data.devOtp);
-      }
-      setStep(2);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to send OTP');
-    } finally {
-      setLoading(false);
-    }
+    // TEMPORARY BYPASS: Skip OTP entirely for launch
+    setStep(3);
   };
 
   const handleVerifyOtp = async () => {
@@ -234,7 +222,7 @@ export default function Register() {
             <ActivityIndicator color="white" />
           ) : (
             <Text style={{ color: (step === 3 && !acceptedTerms) ? (isDark ? '#9ca3af' : '#6b7280') : 'white', fontWeight: 'bold', fontSize: 18 }}>
-              {step === 1 ? 'Get OTP' : step === 2 ? 'Verify OTP' : 'Complete Sign Up'}
+              {step === 1 ? 'Next Step' : step === 2 ? 'Verify OTP' : 'Complete Sign Up'}
             </Text>
           )}
         </TouchableOpacity>

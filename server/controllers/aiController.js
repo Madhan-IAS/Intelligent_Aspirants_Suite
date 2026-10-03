@@ -7,6 +7,7 @@ const Interlinkage = require('../models/Interlinkage');
 const { incrementUsage } = require('../middleware/aiLimits');
 
 const ai = new GoogleGenAI({}); // Automatically uses GEMINI_API_KEY from env
+const User = require('../models/User');
 
 exports.evaluateAnswer = async (req, res) => {
   try {
@@ -19,6 +20,15 @@ exports.evaluateAnswer = async (req, res) => {
 
     if (answer.userId && answer.userId.toString() !== req.user.id) {
       return res.status(403).json({ message: 'You are not authorized to evaluate this answer.' });
+    }
+
+    // Mathematical Paywall Cap Enforcement (Protects LLM Node runtime costs)
+    const activeUser = await User.findById(req.user.id).select('subscriptionTier usageStats');
+    if (activeUser.subscriptionTier === 'foundation' && activeUser.usageStats.aiEssayEvaluations >= 10) {
+      return res.status(403).json({ message: 'Paywall Quota Exceeded. The Foundation Plan is limited to 10 Mock Essay Evaluations per month. Please upgrade your subscription.' });
+    }
+    if (activeUser.subscriptionTier === 'aspirant' && activeUser.usageStats.aiEssayEvaluations >= 50) {
+      return res.status(403).json({ message: 'Paywall Quota Exceeded. The Aspirant Plan is limited to 50 Mock Essay Evaluations per month. Please upgrade to Topper Tier.' });
     }
 
     if (!process.env.GEMINI_API_KEY) {

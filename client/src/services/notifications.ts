@@ -47,14 +47,23 @@ export async function registerForPushNotificationsAsync() {
         finalStatus = status;
       }
       if (finalStatus !== 'granted') {
-        return false;
+        return null;
       }
-      return true;
+
+      try {
+        // Fetch the unique Expo Push API Token mapping this hardware device
+        const token = await Notifications.getExpoPushTokenAsync({
+          projectId: Constants.expoConfig?.extra?.eas?.projectId || undefined,
+        });
+        return token.data; // Returns "ExponentPushToken[xxxx]"
+      } catch (tokenErr) {
+        return null;
+      }
     }
   } catch (err) {
     // Gracefully catch push token restrictions in Expo Go
   }
-  return false;
+  return null;
 }
 
 export async function scheduleLocalNotification(title: string, body: string, triggerInSeconds: number) {

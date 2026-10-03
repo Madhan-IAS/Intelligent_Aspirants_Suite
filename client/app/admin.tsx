@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import AdminCMS from '../src/components/AdminCMS';
 import AdminBroadcast from '../src/components/AdminBroadcast';
+import AdminNotes from '../src/components/AdminNotes';
 
 type PendingUser = {
     _id: string;
@@ -65,7 +66,7 @@ export default function AdminDashboard() {
     const [demographicsData, setDemographicsData] = useState<any>(null);
 
     // Phase 9 Tabs
-    const [adminTab, setAdminTab] = useState<'users' | 'cms' | 'broadcast'>('users');
+    const [adminTab, setAdminTab] = useState<'users' | 'cms' | 'broadcast' | 'ai-notes'>('users');
 
     // Toast notification state (#2)
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -489,14 +490,14 @@ export default function AdminDashboard() {
 
                 {/* Admin Tabs */}
                 <View style={{ flexDirection: 'row', marginBottom: 24, backgroundColor: isDark ? '#1f2937' : '#e5e7eb', borderRadius: 12, padding: 4 }}>
-                    {['users', 'cms', 'broadcast'].map(tab => (
+                    {['users', 'cms', 'broadcast', 'ai-notes'].map(tab => (
                         <TouchableOpacity
                             key={tab}
                             onPress={() => setAdminTab(tab as any)}
                             style={{ flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 10, backgroundColor: adminTab === tab ? (isDark ? '#374151' : 'white') : 'transparent' }}
                         >
                             <Text style={{ fontWeight: 'bold', fontSize: 13, color: adminTab === tab ? (isDark ? 'white' : '#111827') : (isDark ? '#9ca3af' : '#6b7280') }}>
-                                {tab === 'cms' ? 'CONTENT (CMS)' : tab.toUpperCase()}
+                                {tab === 'cms' ? 'CONTENT (CMS)' : tab === 'ai-notes' ? 'AI NOTES' : tab.toUpperCase()}
                             </Text>
                         </TouchableOpacity>
                     ))}
@@ -1363,6 +1364,10 @@ export default function AdminDashboard() {
 
                 {adminTab === 'broadcast' && (
                     <AdminBroadcast />
+                )}
+
+                {adminTab === 'ai-notes' && (
+                    <AdminNotes />
                 )}
             </ScrollView>
         </View>

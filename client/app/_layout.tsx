@@ -28,7 +28,6 @@ function AppContent() {
   const [routerReady, setRouterReady] = useState(false);
 
   useEffect(() => {
-    registerForPushNotificationsAsync();
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
       document.title = "IAS — Intelligent Aspirant's Suite";
     }
@@ -57,6 +56,14 @@ function AppContent() {
     if (!loading && routerReady && !welcomeCompleted) {
       setWelcomeCompleted(true);
       if (user) {
+
+        // Asynchronously map the hardware device to the backend for Hardware Push Notifications
+        registerForPushNotificationsAsync().then(token => {
+          if (token) {
+            api.put('/auth/profile', { expoPushToken: token }).catch(() => { });
+          }
+        });
+
         // Onboarding gate — only for brand-new users who have never completed setup
         // Existing users (onboardingComplete === undefined) are NOT affected
         if (user.onboardingComplete === false && pathname !== '/onboarding' && user.role !== 'admin') {

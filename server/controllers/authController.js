@@ -132,6 +132,14 @@ exports.login = async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: 'User not found' });
 
+    // --- LEGACY DB HOTFIX --- 
+    // Early beta accounts had corrupted examStage enums (e.g., 'Foundation') which crashes user.save()
+    const validStages = ['Beginner', 'First Reading', 'Revision', 'Test Phase', 'Interview'];
+    if (user.examStage && !validStages.includes(user.examStage)) {
+      user.examStage = 'Beginner';
+    }
+    // ------------------------
+
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
@@ -243,7 +251,7 @@ exports.updateProfile = async (req, res) => {
     const {
       name, bio, mobile, targetAttempt, attemptNumber, optionalSubject,
       dailyTargetHours, preferredRevisionPattern,
-      examStage, theme, studyPreferences, onboardingComplete
+      examStage, theme, studyPreferences, onboardingComplete, expoPushToken
     } = req.body;
 
     if (mobile && !/^[0-9]{10}$/.test(mobile)) {
@@ -256,7 +264,7 @@ exports.updateProfile = async (req, res) => {
         $set: {
           name, bio, mobile, targetAttempt, attemptNumber, optionalSubject,
           dailyTargetHours, preferredRevisionPattern,
-          examStage, theme, studyPreferences, onboardingComplete
+          examStage, theme, studyPreferences, onboardingComplete, expoPushToken
         }
       },
       { new: true, runValidators: true }
@@ -380,6 +388,72 @@ exports.toggleFollow = async (req, res) => {
       isFollowing: !isFollowing,
       followersCount: targetUser.followers.length
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// POST /api/auth/forgot-password
+// Generates a 6-digit OTP mapping to the email address with a strict 15-minute expiration
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email address is required' });
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'If this email exists, an OTP will be sent' }); // Generic security warning
+    }
+
+    // Generate random 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiry = new Date();
+    expiry.setMinutes(expiry.getMinutes() + 15);
+
+    user.resetOtp = otp;
+    user.otpExpiry = expiry;
+    await user.save();
+
+    // 🚀 Simulated Email Gateway (Nodemailer could be attached here)
+    console.log(`[SECURE MAIL] -> Dispatching Password Reset OTP [ ${otp} ] to -> ${email}`);
+
+    res.json({
+      message: `Reset OTP sent successfully to ${email}`,
+      devOtp: otp // Pass directly to frontend for easy testing during Beta phase
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// POST /api/auth/reset-password
+// Unlocks the user's DB via valid OTP token and overrides the hashed password
+exports.resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ message: 'Email, OTP, and New Password are required' });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if (user.resetOtp !== otp || new Date() > user.otpExpiry) {
+      return res.status(400).json({ message: 'Invalid or Expired OTP provided' });
+    }
+
+    // Re-Hash new credentials safely 
+    const salt = await bcrypt.genSalt(10);
+    user.passwordHash = await bcrypt.hash(newPassword, salt);
+
+    // Wipe the compromised tokens instantly
+    user.resetOtp = undefined;
+    user.otpExpiry = undefined;
+
+    await user.save();
+
+    res.json({ message: 'Password reset successfully!' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

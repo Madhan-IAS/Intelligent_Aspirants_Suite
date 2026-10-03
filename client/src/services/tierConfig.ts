@@ -48,6 +48,8 @@ export const ROUTE_TIER_MAP: Record<string, string> = {
     '/profile': 'foundation',
     '/planner': 'foundation',
     '/notifications': 'foundation',
+    '/leaderboard': 'foundation',
+    '/book-list': 'foundation',
     '/gs/GS I': 'foundation',
     '/gs/GS II': 'foundation',
     '/gs/GS III': 'foundation',
@@ -59,6 +61,8 @@ export const ROUTE_TIER_MAP: Record<string, string> = {
     '/revision': 'aspirant',
     '/mind-maps': 'aspirant',
     '/current-affairs': 'aspirant',
+    '/ai-notes': 'aspirant',
+    '/answer-gallery': 'aspirant',
     '/flashcards': 'aspirant',
 
     // Topper tier (₹299)
@@ -91,6 +95,8 @@ export const TIER_FEATURES: Record<string, string[]> = {
         'Dashboard & Profile',
         'GS I, II, III, IV Syllabus Checklist',
         'Daily Planner',
+        'Leaderboard',
+        'Book List',
         'Notifications',
     ],
     aspirant: [
@@ -99,6 +105,8 @@ export const TIER_FEATURES: Record<string, string[]> = {
         'CSAT (Paper II)',
         '3-5-7 Spaced Revision',
         'Mind Maps',
+        'AI Notes',
+        'Answer Gallery',
         'Current Affairs',
         'Flashcards',
     ],

@@ -576,15 +576,15 @@ exports.exportUsersCSV = async (req, res) => {
 };
 
 // POST /api/admin/broadcast
-// Send a mass notification to all users
+// Send a mass notification to all users natively inside the DB and externally via FCM Hardware Pings
 exports.broadcastNotification = async (req, res) => {
     try {
         const { title, message, type } = req.body;
         if (!title || !message) return res.status(400).json({ message: 'Title and message are required' });
 
-        const users = await User.find({ role: 'user' }).select('_id');
+        const users = await User.find({ role: 'user' }).select('_id expoPushToken');
 
-        // Batch insertion for performance
+        // Batch insertion for internal UI performance
         const notifications = users.map(u => ({
             userId: u._id,
             title,
@@ -598,15 +598,46 @@ exports.broadcastNotification = async (req, res) => {
             await Notification.insertMany(notifications);
         }
 
+        // Expo Hardware Ping Dispatch
+        const expoMessages = [];
+        for (let u of users) {
+            if (u.expoPushToken && u.expoPushToken.startsWith('ExponentPushToken')) {
+                expoMessages.push({
+                    to: u.expoPushToken,
+                    sound: 'default',
+                    title: title,
+                    body: message,
+                    data: { type: type || 'system' }
+                });
+            }
+        }
+
+        if (expoMessages.length > 0) {
+            try {
+                const axios = require('axios');
+                // Chunk limit is usually 100 for Expo HTTP API, but this natively blasts the array payload to the gateway
+                await axios.post('https://exp.host/--/api/v2/push/send', expoMessages, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Accept-encoding': 'gzip, deflate',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                console.log(`[HARDWARE PUSH] Executed to ${expoMessages.length} external devices.`);
+            } catch (err) {
+                console.error('[HARDWARE PUSH ERR]', err.message);
+            }
+        }
+
         // Log the action
         await AuditLog.create({
             adminId: req.user.id,
             action: 'BROADCAST',
             targetUserId: req.user.id, // Self-targeted since it's global
-            details: { title, userCount: notifications.length }
+            details: { title, internalCount: notifications.length, nativePushCount: expoMessages.length }
         });
 
-        res.json({ message: `Successfully broadcasted to ${notifications.length} users` });
+        res.json({ message: `Successfully broadcasted to ${notifications.length} internal users and vibrated ${expoMessages.length} hardware devices!` });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

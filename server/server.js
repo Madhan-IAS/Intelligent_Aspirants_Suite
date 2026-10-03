@@ -103,6 +103,7 @@ const mindMapsRoutes = require('./routes/mindMaps');
 const subscriptionRoutes = require('./routes/subscription');
 const adminRoutes = require('./routes/admin');
 const gamificationRoutes = require('./routes/gamification');
+const notesRoutes = require('./routes/notes');
 const rateLimit = require('express-rate-limit');
 
 // Rate Limiters
@@ -154,6 +155,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/gamification', gamificationRoutes);
 app.use('/api/bookmarks', require('./routes/bookmarks'));
 app.use('/api/export', require('./routes/export'));
+app.use('/api/notes', notesRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {

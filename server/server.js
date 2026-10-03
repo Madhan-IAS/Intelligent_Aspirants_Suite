@@ -60,6 +60,40 @@ app.get('/api', (req, res) => {
   });
 });
 
+app.get('/api/test-email', async (req, res) => {
+  try {
+    if (!process.env.EMAIL_USER) {
+      return res.status(400).json({ error: "EMAIL_USER is not set in this environment!" });
+    }
+    const nodemailer = require('nodemailer');
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com', port: 587, secure: false,
+      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+      tls: { rejectUnauthorized: false }
+    });
+
+    // Verify connection first
+    await transporter.verify();
+
+    // Send a real email synchronously and wait for it
+    const info = await transporter.sendMail({
+      from: `"IASuite Diagnostics" <${process.env.EMAIL_USER}>`,
+      to: process.env.EMAIL_USER,
+      subject: "Diagnostic Test from Render!",
+      text: "If you see this, SMTP is working perfectly from the Render server."
+    });
+
+    res.json({ success: true, message: "Email Sent successfully!", info });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "SMTP Failed. Google might be blocking the request.",
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 app.get('/api/health', (req, res) => {
   const dbStatus = mongoose.connection.readyState;
   const states = {

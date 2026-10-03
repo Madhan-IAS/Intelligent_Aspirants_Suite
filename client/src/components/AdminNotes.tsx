@@ -189,39 +189,65 @@ export default function AdminNotes() {
 
                 {/* ═══ Right: Existing Notes List ═══ */}
                 <View style={{ flex: 1, backgroundColor: cardBg, borderRadius: 16, padding: 24, borderWidth: 1, borderColor: border, maxHeight: 800 }}>
-                    <Text style={{ color: textPrimary, fontSize: 18, fontWeight: 'bold', marginBottom: 20 }}>Existing Notes ({notes.length})</Text>
+                    <Text style={{ color: textPrimary, fontSize: 18, fontWeight: 'bold', marginBottom: 16 }}>Existing Notes ({notes.length})</Text>
+
+                    {/* Paper Stats */}
+                    <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', marginBottom: 20 }}>
+                        {PAPERS.map(p => {
+                            const count = notes.filter(n => n.paper === p).length;
+                            return (
+                                <View key={p} style={{ backgroundColor: isDark ? '#374151' : '#f3f4f6', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                    <Text style={{ color: textPrimary, fontSize: 11, fontWeight: 'bold' }}>{p}</Text>
+                                    <View style={{ backgroundColor: '#3b82f6', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2 }}>
+                                        <Text style={{ color: 'white', fontSize: 9, fontWeight: 'bold' }}>{count}</Text>
+                                    </View>
+                                </View>
+                            )
+                        })}
+                    </View>
 
                     {loading ? (
                         <ActivityIndicator size="large" color="#3b82f6" />
                     ) : (
                         <ScrollView showsVerticalScrollIndicator={false}>
-                            {notes.map(note => (
-                                <View key={note._id} style={{ backgroundColor: inputBg, padding: 16, borderRadius: 12, borderWidth: 1, borderColor: border, marginBottom: 12 }}>
-                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                                        <View style={{ flex: 1 }}>
-                                            <View style={{ flexDirection: 'row', gap: 6, marginBottom: 4 }}>
-                                                <View style={{ backgroundColor: '#3b82f620', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
-                                                    <Text style={{ color: '#3b82f6', fontSize: 10, fontWeight: 'bold' }}>{note.paper}</Text>
-                                                </View>
-                                                <Text style={{ color: textSecondary, fontSize: 11 }}>• {note.subject}</Text>
-                                            </View>
-                                            <Text style={{ color: textPrimary, fontWeight: 'bold', fontSize: 15 }}>{note.title}</Text>
-                                        </View>
+                            {notes.map(note => {
+                                // Color code by paper
+                                const paperColor = note.paper === 'GS I' ? '#ef4444' :
+                                    note.paper === 'GS II' ? '#3b82f6' :
+                                        note.paper === 'GS III' ? '#10b981' :
+                                            note.paper === 'GS IV' ? '#8b5cf6' : '#f59e0b';
 
-                                        <View style={{ flexDirection: 'row', gap: 8 }}>
-                                            <TouchableOpacity onPress={() => handleEdit(note)} style={{ padding: 6, backgroundColor: '#3b82f620', borderRadius: 8 }}>
-                                                <Ionicons name="pencil" size={16} color="#3b82f6" />
-                                            </TouchableOpacity>
-                                            <TouchableOpacity onPress={() => handleDelete(note._id)} style={{ padding: 6, backgroundColor: '#ef444420', borderRadius: 8 }}>
-                                                <Ionicons name="trash" size={16} color="#ef4444" />
-                                            </TouchableOpacity>
+                                return (
+                                    <View key={note._id} style={{
+                                        backgroundColor: inputBg, padding: 16, borderRadius: 12, borderWidth: 1, borderColor: border, marginBottom: 12,
+                                        borderLeftWidth: 4, borderLeftColor: paperColor
+                                    }}>
+                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                                            <View style={{ flex: 1 }}>
+                                                <View style={{ flexDirection: 'row', gap: 6, marginBottom: 4, alignItems: 'center' }}>
+                                                    <View style={{ backgroundColor: `${paperColor}20`, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
+                                                        <Text style={{ color: paperColor, fontSize: 10, fontWeight: 'bold' }}>{note.paper}</Text>
+                                                    </View>
+                                                    <Text style={{ color: textSecondary, fontSize: 11 }}>• {note.subject}</Text>
+                                                </View>
+                                                <Text style={{ color: textPrimary, fontWeight: 'bold', fontSize: 15 }}>{note.title}</Text>
+                                            </View>
+
+                                            <View style={{ flexDirection: 'row', gap: 8 }}>
+                                                <TouchableOpacity onPress={() => handleEdit(note)} style={{ padding: 6, backgroundColor: '#3b82f620', borderRadius: 8 }}>
+                                                    <Ionicons name="pencil" size={16} color="#3b82f6" />
+                                                </TouchableOpacity>
+                                                <TouchableOpacity onPress={() => handleDelete(note._id)} style={{ padding: 6, backgroundColor: '#ef444420', borderRadius: 8 }}>
+                                                    <Ionicons name="trash" size={16} color="#ef4444" />
+                                                </TouchableOpacity>
+                                            </View>
                                         </View>
+                                        {note.tags?.length > 0 && (
+                                            <Text style={{ color: textSecondary, fontSize: 11 }}>Tags: {note.tags.join(', ')}</Text>
+                                        )}
                                     </View>
-                                    {note.tags?.length > 0 && (
-                                        <Text style={{ color: textSecondary, fontSize: 11 }}>Tags: {note.tags.join(', ')}</Text>
-                                    )}
-                                </View>
-                            ))}
+                                )
+                            })}
                             {notes.length === 0 && (
                                 <Text style={{ color: textSecondary, textAlign: 'center', marginTop: 20 }}>No notes found.</Text>
                             )}

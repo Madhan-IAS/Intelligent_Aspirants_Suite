@@ -11,6 +11,20 @@ export default function AdminBroadcast() {
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+    const [recentBroadcasts, setRecentBroadcasts] = useState<any[]>([]);
+
+    React.useEffect(() => {
+        const fetchBroadcasts = async () => {
+            try {
+                const res = await api.get('/admin/audit-logs');
+                const logs = res.data || [];
+                setRecentBroadcasts(logs.filter((l: any) => l.action === 'BROADCAST').slice(0, 5));
+            } catch (e) {
+                console.error('Failed to fetch recent broadcasts for history', e);
+            }
+        };
+        fetchBroadcasts();
+    }, []);
 
     const handleBroadcast = async () => {
         if (!title.trim() || !message.trim()) {
@@ -78,13 +92,19 @@ export default function AdminBroadcast() {
                 </View>
 
                 <View>
-                    <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontWeight: 'bold', marginBottom: 8 }}>Message Body</Text>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                        <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontWeight: 'bold' }}>Message Body</Text>
+                        <Text style={{ color: message.length > 500 ? '#ef4444' : (isDark ? '#6b7280' : '#9ca3af'), fontSize: 11, fontWeight: 'bold' }}>
+                            {message.length} / 500
+                        </Text>
+                    </View>
                     <TextInput
                         value={message}
                         onChangeText={setMessage}
                         placeholder="Type the full message payload..."
                         placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
                         multiline
+                        maxLength={500}
                         style={{
                             backgroundColor: isDark ? '#374151' : '#f9fafb',
                             color: isDark ? 'white' : '#111827',
@@ -106,6 +126,25 @@ export default function AdminBroadcast() {
                     {loading ? <ActivityIndicator color="white" size="small" /> : <Ionicons name="send" size={18} color="white" />}
                     <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>DISPATCH BROADCAST</Text>
                 </TouchableOpacity>
+
+                {/* Recent Broadcasts */}
+                {recentBroadcasts.length > 0 && (
+                    <View style={{ marginTop: 20, borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#e5e7eb', paddingTop: 20 }}>
+                        <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 13, fontWeight: 'bold', marginBottom: 12, textTransform: 'uppercase' }}>Recent Broadcasts</Text>
+                        <View style={{ gap: 10 }}>
+                            {recentBroadcasts.map((b, i) => (
+                                <View key={i} style={{ backgroundColor: isDark ? '#374151' : '#f9fafb', padding: 14, borderRadius: 10, borderWidth: 1, borderColor: isDark ? '#4b5563' : '#e5e7eb' }}>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                                        <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold', flex: 1 }}>{b.details?.split(' - ')?.[1] || 'Broadcast Message'}</Text>
+                                        <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 10 }}>{new Date(b.timestamp).toLocaleDateString('en-IN')}</Text>
+                                    </View>
+                                    <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', fontSize: 12 }} numberOfLines={2}>{b.details}</Text>
+                                    <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 10, marginTop: 8, fontStyle: 'italic' }}>Sent by {b.adminName}</Text>
+                                </View>
+                            ))}
+                        </View>
+                    </View>
+                )}
             </View>
         </View>
     );

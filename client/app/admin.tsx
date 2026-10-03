@@ -66,7 +66,10 @@ export default function AdminDashboard() {
     const [demographicsData, setDemographicsData] = useState<any>(null);
 
     // Phase 9 Tabs
-    const [adminTab, setAdminTab] = useState<'users' | 'cms' | 'broadcast' | 'ai-notes'>('users');
+    const [adminTab, setAdminTab] = useState<'users' | 'cms' | 'broadcast' | 'ai-notes' | 'audit-logs'>('users');
+
+    // Audit Logs
+    const [auditLogs, setAuditLogs] = useState<any[]>([]);
 
     // Toast notification state (#2)
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -435,69 +438,100 @@ export default function AdminDashboard() {
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#2563eb" />}
             >
                 {/* Header */}
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                    <View>
-                        <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 24, fontWeight: 'bold' }}>
-                            🛡️ Admin Panel
-                        </Text>
-                        <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 13, marginTop: 4 }}>
-                            Manage user subscriptions and platform tools
-                        </Text>
+                <View style={{ marginBottom: 28 }}>
+                    <View style={{ height: 4, borderRadius: 2, marginBottom: 20, overflow: 'hidden' }}>
+                        <View style={{ flex: 1, flexDirection: 'row' }}>
+                            <View style={{ flex: 1, backgroundColor: '#f59e0b' }} />
+                            <View style={{ flex: 1, backgroundColor: '#3b82f6' }} />
+                            <View style={{ flex: 1, backgroundColor: '#8b5cf6' }} />
+                            <View style={{ flex: 1, backgroundColor: '#22c55e' }} />
+                        </View>
                     </View>
-                    <View style={{ flexDirection: 'row', gap: 10 }}>
-                        <TouchableOpacity
-                            onPress={handleExportCSV}
-                            disabled={actionLoading === 'export-csv'}
-                            style={{ backgroundColor: '#10b981', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 10, flexDirection: 'row', alignItems: 'center', gap: 6 }}
-                        >
-                            {actionLoading === 'export-csv' ? (
-                                <ActivityIndicator size="small" color={'white'} />
-                            ) : (
-                                <>
-                                    <Ionicons name="download" size={18} color={'white'} />
-                                    <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 13 }}>Export CSV</Text>
-                                </>
-                            )}
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            onPress={handleRefreshCA}
-                            disabled={actionLoading === 'refreshing-ca'}
-                            style={{ backgroundColor: isDark ? '#374151' : '#e5e7eb', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 10, flexDirection: 'row', alignItems: 'center', gap: 6 }}
-                        >
-                            {actionLoading === 'refreshing-ca' ? (
-                                <ActivityIndicator size="small" color={isDark ? 'white' : '#374151'} />
-                            ) : (
-                                <>
-                                    <Ionicons name="refresh" size={18} color={isDark ? 'white' : '#374151'} />
-                                    <Text style={{ color: isDark ? 'white' : '#374151', fontWeight: 'bold', fontSize: 13 }}>Scrape News</Text>
-                                </>
-                            )}
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            onPress={() => router.push('/health')}
-                            style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', marginLeft: 8 }}
-                        >
-                            <Ionicons name="pulse" size={20} color="#22c55e" />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            onPress={() => router.replace('/')}
-                            style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', marginLeft: 8 }}
-                        >
-                            <Ionicons name="home" size={20} color={isDark ? '#d1d5db' : '#374151'} />
-                        </TouchableOpacity>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <View>
+                            <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 28, fontWeight: 'bold', letterSpacing: -0.5 }}>
+                                🛡️ Command Center
+                            </Text>
+                            <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 13, marginTop: 4 }}>
+                                Manage subscriptions, content, and platform operations
+                            </Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', gap: 8 }}>
+                            <TouchableOpacity
+                                onPress={handleExportCSV}
+                                disabled={actionLoading === 'export-csv'}
+                                style={{ backgroundColor: '#10b981', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10, flexDirection: 'row', alignItems: 'center', gap: 6 }}
+                            >
+                                {actionLoading === 'export-csv' ? (
+                                    <ActivityIndicator size="small" color={'white'} />
+                                ) : (
+                                    <>
+                                        <Ionicons name="download" size={16} color={'white'} />
+                                        <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12 }}>CSV</Text>
+                                    </>
+                                )}
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                onPress={handleRefreshCA}
+                                disabled={actionLoading === 'refreshing-ca'}
+                                style={{ backgroundColor: isDark ? '#374151' : '#e5e7eb', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10, flexDirection: 'row', alignItems: 'center', gap: 6 }}
+                            >
+                                {actionLoading === 'refreshing-ca' ? (
+                                    <ActivityIndicator size="small" color={isDark ? 'white' : '#374151'} />
+                                ) : (
+                                    <>
+                                        <Ionicons name="newspaper" size={16} color={isDark ? 'white' : '#374151'} />
+                                        <Text style={{ color: isDark ? 'white' : '#374151', fontWeight: 'bold', fontSize: 12 }}>Scrape</Text>
+                                    </>
+                                )}
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                onPress={() => router.push('/health')}
+                                style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}
+                            >
+                                <Ionicons name="pulse" size={18} color="#22c55e" />
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                onPress={() => router.replace('/')}
+                                style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}
+                            >
+                                <Ionicons name="home" size={18} color={isDark ? '#d1d5db' : '#374151'} />
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
 
-                {/* Admin Tabs */}
-                <View style={{ flexDirection: 'row', marginBottom: 24, backgroundColor: isDark ? '#1f2937' : '#e5e7eb', borderRadius: 12, padding: 4 }}>
-                    {['users', 'cms', 'broadcast', 'ai-notes'].map(tab => (
+                {/* Admin Tabs — Icon + Label */}
+                <View style={{ flexDirection: 'row', marginBottom: 24, backgroundColor: isDark ? '#1f2937' : '#e5e7eb', borderRadius: 14, padding: 4, flexWrap: 'wrap' }}>
+                    {[
+                        { key: 'users', icon: 'people', label: 'Users' },
+                        { key: 'cms', icon: 'grid', label: 'CMS' },
+                        { key: 'broadcast', icon: 'megaphone', label: 'Broadcast' },
+                        { key: 'ai-notes', icon: 'document-text', label: 'Notes' },
+                        { key: 'audit-logs', icon: 'time', label: 'Audit Logs' },
+                    ].map(tab => (
                         <TouchableOpacity
-                            key={tab}
-                            onPress={() => setAdminTab(tab as any)}
-                            style={{ flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 10, backgroundColor: adminTab === tab ? (isDark ? '#374151' : 'white') : 'transparent' }}
+                            key={tab.key}
+                            onPress={() => setAdminTab(tab.key as any)}
+                            style={{
+                                flex: 1, minWidth: 80, paddingVertical: 10, alignItems: 'center', borderRadius: 10,
+                                backgroundColor: adminTab === tab.key ? (isDark ? '#374151' : 'white') : 'transparent',
+                                flexDirection: 'row', justifyContent: 'center', gap: 6,
+                                ...(adminTab === tab.key ? {
+                                    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3
+                                } : {})
+                            }}
                         >
-                            <Text style={{ fontWeight: 'bold', fontSize: 13, color: adminTab === tab ? (isDark ? 'white' : '#111827') : (isDark ? '#9ca3af' : '#6b7280') }}>
-                                {tab === 'cms' ? 'CONTENT (CMS)' : tab === 'ai-notes' ? 'IASUITE NOTES' : tab.toUpperCase()}
+                            <Ionicons
+                                name={tab.icon as any}
+                                size={16}
+                                color={adminTab === tab.key ? (isDark ? '#60a5fa' : '#2563eb') : (isDark ? '#6b7280' : '#9ca3af')}
+                            />
+                            <Text style={{
+                                fontWeight: 'bold', fontSize: 12,
+                                color: adminTab === tab.key ? (isDark ? 'white' : '#111827') : (isDark ? '#9ca3af' : '#6b7280')
+                            }}>
+                                {tab.label}
                             </Text>
                         </TouchableOpacity>
                     ))}
@@ -506,20 +540,24 @@ export default function AdminDashboard() {
                 {adminTab === 'users' && (
                     <View>
                         {/* Stats */}
-                        <View style={{ flexDirection: 'row', gap: 12, marginBottom: 24 }}>
+                        <View style={{ flexDirection: 'row', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
                             {[
-                                { label: 'Total Users', count: allUsers.length, color: '#2563eb', icon: '👥' },
-                                { label: 'Pending', count: pendingUsers.length, color: '#f59e0b', icon: '⏳' },
-                                { label: 'Active', count: allUsers.filter(u => u.subscriptionStatus === 'active').length, color: '#22c55e', icon: '✅' },
+                                { label: 'Total Users', count: allUsers.length, color: '#2563eb', icon: '👥', glow: 'rgba(37, 99, 235, 0.1)' },
+                                { label: 'Pending', count: pendingUsers.length, color: '#f59e0b', icon: '⏳', glow: 'rgba(245, 158, 11, 0.1)' },
+                                { label: 'Active Plans', count: allUsers.filter(u => u.subscriptionStatus === 'active').length, color: '#22c55e', icon: '✅', glow: 'rgba(34, 197, 94, 0.1)' },
+                                { label: 'Notes Access', count: allUsers.filter(u => u.hasNotesAccess).length, color: '#a855f7', icon: '📝', glow: 'rgba(168, 85, 247, 0.1)' },
                             ].map((stat, i) => (
                                 <View key={i} style={{
-                                    flex: 1, backgroundColor: isDark ? '#1f2937' : '#ffffff',
-                                    padding: 16, borderRadius: 14, alignItems: 'center',
-                                    borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb'
+                                    flex: 1, minWidth: '45%', backgroundColor: isDark ? '#1f2937' : '#ffffff',
+                                    padding: 16, borderRadius: 16, alignItems: 'center',
+                                    borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb',
+                                    shadowColor: stat.color, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 2
                                 }}>
-                                    <Text style={{ fontSize: 22 }}>{stat.icon}</Text>
-                                    <Text style={{ color: stat.color, fontSize: 24, fontWeight: 'bold', marginTop: 4 }}>{stat.count}</Text>
-                                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11, marginTop: 2 }}>{stat.label}</Text>
+                                    <View style={{ backgroundColor: stat.glow, padding: 12, borderRadius: 20, marginBottom: 12 }}>
+                                        <Text style={{ fontSize: 24 }}>{stat.icon}</Text>
+                                    </View>
+                                    <Text style={{ color: stat.color, fontSize: 26, fontWeight: 'bold' }}>{stat.count}</Text>
+                                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 13, marginTop: 4, fontWeight: '600' }}>{stat.label}</Text>
                                 </View>
                             ))}
                         </View>
@@ -1040,12 +1078,24 @@ export default function AdminDashboard() {
                                 const daysLeft = getDaysUntilExpiry(u.subscriptionExpiry);
                                 const isExpiringSoon = daysLeft !== null && daysLeft > 0 && daysLeft <= 7;
 
+                                const rowBgColor = u.subscriptionStatus === 'active'
+                                    ? (isDark ? 'rgba(34, 197, 94, 0.05)' : 'rgba(34, 197, 94, 0.05)')
+                                    : u.subscriptionStatus === 'expired'
+                                        ? (isDark ? 'rgba(239, 68, 68, 0.05)' : 'rgba(239, 68, 68, 0.05)')
+                                        : (isDark ? '#1f2937' : '#ffffff');
+
+                                const rowBorderColor = u.subscriptionStatus === 'active'
+                                    ? (isDark ? 'rgba(34, 197, 94, 0.2)' : 'rgba(34, 197, 94, 0.3)')
+                                    : u.subscriptionStatus === 'expired'
+                                        ? (isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.3)')
+                                        : (isDark ? '#374151' : '#e5e7eb');
+
                                 return (
                                     <View key={u._id} style={{ marginBottom: 8 }}>
                                         <View style={{
-                                            backgroundColor: isDark ? '#1f2937' : '#ffffff',
+                                            backgroundColor: rowBgColor,
                                             padding: 16, borderRadius: 14,
-                                            borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb',
+                                            borderWidth: 1, borderColor: rowBorderColor,
                                             flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'
                                         }}>
                                             <View style={{ flex: 1 }}>
@@ -1093,9 +1143,15 @@ export default function AdminDashboard() {
                                                     </View>
                                                 </View>
                                             </View>
-                                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                                {u.hasNotesAccess && (
+                                                    <View style={{ backgroundColor: 'rgba(56, 189, 248, 0.15)', paddingVertical: 4, paddingHorizontal: 8, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                                        <Text style={{ fontSize: 10 }}>📝</Text>
+                                                        <Text style={{ color: '#0284c7', fontSize: 10, fontWeight: 'bold' }}>NOTES</Text>
+                                                    </View>
+                                                )}
                                                 {u.subscriptionTier && TIER_INFO[u.subscriptionTier] && (
-                                                    <View style={{ backgroundColor: `${TIER_INFO[u.subscriptionTier].color}20`, paddingVertical: 2, paddingHorizontal: 8, borderRadius: 8 }}>
+                                                    <View style={{ backgroundColor: `${TIER_INFO[u.subscriptionTier].color}20`, paddingVertical: 4, paddingHorizontal: 8, borderRadius: 8 }}>
                                                         <Text style={{ color: TIER_INFO[u.subscriptionTier].color, fontSize: 10, fontWeight: 'bold' }}>
                                                             {TIER_INFO[u.subscriptionTier].icon} {TIER_INFO[u.subscriptionTier].name}
                                                         </Text>
@@ -1356,20 +1412,101 @@ export default function AdminDashboard() {
                             )
                         }
                     </View>
-                )}
+                )
+                }
 
-                {adminTab === 'cms' && (
-                    <AdminCMS />
-                )}
+                {
+                    adminTab === 'cms' && (
+                        <AdminCMS />
+                    )
+                }
 
-                {adminTab === 'broadcast' && (
-                    <AdminBroadcast />
-                )}
+                {
+                    adminTab === 'broadcast' && (
+                        <AdminBroadcast />
+                    )
+                }
 
-                {adminTab === 'ai-notes' && (
-                    <AdminNotes />
-                )}
-            </ScrollView>
-        </View>
+                {
+                    adminTab === 'ai-notes' && (
+                        <AdminNotes />
+                    )
+                }
+
+                {
+                    adminTab === 'audit-logs' && (
+                        <View style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+                                <View style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', padding: 12, borderRadius: 12 }}>
+                                    <Ionicons name="time" size={24} color="#3b82f6" />
+                                </View>
+                                <View>
+                                    <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 20, fontWeight: 'bold' }}>Audit Logs</Text>
+                                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 13, marginTop: 2 }}>System-wide record of all administrative actions</Text>
+                                </View>
+                            </View>
+
+                            {auditLogs.length === 0 ? (
+                                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', textAlign: 'center', padding: 40 }}>No audit logs recorded yet.</Text>
+                            ) : (
+                                <View style={{ gap: 16 }}>
+                                    {auditLogs.map((log, i) => (
+                                        <View key={i} style={{ flexDirection: 'row', gap: 16 }}>
+                                            <View style={{ width: 2, backgroundColor: isDark ? '#374151' : '#e5e7eb', position: 'absolute', top: 20, bottom: -16, left: 19 }} />
+                                            <View style={{
+                                                width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center',
+                                                backgroundColor: log.action === 'APPROVE' ? 'rgba(16, 185, 129, 0.1)' :
+                                                    log.action === 'REJECT' ? 'rgba(239, 68, 68, 0.1)' :
+                                                        log.action === 'REVOKE' ? 'rgba(245, 158, 11, 0.1)' :
+                                                            log.action === 'BROADCAST' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(107, 114, 128, 0.1)'
+                                            }}>
+                                                <Ionicons
+                                                    name={
+                                                        log.action === 'APPROVE' ? 'checkmark' :
+                                                            log.action === 'REJECT' ? 'close' :
+                                                                log.action === 'REVOKE' ? 'warning' :
+                                                                    log.action === 'BROADCAST' ? 'megaphone' : 'construct'
+                                                    }
+                                                    size={20}
+                                                    color={
+                                                        log.action === 'APPROVE' ? '#10b981' :
+                                                            log.action === 'REJECT' ? '#ef4444' :
+                                                                log.action === 'REVOKE' ? '#f59e0b' :
+                                                                    log.action === 'BROADCAST' ? '#3b82f6' : '#6b7280'
+                                                    }
+                                                />
+                                            </View>
+                                            <View style={{ flex: 1, backgroundColor: isDark ? '#111827' : '#f9fafb', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
+                                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                                        <Text style={{ fontWeight: 'bold', color: isDark ? 'white' : '#111827' }}>{log.adminName}</Text>
+                                                        <View style={{ backgroundColor: isDark ? '#374151' : '#e5e7eb', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                                                            <Text style={{ fontSize: 10, fontWeight: 'bold', color: isDark ? '#d1d5db' : '#4b5563' }}>{log.action}</Text>
+                                                        </View>
+                                                    </View>
+                                                    <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11 }}>
+                                                        {new Date(log.timestamp).toLocaleString('en-IN')}
+                                                    </Text>
+                                                </View>
+
+                                                {log.targetUserName && (
+                                                    <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 13, marginBottom: 4 }}>
+                                                        Target: <Text style={{ fontWeight: '600' }}>{log.targetUserName}</Text> ({log.targetUserEmail})
+                                                    </Text>
+                                                )}
+
+                                                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 13 }}>
+                                                    {log.details}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                    ))}
+                                </View>
+                            )}
+                        </View>
+                    )
+                }
+            </ScrollView >
+        </View >
     );
 }

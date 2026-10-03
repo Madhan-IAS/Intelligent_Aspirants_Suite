@@ -115,22 +115,40 @@ export default function AdminCMS() {
                 </View>
             )}
 
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 16, fontWeight: 'bold' }}>
+                    {subTab === 'mindmaps' ? 'Active Mind Maps' : subTab === 'pyqs' ? 'Active PYQs' : 'Curation Queue'}
+                </Text>
+                {!loading && (
+                    <View style={{ backgroundColor: isDark ? '#374151' : '#f3f4f6', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
+                        <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', fontSize: 12, fontWeight: 'bold' }}>{items.length} items</Text>
+                    </View>
+                )}
+            </View>
+
             {/* List */}
             {loading ? <ActivityIndicator color="#3b82f6" /> : (
-                <View style={{ gap: 10 }}>
+                <View style={{ gap: 12 }}>
                     {items.map(item => (
-                        <View key={item._id} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: isDark ? '#374151' : '#f9fafb', padding: 16, borderRadius: 8 }}>
+                        <View key={item._id} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: isDark ? '#111827' : '#f9fafb', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
                             <View style={{ flex: 1, paddingRight: 10 }}>
                                 <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold', fontSize: 16 }} numberOfLines={2}>
                                     {subTab === 'answers' ? (item.pyqId?.title || 'Unknown Question') : item.title}
                                 </Text>
-                                <Text style={{ color: isDark ? '#9ca3af' : 'gray', fontSize: 12, marginTop: 4 }}>
-                                    {subTab === 'mindmaps' && item.subject}
-                                    {subTab === 'pyqs' && `Year: ${item.year}`}
-                                    {subTab === 'answers' && `By: ${item.userId?.name || 'Unknown Aspirant'} • AI Score: ${item.aiEvaluation?.score || 0}/20`}
-                                </Text>
+                                <View style={{ flexDirection: 'row', gap: 6, marginTop: 6 }}>
+                                    <View style={{ backgroundColor: isDark ? '#374151' : '#e5e7eb', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                                        <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase' }}>
+                                            {subTab === 'mindmaps' ? item.subject : subTab === 'pyqs' ? `Year: ${item.year}` : `AI Score: ${item.aiEvaluation?.score || 0}/20`}
+                                        </Text>
+                                    </View>
+                                    {subTab === 'answers' && (
+                                        <View style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                                            <Text style={{ color: '#3b82f6', fontSize: 10, fontWeight: 'bold' }}>By: {item.userId?.name || 'Aspirant'}</Text>
+                                        </View>
+                                    )}
+                                </View>
                                 {subTab === 'answers' && (
-                                    <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 13, marginTop: 8 }} numberOfLines={4}>
+                                    <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', fontSize: 13, marginTop: 8 }} numberOfLines={3}>
                                         {item.content}
                                     </Text>
                                 )}

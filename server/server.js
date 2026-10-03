@@ -48,6 +48,18 @@ app.get('/', (req, res) => {
 // Public Pages (no rate limit, no auth)
 app.use('/privacy', require('./routes/privacy'));
 
+app.get('/api', (req, res) => {
+  res.json({
+    message: "Intelligent Aspirant's Suite API is running...",
+    status: "active",
+    endpoints: {
+      health: "/api/health",
+      auth: "/api/auth",
+      subjects: "/api/subjects"
+    }
+  });
+});
+
 app.get('/api/health', (req, res) => {
   const dbStatus = mongoose.connection.readyState;
   const states = {

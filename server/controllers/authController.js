@@ -467,7 +467,7 @@ exports.forgotPassword = async (req, res) => {
 
       // Send asynchronously so the API responds instantly
       transporter.sendMail(mailOptions)
-        .then(() => console.log(`[SECURE MAIL] -> Dispatching Password Reset OTP to -> ${email}`))
+        .then(() => console.log(`[SECURE MAIL] -> Dispatching Password Reset OTP [ ${otp} ] to -> ${email}`))
         .catch((mailError) => console.error('[EMAIL] Failed to send Reset OTP', mailError));
     } else {
       console.log(`[DEVELOPMENT MOCK EMAIL] -> Dispatching Password Reset OTP [ ${otp} ] to -> ${email}`);
@@ -568,7 +568,7 @@ exports.sendOtp = async (req, res) => {
 
       // Send asynchronously so the API responds instantly
       transporter.sendMail(mailOptions)
-        .then(() => console.log(`[EMAIL] OTP Sent securely to ${email}`))
+        .then(() => console.log(`[EMAIL] OTP Sent securely to ${email}. The Code is: [ ${otpCode} ]`))
         .catch((mailError) => console.error('[EMAIL] Failed to send via Nodemailer', mailError));
     } else {
       console.log(`[DEVELOPMENT MOCK EMAIL] -> Sent Setup OTP [ ${otpCode} ] to -> ${email}`);

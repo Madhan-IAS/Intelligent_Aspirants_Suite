@@ -67,6 +67,7 @@ export default function AdminDashboard() {
 
     // Phase 9 Tabs
     const [adminTab, setAdminTab] = useState<'users' | 'cms' | 'broadcast' | 'ai-notes' | 'audit-logs'>('users');
+    const [headerExpanded, setHeaderExpanded] = useState(false);
 
     // Audit Logs
     const [auditLogs, setAuditLogs] = useState<any[]>([]);
@@ -456,47 +457,33 @@ export default function AdminDashboard() {
                                 Manage subscriptions, content, and platform operations
                             </Text>
                         </View>
-                        <View style={{ flexDirection: 'row', gap: 8 }}>
+                        <View style={{ flexDirection: 'column', alignItems: 'flex-end', position: 'relative' }}>
                             <TouchableOpacity
-                                onPress={handleExportCSV}
-                                disabled={actionLoading === 'export-csv'}
-                                style={{ backgroundColor: '#10b981', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10, flexDirection: 'row', alignItems: 'center', gap: 6 }}
+                                onPress={() => setHeaderExpanded(!headerExpanded)}
+                                style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', flexDirection: 'row', alignItems: 'center', gap: 6 }}
                             >
-                                {actionLoading === 'export-csv' ? (
-                                    <ActivityIndicator size="small" color={'white'} />
-                                ) : (
-                                    <>
-                                        <Ionicons name="download" size={16} color={'white'} />
-                                        <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12 }}>CSV</Text>
-                                    </>
-                                )}
+                                <Ionicons name="settings" size={16} color={isDark ? '#d1d5db' : '#4b5563'} />
+                                <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', fontWeight: 'bold', fontSize: 12 }}>Settings</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity
-                                onPress={handleRefreshCA}
-                                disabled={actionLoading === 'refreshing-ca'}
-                                style={{ backgroundColor: isDark ? '#374151' : '#e5e7eb', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10, flexDirection: 'row', alignItems: 'center', gap: 6 }}
-                            >
-                                {actionLoading === 'refreshing-ca' ? (
-                                    <ActivityIndicator size="small" color={isDark ? 'white' : '#374151'} />
-                                ) : (
-                                    <>
-                                        <Ionicons name="newspaper" size={16} color={isDark ? 'white' : '#374151'} />
-                                        <Text style={{ color: isDark ? 'white' : '#374151', fontWeight: 'bold', fontSize: 12 }}>Scrape</Text>
-                                    </>
-                                )}
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                onPress={() => router.push('/health')}
-                                style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}
-                            >
-                                <Ionicons name="pulse" size={18} color="#22c55e" />
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                onPress={() => router.replace('/')}
-                                style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}
-                            >
-                                <Ionicons name="home" size={18} color={isDark ? '#d1d5db' : '#374151'} />
-                            </TouchableOpacity>
+
+                            {headerExpanded && (
+                                <View style={{ flexDirection: 'row', gap: 8, position: 'absolute', top: 45, right: 0, zIndex: 50, backgroundColor: isDark ? '#111827' : '#ffffff', padding: 8, borderRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 5, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
+                                    <TouchableOpacity
+                                        onPress={() => router.push('/health')}
+                                        style={{ backgroundColor: isDark ? '#1f2937' : '#f3f4f6', padding: 10, borderRadius: 10, flexDirection: 'row', alignItems: 'center', gap: 6 }}
+                                    >
+                                        <Ionicons name="pulse" size={16} color="#22c55e" />
+                                        <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', fontWeight: 'bold', fontSize: 11 }}>Health</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={() => router.replace('/')}
+                                        style={{ backgroundColor: isDark ? '#1f2937' : '#f3f4f6', padding: 10, borderRadius: 10, flexDirection: 'row', alignItems: 'center', gap: 6 }}
+                                    >
+                                        <Ionicons name="home" size={16} color={isDark ? '#d1d5db' : '#4b5563'} />
+                                        <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', fontWeight: 'bold', fontSize: 11 }}>Home</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
                         </View>
                     </View>
                 </View>
@@ -539,6 +526,22 @@ export default function AdminDashboard() {
 
                 {adminTab === 'users' && (
                     <View>
+                        {/* Quick Actions Bar */}
+                        <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap', marginBottom: 24, backgroundColor: isDark ? '#1f2937' : '#ffffff', padding: 16, borderRadius: 14, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
+                            <TouchableOpacity onPress={handleExportCSV} disabled={actionLoading === 'export-csv'} style={{ flex: 1, minWidth: 120, backgroundColor: 'rgba(16, 185, 129, 0.1)', paddingVertical: 12, borderRadius: 10, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 }}>
+                                {actionLoading === 'export-csv' ? <ActivityIndicator size="small" color="#10b981" /> : <><Ionicons name="download" size={18} color="#10b981" /><Text style={{ color: '#10b981', fontWeight: 'bold', fontSize: 13 }}>Export CSV</Text></>}
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={handleRefreshCA} disabled={actionLoading === 'refreshing-ca'} style={{ flex: 1, minWidth: 120, backgroundColor: 'rgba(59, 130, 246, 0.1)', paddingVertical: 12, borderRadius: 10, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 }}>
+                                {actionLoading === 'refreshing-ca' ? <ActivityIndicator size="small" color="#3b82f6" /> : <><Ionicons name="newspaper" size={18} color="#3b82f6" /><Text style={{ color: '#3b82f6', fontWeight: 'bold', fontSize: 13 }}>Scrape News</Text></>}
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => setAdminTab('broadcast')} style={{ flex: 1, minWidth: 120, backgroundColor: 'rgba(245, 158, 11, 0.1)', paddingVertical: 12, borderRadius: 10, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 }}>
+                                <Ionicons name="megaphone" size={18} color="#f59e0b" /><Text style={{ color: '#f59e0b', fontWeight: 'bold', fontSize: 13 }}>Broadcast</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={onRefresh} style={{ flex: 1, minWidth: 120, backgroundColor: isDark ? '#374151' : '#f3f4f6', paddingVertical: 12, borderRadius: 10, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 }}>
+                                <Ionicons name="refresh" size={18} color={isDark ? '#d1d5db' : '#4b5563'} /><Text style={{ color: isDark ? '#d1d5db' : '#4b5563', fontWeight: 'bold', fontSize: 13 }}>Refresh</Text>
+                            </TouchableOpacity>
+                        </View>
+
                         {/* Stats */}
                         <View style={{ flexDirection: 'row', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
                             {[

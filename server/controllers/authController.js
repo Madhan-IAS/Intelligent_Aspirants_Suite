@@ -495,18 +495,22 @@ exports.sendOtp = async (req, res) => {
     if (process.env.FAST2SMS_API_KEY) {
       const axios = require('axios');
       try {
-        await axios.get('https://www.fast2sms.com/dev/bulkV2', {
+        const smsRes = await axios.get('https://www.fast2sms.com/dev/bulkV2', {
           params: {
             authorization: process.env.FAST2SMS_API_KEY,
-            variables_values: otpCode,
+            variables_values: String(otpCode),
             route: 'otp',
-            numbers: mobile,
+            numbers: String(mobile),
           }
         });
-        console.log(`[SMS] Fast2SMS OTP Sent to ${mobile}`);
+        console.log(`[SMS] Fast2SMS Res:`, smsRes.data);
       } catch (smsError) {
         console.error('[SMS] Failed to send via Fast2SMS', smsError.response?.data || smsError.message);
-        // Continue anyway if the developer wants to test via response / console
+        // Expose exact API denial reason to the browser so the user can debug the Provider issue
+        return res.status(400).json({
+          message: 'SMS Provider Error',
+          provider_error: smsError.response?.data || smsError.message
+        });
       }
     } else {
       console.log(`[DEVELOPMENT MOCK SMS] -> Sent Setup OTP [ ${otpCode} ] to -> ${mobile}`);

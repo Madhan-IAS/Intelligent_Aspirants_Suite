@@ -465,16 +465,10 @@ exports.forgotPassword = async (req, res) => {
         `,
       };
 
-      try {
-        await transporter.sendMail(mailOptions);
-        console.log(`[SECURE MAIL] -> Dispatching Password Reset OTP to -> ${email}`);
-      } catch (mailError) {
-        console.error('[EMAIL] Failed to send Reset OTP', mailError);
-        return res.status(400).json({
-          message: 'Failed to send reset email. Verify provider settings.',
-          provider_error: mailError.message
-        });
-      }
+      // Send asynchronously so the API responds instantly
+      transporter.sendMail(mailOptions)
+        .then(() => console.log(`[SECURE MAIL] -> Dispatching Password Reset OTP to -> ${email}`))
+        .catch((mailError) => console.error('[EMAIL] Failed to send Reset OTP', mailError));
     } else {
       console.log(`[DEVELOPMENT MOCK EMAIL] -> Dispatching Password Reset OTP [ ${otp} ] to -> ${email}`);
     }
@@ -572,16 +566,10 @@ exports.sendOtp = async (req, res) => {
         `,
       };
 
-      try {
-        await transporter.sendMail(mailOptions);
-        console.log(`[EMAIL] OTP Sent securely to ${email}`);
-      } catch (mailError) {
-        console.error('[EMAIL] Failed to send via Nodemailer', mailError);
-        return res.status(400).json({
-          message: 'Email Provider Error',
-          provider_error: mailError.message
-        });
-      }
+      // Send asynchronously so the API responds instantly
+      transporter.sendMail(mailOptions)
+        .then(() => console.log(`[EMAIL] OTP Sent securely to ${email}`))
+        .catch((mailError) => console.error('[EMAIL] Failed to send via Nodemailer', mailError));
     } else {
       console.log(`[DEVELOPMENT MOCK EMAIL] -> Sent Setup OTP [ ${otpCode} ] to -> ${email}`);
     }

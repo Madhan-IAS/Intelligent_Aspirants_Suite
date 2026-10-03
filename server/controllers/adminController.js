@@ -6,11 +6,16 @@ const AuditLog = require('../models/AuditLog');
 // List all users with pending_review subscription status
 exports.getPendingUsers = async (req, res) => {
     try {
+        // Find pending subscriptions to get the user IDs who are requesting upgrades/addons
+        const pendingSubs = await Subscription.find({ status: 'pending' }).select('userId');
+        const pendingUserIds = pendingSubs.map(sub => sub.userId);
+
         const users = await User.find({
             $or: [
                 { subscriptionStatus: { $in: ['pending', 'pending_review', 'expired'] } },
                 { subscriptionStatus: { $exists: false } },
-                { subscriptionStatus: null }
+                { subscriptionStatus: null },
+                { _id: { $in: pendingUserIds } }
             ]
         }).select('-passwordHash').sort({ createdAt: -1 });
 

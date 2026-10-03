@@ -870,8 +870,8 @@ export default function AdminDashboard() {
                                                         <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12, marginBottom: 6 }}>
                                                             Subscription tier:
                                                         </Text>
-                                                        <View style={{ flexDirection: 'row', gap: 8 }}>
-                                                            {(['foundation', 'aspirant', 'topper'] as const).map((t) => {
+                                                        <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+                                                            {(['foundation', 'aspirant', 'topper', 'notes-addon'] as const).map((t) => {
                                                                 const info = TIER_INFO[t];
                                                                 return (
                                                                     <TouchableOpacity

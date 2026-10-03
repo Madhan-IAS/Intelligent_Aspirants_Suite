@@ -1,6 +1,10 @@
 const User = require('../models/User');
 const Subscription = require('../models/Subscription');
 const AuditLog = require('../models/AuditLog');
+const UserTopicProgress = require('../models/UserTopicProgress');
+const FocusSession = require('../models/FocusSession');
+const Answer = require('../models/Answer');
+const mongoose = require('mongoose');
 
 // GET /api/admin/pending
 // List all users with pending_review subscription status
@@ -677,6 +681,39 @@ exports.getDemographics = async (req, res) => {
         res.json({
             optionals: optionalsAgg.map(o => ({ subject: o._id, count: o.count })),
             targetYears: targetsAgg.map(t => ({ year: t._id, count: t.count }))
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// GET /api/admin/user-progress/:id
+// Aggregate academic progress for a specific student for Admin observation
+exports.getUserProgress = async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const targetUser = await User.findById(userId).select('score currentStreak');
+        if (!targetUser) return res.status(404).json({ message: 'User not found' });
+
+        const [topicsCompleted, focusSessions, answersEvaluated, answersFeatured] = await Promise.all([
+            UserTopicProgress.countDocuments({ userId, completed: true }),
+            FocusSession.aggregate([
+                { $match: { userId: new mongoose.Types.ObjectId(userId) } },
+                { $group: { _id: null, totalMinutes: { $sum: "$durationMinutes" } } }
+            ]),
+            Answer.countDocuments({ userId, status: 'Evaluated' }),
+            Answer.countDocuments({ userId, isFeatured: true })
+        ]);
+
+        const totalFocusMinutes = focusSessions.length > 0 ? focusSessions[0].totalMinutes : 0;
+
+        res.json({
+            score: targetUser.score || 0,
+            streak: targetUser.currentStreak || 0,
+            topicsCompleted,
+            totalFocusMinutes,
+            answersEvaluated,
+            answersFeatured
         });
     } catch (error) {
         res.status(500).json({ message: error.message });

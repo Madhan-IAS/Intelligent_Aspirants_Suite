@@ -72,6 +72,28 @@ export default function AdminDashboard() {
     // Audit Logs
     const [auditLogs, setAuditLogs] = useState<any[]>([]);
 
+    // Admin Progress Tracker State
+    const [progressModalVisible, setProgressModalVisible] = useState(false);
+    const [progressData, setProgressData] = useState<any>(null);
+    const [progressLoading, setProgressLoading] = useState(false);
+    const [progressUser, setProgressUser] = useState<{ id: string, name: string } | null>(null);
+
+    const handleLoadProgress = async (id: string, name: string) => {
+        setProgressUser({ id, name });
+        setProgressModalVisible(true);
+        setProgressLoading(true);
+        try {
+            const res = await api.get(`/admin/user-progress/${id}`);
+            setProgressData(res.data);
+        } catch (e: any) {
+            console.error('Failed to load progress', e);
+            showToast('Failed to load user progress', 'error');
+            setProgressModalVisible(false);
+        } finally {
+            setProgressLoading(false);
+        }
+    };
+
     // Toast notification state (#2)
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
     const showToast = (message: string, type: 'success' | 'error' = 'success') => {
@@ -429,6 +451,65 @@ export default function AdminDashboard() {
                     }}>
                         <Ionicons name={toast.type === 'success' ? 'checkmark-circle' : 'alert-circle'} size={20} color="white" />
                         <Text style={{ color: 'white', fontWeight: 'bold' }}>{toast.message}</Text>
+                    </View>
+                </View>
+            )}
+
+            {/* Admin Progress Tracker Modal Overlay */}
+            {progressModalVisible && (
+                <View style={{
+                    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)',
+                    justifyContent: 'center', alignItems: 'center', zIndex: 9999
+                }}>
+                    <View style={{ backgroundColor: isDark ? '#1f2937' : 'white', borderRadius: 20, padding: 24, width: '90%', maxWidth: 500, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 15 }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                            <View>
+                                <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 20, fontWeight: 'bold' }}>Academic Profile</Text>
+                                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 13, marginTop: 2 }}>{progressUser?.name}</Text>
+                            </View>
+                            <TouchableOpacity onPress={() => setProgressModalVisible(false)} style={{ backgroundColor: isDark ? '#374151' : '#f3f4f6', padding: 8, borderRadius: 20 }}>
+                                <Ionicons name="close" size={20} color={isDark ? '#d1d5db' : '#4b5563'} />
+                            </TouchableOpacity>
+                        </View>
+
+                        {progressLoading ? (
+                            <View style={{ alignItems: 'center', paddingVertical: 40 }}>
+                                <ActivityIndicator size="large" color="#2563eb" />
+                                <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', marginTop: 12 }}>Aggregating Live Data...</Text>
+                            </View>
+                        ) : progressData ? (
+                            <View>
+                                {/* Gamification Profile */}
+                                <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
+                                    <View style={{ flex: 1, backgroundColor: 'rgba(245, 158, 11, 0.1)', padding: 16, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(245, 158, 11, 0.3)' }}>
+                                        <Text style={{ color: '#d97706', fontSize: 24, fontWeight: 'bold' }}>{progressData.score} <Text style={{ fontSize: 12 }}>XP</Text></Text>
+                                        <Text style={{ color: '#d97706', fontSize: 12, fontWeight: '600' }}>Power Score</Text>
+                                    </View>
+                                    <View style={{ flex: 1, backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: 16, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(239, 68, 68, 0.3)' }}>
+                                        <Text style={{ color: '#ef4444', fontSize: 24, fontWeight: 'bold' }}>{progressData.streak} 🔥</Text>
+                                        <Text style={{ color: '#ef4444', fontSize: 12, fontWeight: '600' }}>Active Streak</Text>
+                                    </View>
+                                </View>
+
+                                {/* Raw Metrics */}
+                                <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+                                    {[
+                                        { label: 'Topics Mastered', val: progressData.topicsCompleted, color: '#10b981', icon: '✅' },
+                                        { label: 'Deep Focus Mins', val: progressData.totalFocusMinutes, color: '#3b82f6', icon: '⏳' },
+                                        { label: 'Evaluated Answers', val: progressData.answersEvaluated, color: '#8b5cf6', icon: '📝' },
+                                        { label: 'Featured Submissions', val: progressData.answersFeatured, color: '#ec4899', icon: '⭐' }
+                                    ].map((metric, i) => (
+                                        <View key={i} style={{ width: '48%', backgroundColor: isDark ? '#111827' : '#f9fafb', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', marginBottom: 8 }}>
+                                            <Text style={{ fontSize: 16, marginBottom: 4 }}>{metric.icon}</Text>
+                                            <Text style={{ color: metric.color, fontSize: 18, fontWeight: 'bold' }}>{metric.val}</Text>
+                                            <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 10, marginTop: 2 }}>{metric.label}</Text>
+                                        </View>
+                                    ))}
+                                </View>
+                            </View>
+                        ) : (
+                            <Text style={{ color: '#ef4444', textAlign: 'center', padding: 20 }}>No records found.</Text>
+                        )}
                     </View>
                 </View>
             )}
@@ -849,7 +930,13 @@ export default function AdminDashboard() {
                                                                 </View>
 
                                                                 {/* ACTIONS COL */}
-                                                                <View style={{ width: 100, alignItems: 'flex-end', justifyContent: 'center' }}>
+                                                                <View style={{ width: 100, alignItems: 'flex-end', justifyContent: 'center', flexDirection: 'row', gap: 6 }}>
+                                                                    <TouchableOpacity
+                                                                        onPress={() => handleLoadProgress(u._id, u.name)}
+                                                                        style={{ padding: 6, backgroundColor: isDark ? '#374151' : '#e5e7eb', borderRadius: 6 }}
+                                                                    >
+                                                                        <Ionicons name="bar-chart" size={14} color={isDark ? '#d1d5db' : '#4b5563'} />
+                                                                    </TouchableOpacity>
                                                                     <TouchableOpacity
                                                                         onPress={() => handleExpandUser(u._id, u)}
                                                                         style={{ padding: 6, backgroundColor: expandedUser === u._id ? '#2563eb' : (isDark ? '#374151' : '#e5e7eb'), borderRadius: 6 }}
@@ -1191,6 +1278,9 @@ export default function AdminDashboard() {
 
                                                         {/* ACTIONS COL */}
                                                         <View style={{ width: 140, flexDirection: 'row', justifyContent: 'flex-end', gap: 6 }}>
+                                                            <TouchableOpacity onPress={() => handleLoadProgress(u._id, u.name)} style={{ padding: 6, backgroundColor: isDark ? '#374151' : '#e5e7eb', borderRadius: 6 }}>
+                                                                <Ionicons name="bar-chart" size={14} color={isDark ? '#d1d5db' : '#4b5563'} />
+                                                            </TouchableOpacity>
                                                             <TouchableOpacity onPress={() => {
                                                                 if (editUserId === u._id) {
                                                                     setEditUserId(null); // Toggle off

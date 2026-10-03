@@ -24,6 +24,9 @@ router.get('/demographics', auth, adminAuth, adminController.getDemographics);
 router.get('/gallery-curation', auth, adminAuth, adminController.getUnfeaturedAnswers);
 router.post('/feature-answer/:id', auth, adminAuth, adminController.featureAnswer);
 
+// Phase 11: Admin User Observability
+router.get('/user-progress/:id', auth, adminAuth, validate(idValidation), adminController.getUserProgress);
+
 router.post('/approve/:id', auth, adminAuth, validate([
     ...idValidation,
     body('durationMonths').optional().isInt({ min: 1 }),

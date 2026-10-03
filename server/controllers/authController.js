@@ -18,25 +18,33 @@ const getSecureTransporter = async () => {
 
   const nodemailer = require('nodemailer');
   const dns = require('dns');
+  const { promisify } = require('util');
+  const lookup = promisify(dns.lookup);
 
-  // Cache a single pooled connection so Gmail doesn't drop us
+  let hostName = process.env.SMTP_HOST || 'smtp.gmail.com';
+  let resolvedAddress = hostName;
+  try {
+    // 🛡️ Manually intercept DNS beforehand and forcibly translate to IPv4
+    const { address } = await lookup(hostName, { family: 4 });
+    resolvedAddress = address;
+  } catch (e) {
+    console.error("[EMAIL] DNS fallback:", e.message);
+  }
+
+  // Cache a single pooled connection using the RAW IPv4 Address
   globalTransporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    host: resolvedAddress,
     port: process.env.SMTP_HOST ? (parseInt(process.env.SMTP_PORT) || 587) : 587,
     secure: process.env.SMTP_HOST ? (parseInt(process.env.SMTP_PORT) === 465) : false,
     auth: {
       user: process.env.SMTP_HOST ? process.env.SMTP_USER : process.env.EMAIL_USER,
       pass: process.env.SMTP_HOST ? process.env.SMTP_PASS : process.env.EMAIL_PASS,
     },
-    tls: { rejectUnauthorized: false },
-    pool: true, // Reuse the same TLS connection 
+    // We must pass the original hostName to TLS so the SSL certificate validation doesn't fail
+    tls: { rejectUnauthorized: false, servername: hostName },
+    pool: true,
     maxConnections: 1,
-    maxMessages: 100,
-    // 🛡️ Iron-clad IPv4 Enforcement at the OS level
-    lookup: (hostname, options, callback) => {
-      // Must pass original options (like all: true) while enforcing family 4
-      dns.lookup(hostname, Object.assign({}, options || {}, { family: 4 }), callback);
-    }
+    maxMessages: 100
   });
 
   return globalTransporter;

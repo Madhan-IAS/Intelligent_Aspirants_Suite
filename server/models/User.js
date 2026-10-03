@@ -37,6 +37,8 @@ const userSchema = new mongoose.Schema({
   },
   streak: { type: Number, default: 0 },
   reputation: { type: Number, default: 0 },
+  termsAccepted: { type: Boolean, default: true },
+  termsAcceptedAt: { type: Date, default: Date.now },
   usageStats: {
     aiQuizGenerated: { type: Number, default: 0 },
     aiQuestionGenerated: { type: Number, default: 0 },

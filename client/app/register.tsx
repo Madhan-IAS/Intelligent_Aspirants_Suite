@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Image, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../src/context/AuthContext';
 import { useTheme } from '../src/context/ThemeContext';
@@ -18,6 +18,7 @@ export default function Register() {
   const [mobile, setMobile] = useState('');
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState(1);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -62,6 +63,11 @@ export default function Register() {
   const handleRegister = async () => {
     if (!name || !username || !password || !mobile) {
       setError('Please fill in all fields');
+      return;
+    }
+
+    if (!acceptedTerms) {
+      setError('You must accept the Terms of Service and Privacy Policy to register.');
       return;
     }
 
@@ -221,6 +227,21 @@ export default function Register() {
                   secureTextEntry
                 />
               </View>
+
+              {/* Consent Toggle */}
+              <TouchableOpacity
+                style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}
+                onPress={() => setAcceptedTerms(!acceptedTerms)}
+              >
+                <Ionicons
+                  name={acceptedTerms ? "checkmark-circle" : "ellipse-outline"}
+                  size={24}
+                  color={acceptedTerms ? "#2563eb" : (isDark ? "#4b5563" : "#9ca3af")}
+                />
+                <Text style={{ marginLeft: 8, color: isDark ? '#9ca3af' : '#4b5563', flex: 1, lineHeight: 20 }}>
+                  I agree to the <Link href="/terms" style={{ color: '#2563eb', fontWeight: 'bold' }}>Terms of Service</Link> and <Link href="/privacy" style={{ color: '#2563eb', fontWeight: 'bold' }}>Privacy Policy</Link>
+                </Text>
+              </TouchableOpacity>
             </>
           )}
         </View>
@@ -228,13 +249,19 @@ export default function Register() {
         {/* Dynamic Action Button */}
         <TouchableOpacity
           onPress={step === 1 ? handleSendOtp : step === 2 ? handleVerifyOtp : handleRegister}
-          disabled={loading}
-          style={{ backgroundColor: loading ? '#1e40af' : '#2563eb', padding: 16, borderRadius: 12, alignItems: 'center', marginBottom: 20 }}
+          disabled={loading || (step === 3 && !acceptedTerms)}
+          style={{
+            backgroundColor: (loading || (step === 3 && !acceptedTerms)) ? (isDark ? '#374151' : '#d1d5db') : '#2563eb',
+            padding: 16,
+            borderRadius: 12,
+            alignItems: 'center',
+            marginBottom: 20
+          }}
         >
           {loading ? (
             <ActivityIndicator color="white" />
           ) : (
-            <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 18 }}>
+            <Text style={{ color: (step === 3 && !acceptedTerms) ? (isDark ? '#9ca3af' : '#6b7280') : 'white', fontWeight: 'bold', fontSize: 18 }}>
               {step === 1 ? 'Get OTP' : step === 2 ? 'Verify OTP' : 'Complete Sign Up'}
             </Text>
           )}

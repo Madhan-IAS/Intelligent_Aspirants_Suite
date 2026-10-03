@@ -83,9 +83,9 @@ exports.register = async (req, res) => {
     }
 
     // Require OTP Verification before allowing signup
-    const verifiedOtp = await Otp.findOne({ phoneNumber: mobile, verified: true });
+    const verifiedOtp = await Otp.findOne({ email, verified: true });
     if (!verifiedOtp) {
-      return res.status(400).json({ message: 'Mobile number not verified or OTP expired. Please verify your mobile number first.' });
+      return res.status(400).json({ message: 'Email not verified or OTP expired. Please verify your email first.' });
     }
 
     let user = await User.findOne({ email });
@@ -470,55 +470,73 @@ exports.resetPassword = async (req, res) => {
 };
 
 // POST /api/auth/send-otp
-// Generates and sends a 6-digit OTP to the user's mobile number
+// Generates and sends a 6-digit OTP to the user's email
 exports.sendOtp = async (req, res) => {
   try {
-    const { mobile } = req.body;
-    if (!mobile || !/^[0-9]{10}$/.test(mobile)) {
-      return res.status(400).json({ message: 'Please provide a valid 10-digit mobile number' });
+    const { email } = req.body;
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ message: 'Please provide a valid email address' });
     }
 
     // Generate random 6-digit OTP
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // Delete any existing unverified OTP for this number to prevent clutter
-    await Otp.deleteMany({ phoneNumber: mobile, verified: false });
+    // Delete any existing unverified OTP for this email to prevent clutter
+    await Otp.deleteMany({ email, verified: false });
 
     // Save to database
     const otpDoc = new Otp({
-      phoneNumber: mobile,
+      email,
       otp: otpCode, // Will be hashed via schema pre-save hook
     });
     await otpDoc.save();
 
-    // 🚀 Fallback Mock Sending or Real SMS Gateway Integration
-    if (process.env.FAST2SMS_API_KEY) {
-      const axios = require('axios');
+    // 🚀 Nodemailer Email Transport
+    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+      const nodemailer = require('nodemailer');
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+        },
+      });
+
+      const mailOptions = {
+        from: `"IASuite Security" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: 'Your IASuite Verification Code',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;">
+            <h2 style="color: #2563eb;">Intelligent Aspirant's Suite</h2>
+            <p>Hello,</p>
+            <p>Your OTP securely generated for IAS Registration is:</p>
+            <div style="margin: 24px 0; padding: 16px; background-color: #f3f4f6; border-radius: 8px; text-align: center;">
+              <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px;">${otpCode}</span>
+            </div>
+            <p>This code will expire securely in 5 minutes. Do not share it with anyone.</p>
+            <p style="font-size: 12px; color: #6b7280; margin-top: 32px;">This is an automated security email. Please do not reply.</p>
+          </div>
+        `,
+      };
+
       try {
-        const smsRes = await axios.get('https://www.fast2sms.com/dev/bulkV2', {
-          params: {
-            authorization: process.env.FAST2SMS_API_KEY,
-            variables_values: String(otpCode),
-            route: 'otp',
-            numbers: String(mobile),
-          }
-        });
-        console.log(`[SMS] Fast2SMS Res:`, smsRes.data);
-      } catch (smsError) {
-        console.error('[SMS] Failed to send via Fast2SMS', smsError.response?.data || smsError.message);
-        // Expose exact API denial reason to the browser so the user can debug the Provider issue
+        await transporter.sendMail(mailOptions);
+        console.log(`[EMAIL] OTP Sent securely to ${email}`);
+      } catch (mailError) {
+        console.error('[EMAIL] Failed to send via Nodemailer', mailError);
         return res.status(400).json({
-          message: 'SMS Provider Error',
-          provider_error: smsError.response?.data || smsError.message
+          message: 'Email Provider Error',
+          provider_error: mailError.message
         });
       }
     } else {
-      console.log(`[DEVELOPMENT MOCK SMS] -> Sent Setup OTP [ ${otpCode} ] to -> ${mobile}`);
+      console.log(`[DEVELOPMENT MOCK EMAIL] -> Sent Setup OTP [ ${otpCode} ] to -> ${email}`);
     }
 
     res.json({
       message: 'OTP sent successfully',
-      devOtp: !process.env.FAST2SMS_API_KEY ? otpCode : undefined // Expose for easy testing in dev
+      devOtp: !(process.env.EMAIL_USER && process.env.EMAIL_PASS) ? otpCode : undefined
     });
   } catch (error) {
     res.status(500).json({ message: 'Failed to send OTP server-side', error: error.message });
@@ -529,16 +547,16 @@ exports.sendOtp = async (req, res) => {
 // Verifies the provided 6-digit OTP matches our database
 exports.verifyOtp = async (req, res) => {
   try {
-    const { mobile, otp } = req.body;
+    const { email, otp } = req.body;
 
-    if (!mobile || !otp) {
-      return res.status(400).json({ message: 'Mobile number and OTP are required' });
+    if (!email || !otp) {
+      return res.status(400).json({ message: 'Email and OTP are required' });
     }
 
-    // Find the OTP document for this number (most recent first if multiple exist)
-    const otpRecords = await Otp.find({ phoneNumber: mobile }).sort({ createdAt: -1 });
+    // Find the OTP document for this email (most recent first if multiple exist)
+    const otpRecords = await Otp.find({ email }).sort({ createdAt: -1 });
     if (!otpRecords || otpRecords.length === 0) {
-      return res.status(400).json({ message: 'No OTP found for this number or it has expired. Please resend.' });
+      return res.status(400).json({ message: 'No OTP found for this email or it has expired. Please resend.' });
     }
 
     // Take the most recent one
@@ -546,7 +564,7 @@ exports.verifyOtp = async (req, res) => {
 
     // Check if it's already verified (edge case)
     if (latestOtpRecord.verified) {
-      return res.json({ message: 'Number already verified successfully.' });
+      return res.json({ message: 'Email already verified successfully.' });
     }
 
     // Check if the OTP matches
@@ -559,7 +577,7 @@ exports.verifyOtp = async (req, res) => {
     latestOtpRecord.verified = true;
     await latestOtpRecord.save();
 
-    res.json({ message: 'Mobile number verified successfully!' });
+    res.json({ message: 'Email verified successfully!' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

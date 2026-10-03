@@ -13,9 +13,9 @@ export default function Register() {
   const isDark = mode === 'dark';
 
   const [name, setName] = useState('');
-  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [mobile, setMobile] = useState('');
+  const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState(1);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -23,14 +23,14 @@ export default function Register() {
   const [error, setError] = useState('');
 
   const handleSendOtp = async () => {
-    if (!/^[0-9]{10}$/.test(mobile)) {
-      setError('Please enter a valid 10-digit mobile number');
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError('Please enter a valid email address');
       return;
     }
     setLoading(true);
     setError('');
     try {
-      const res = await api.post('/auth/send-otp', { mobile });
+      const res = await api.post('/auth/send-otp', { email });
       // If devOtp is provided via backend, we could console.log it or auto-fill for dev convenience.
       if (res.data.devOtp) {
         console.log("Dev OTP:", res.data.devOtp);
@@ -51,7 +51,7 @@ export default function Register() {
     setLoading(true);
     setError('');
     try {
-      await api.post('/auth/verify-otp', { mobile, otp });
+      await api.post('/auth/verify-otp', { email, otp });
       setStep(3);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Invalid OTP');
@@ -61,7 +61,7 @@ export default function Register() {
   };
 
   const handleRegister = async () => {
-    if (!name || !username || !password || !mobile) {
+    if (!name || !email || !password || !mobile) {
       setError('Please fill in all fields');
       return;
     }
@@ -76,13 +76,6 @@ export default function Register() {
       return;
     }
 
-    const cleanUsername = username.replace(/[^a-zA-Z0-9._-]/g, '').toLowerCase();
-    if (!cleanUsername) {
-      setError('Please enter a valid username');
-      return;
-    }
-
-    const email = `${cleanUsername}@upsc.kms`;
     setLoading(true);
     setError('');
 
@@ -126,22 +119,19 @@ export default function Register() {
         {/* Form Inputs & Stages */}
         <View style={{ gap: 16, marginBottom: 24 }}>
 
-          {/* STEP 1: MOBILE NUMBER ENTRY */}
+          {/* STEP 1: EMAIL ENTRY */}
           {step === 1 && (
             <View>
-              <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', marginBottom: 8, fontWeight: '500' }}>Mobile Number</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: isDark ? '#111827' : '#f9fafb', borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
-                <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', paddingLeft: 16, fontSize: 16, fontWeight: 'bold' }}>+91</Text>
-                <TextInput
-                  style={{ flex: 1, color: isDark ? 'white' : '#111827', padding: 16, outlineStyle: Platform.OS === 'web' ? 'none' : undefined, fontSize: 16, letterSpacing: 2 } as any}
-                  placeholder="9876543210"
-                  placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
-                  value={mobile}
-                  onChangeText={(val) => setMobile(val.replace(/[^0-9]/g, '').slice(0, 10))}
-                  keyboardType="phone-pad"
-                  maxLength={10}
-                />
-              </View>
+              <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', marginBottom: 8, fontWeight: '500' }}>Email Address</Text>
+              <TextInput
+                style={{ backgroundColor: isDark ? '#111827' : '#f9fafb', color: isDark ? 'white' : '#111827', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', outlineStyle: Platform.OS === 'web' ? 'none' : undefined, fontSize: 16 } as any}
+                placeholder="aspirant@gmaiI.com"
+                placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
+                value={email}
+                onChangeText={(val) => setEmail(val.trim())}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
             </View>
           )}
 
@@ -149,7 +139,7 @@ export default function Register() {
           {step === 2 && (
             <View>
               <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', marginBottom: 8, fontWeight: '500' }}>Enter 6-Digit OTP</Text>
-              <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 12, marginBottom: 12 }}>Sent securely to +91 {mobile}</Text>
+              <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 12, marginBottom: 12 }}>Sent securely to {email}</Text>
               <TextInput
                 style={{ backgroundColor: isDark ? '#111827' : '#f9fafb', color: isDark ? 'white' : '#111827', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', outlineStyle: Platform.OS === 'web' ? 'none' : undefined, letterSpacing: 8, textAlign: 'center', fontSize: 24, fontWeight: 'bold' } as any}
                 placeholder="••••••"
@@ -160,7 +150,7 @@ export default function Register() {
                 maxLength={6}
               />
               <TouchableOpacity onPress={() => { setStep(1); setOtp(''); }} style={{ marginTop: 12 }}>
-                <Text style={{ color: '#2563eb', textAlign: 'center', fontSize: 12 }}>Change Mobile Number</Text>
+                <Text style={{ color: '#2563eb', textAlign: 'center', fontSize: 12 }}>Change Email Address</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -180,38 +170,20 @@ export default function Register() {
                 />
               </View>
 
-              {/* Username prefix with static @upsc.kms suffix */}
+              {/* Mobile Number */}
               <View>
-                <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', marginBottom: 8, fontWeight: '500' }}>Username</Text>
-                <View style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  backgroundColor: isDark ? '#111827' : '#f9fafb',
-                  borderRadius: 12,
-                  borderWidth: 1,
-                  borderColor: isDark ? '#374151' : '#e5e7eb'
-                }}>
+                <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', marginBottom: 8, fontWeight: '500' }}>Mobile Number</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: isDark ? '#111827' : '#f9fafb', borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
+                  <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', paddingLeft: 16, fontSize: 16, fontWeight: 'bold' }}>+91</Text>
                   <TextInput
-                    style={{
-                      flex: 1,
-                      color: isDark ? 'white' : '#111827',
-                      padding: 16,
-                      outlineStyle: Platform.OS === 'web' ? 'none' : undefined
-                    } as any}
-                    placeholder="madhan"
+                    style={{ flex: 1, color: isDark ? 'white' : '#111827', padding: 16, outlineStyle: Platform.OS === 'web' ? 'none' : undefined, fontSize: 16, letterSpacing: 2 } as any}
+                    placeholder="9876543210"
                     placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
-                    value={username}
-                    onChangeText={(val) => setUsername(val.replace(/[^a-zA-Z0-9._-]/g, ''))}
-                    autoCapitalize="none"
+                    value={mobile}
+                    onChangeText={(val) => setMobile(val.replace(/[^0-9]/g, '').slice(0, 10))}
+                    keyboardType="phone-pad"
+                    maxLength={10}
                   />
-                  <Text style={{
-                    color: isDark ? '#9ca3af' : '#4b5563',
-                    fontWeight: 'bold',
-                    fontSize: 14,
-                    paddingRight: 16
-                  }}>
-                    @upsc.kms
-                  </Text>
                 </View>
               </View>
 

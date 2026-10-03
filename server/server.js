@@ -5,6 +5,12 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const cron = require('node-cron');
+
+// 🛡️ ENFORCING IPV4 NETWORKING GLOBALLY
+// Fixes ENETUNREACH errors on cloud platforms like Render that do not support outbound IPv6 (Node 17+ defaults to IPv6 first)
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first');
+
 const { runScraper } = require('./workers/currentAffairsScraper');
 const Notification = require('./models/Notification');
 require('dotenv').config();

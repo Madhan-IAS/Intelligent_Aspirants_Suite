@@ -12,6 +12,33 @@ const generateTokens = (userId) => {
   return { accessToken, refreshToken };
 };
 
+const getSecureTransporter = async () => {
+  const nodemailer = require('nodemailer');
+  const dns = require('dns');
+  const { promisify } = require('util');
+  const lookup = promisify(dns.lookup);
+
+  let hostName = process.env.SMTP_HOST || 'smtp.gmail.com';
+  let resolvedAddress = hostName;
+  try {
+    const { address } = await lookup(hostName, { family: 4 });
+    resolvedAddress = address;
+  } catch (e) {
+    console.error("[EMAIL] DNS lookup fallback:", e.message);
+  }
+
+  return nodemailer.createTransport({
+    host: resolvedAddress,
+    port: process.env.SMTP_HOST ? (parseInt(process.env.SMTP_PORT) || 587) : 587,
+    secure: process.env.SMTP_HOST ? (parseInt(process.env.SMTP_PORT) === 465) : false,
+    auth: {
+      user: process.env.SMTP_HOST ? process.env.SMTP_USER : process.env.EMAIL_USER,
+      pass: process.env.SMTP_HOST ? process.env.SMTP_PASS : process.env.EMAIL_PASS,
+    },
+    tls: { rejectUnauthorized: false, servername: hostName },
+  });
+};
+
 // Master Seeding Arrays to initialize new registered users with the exact same data
 const MASTER_TIMETABLE = [
   { time: '05:00 – 05:20 AM', duration: '20 min', session: 'Morning Routine', activity: 'Wake Up, Freshen Up', category: 'Morning Routine', objective: 'Prepare for the day', expectedOutput: 'Fresh & Ready', isStudyBlock: false },
@@ -439,29 +466,7 @@ exports.forgotPassword = async (req, res) => {
 
     // 🚀 Authentic Nodemailer Email Gateway 
     if (process.env.SMTP_HOST || (process.env.EMAIL_USER && process.env.EMAIL_PASS)) {
-      const nodemailer = require('nodemailer');
-      const transportConfig = process.env.SMTP_HOST
-        ? {
-          host: process.env.SMTP_HOST,
-          port: parseInt(process.env.SMTP_PORT) || 587,
-          secure: parseInt(process.env.SMTP_PORT) === 465,
-          auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS,
-          },
-        }
-        : {
-          host: 'smtp.gmail.com',
-          port: 587,
-          secure: false,
-          auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
-          },
-          tls: { rejectUnauthorized: false },
-        };
-      transportConfig.family = 4; // Force IPv4 to avoid ENETUNREACH on cloud hosts
-      const transporter = nodemailer.createTransport(transportConfig);
+      const transporter = await getSecureTransporter();
 
       const senderEmail = process.env.SMTP_HOST ? process.env.SMTP_USER : process.env.EMAIL_USER;
       const mailOptions = {
@@ -555,29 +560,7 @@ exports.sendOtp = async (req, res) => {
 
     // 🚀 Nodemailer Email Transport
     if (process.env.SMTP_HOST || (process.env.EMAIL_USER && process.env.EMAIL_PASS)) {
-      const nodemailer = require('nodemailer');
-      const transportConfig = process.env.SMTP_HOST
-        ? {
-          host: process.env.SMTP_HOST,
-          port: parseInt(process.env.SMTP_PORT) || 587,
-          secure: parseInt(process.env.SMTP_PORT) === 465,
-          auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS,
-          },
-        }
-        : {
-          host: 'smtp.gmail.com',
-          port: 587,
-          secure: false,
-          auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
-          },
-          tls: { rejectUnauthorized: false },
-        };
-      transportConfig.family = 4; // Force IPv4 to avoid ENETUNREACH on cloud hosts
-      const transporter = nodemailer.createTransport(transportConfig);
+      const transporter = await getSecureTransporter();
 
       const senderEmail = process.env.SMTP_HOST ? process.env.SMTP_USER : process.env.EMAIL_USER;
       const mailOptions = {

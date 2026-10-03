@@ -1147,7 +1147,9 @@ export default function AdminDashboard() {
                                                 {u.hasNotesAccess && (
                                                     <View style={{ backgroundColor: 'rgba(56, 189, 248, 0.15)', paddingVertical: 4, paddingHorizontal: 8, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                                                         <Text style={{ fontSize: 10 }}>📝</Text>
-                                                        <Text style={{ color: '#0284c7', fontSize: 10, fontWeight: 'bold' }}>NOTES</Text>
+                                                        <Text style={{ color: '#0284c7', fontSize: 10, fontWeight: 'bold' }}>
+                                                            NOTES {u.notesAccessExpiry ? `• Exp: ${new Date(u.notesAccessExpiry).toLocaleDateString('en-IN')}` : ''}
+                                                        </Text>
                                                     </View>
                                                 )}
                                                 {u.subscriptionTier && TIER_INFO[u.subscriptionTier] && (
@@ -1280,7 +1282,8 @@ export default function AdminDashboard() {
                                                         </TouchableOpacity>
                                                     </View>
                                                 </View>
-                                            )}
+                                            )
+                                        }
                                     </View>
                                 );
                             })

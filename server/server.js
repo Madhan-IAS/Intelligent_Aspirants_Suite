@@ -62,36 +62,41 @@ app.get('/api', (req, res) => {
 
 app.get('/api/test-email', async (req, res) => {
   try {
-    if (!process.env.EMAIL_USER) {
-      return res.status(400).json({ error: "EMAIL_USER is not set in this environment!" });
+    if (!process.env.RESEND_API_KEY) {
+      return res.status(400).json({ error: "RESEND_API_KEY is not set in this environment! Cannot run diagnostic." });
     }
-    const nodemailer = require('nodemailer');
 
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
-      family: 4, // 🛡️ Fixes Render IPv6 issue
-      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-      tls: { rejectUnauthorized: false, servername: 'smtp.gmail.com' }
+    const payload = {
+      from: process.env.RESEND_SENDER || 'IASuite Diagnostics <onboarding@resend.dev>',
+      to: process.env.RESEND_SENDER || 'iasuite.support@gmail.com', // Sends to self if domain verified
+      subject: "Diagnostic Test from Render via Resend!",
+      html: "<p>If you see this, the HTTPS Email API is working perfectly from the Render server.</p>"
+    };
+
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
     });
 
-    // Verify connection first
-    await transporter.verify();
+    if (!response.ok) {
+      const errorText = await response.text();
+      return res.status(500).json({
+        success: false,
+        message: "Resend API rejected the request.",
+        error: errorText
+      });
+    }
 
-    // Send a real email synchronously and wait for it
-    const info = await transporter.sendMail({
-      from: `"IASuite Diagnostics" <${process.env.EMAIL_USER}>`,
-      to: process.env.EMAIL_USER,
-      subject: "Diagnostic Test from Render!",
-      text: "If you see this, SMTP is working perfectly from the Render server."
-    });
-
-    res.json({ success: true, message: "Email Sent successfully!", info });
+    const data = await response.json();
+    res.json({ success: true, message: "Email Sent successfully via Resend!", data });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "SMTP Failed. Google might be blocking the request.",
+      message: "Internal Server Error testing Resend.",
       error: error.message,
       stack: error.stack
     });

@@ -8,13 +8,21 @@ const { body } = require('express-validator');
 const { authLimiter } = require('../middleware/rateLimiter');
 
 
+const rateLimit = require('express-rate-limit');
+const otpLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 3,
+    message: { message: 'Too many OTP requests for this email. Please try again in 15 minutes.' },
+    keyGenerator: (req) => req.body.email || req.ip
+});
+
 router.post('/register', authLimiter, validate([
     body('name').trim().notEmpty().withMessage('Name is required'),
     body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
 ]), authController.register);
 
-router.post('/send-otp', authLimiter, validate([
+router.post('/send-otp', authLimiter, otpLimiter, validate([
     body('email').isEmail().normalizeEmail().withMessage('Valid email required')
 ]), authController.sendOtp);
 
@@ -32,7 +40,7 @@ router.post('/refresh', authLimiter, validate([
     body('refreshToken').notEmpty().withMessage('Refresh token is required')
 ]), authController.refreshToken);
 
-router.post('/forgot-password', validate([
+router.post('/forgot-password', authLimiter, otpLimiter, validate([
     body('email').isEmail().normalizeEmail().withMessage('Valid email is required')
 ]), authController.forgotPassword);
 

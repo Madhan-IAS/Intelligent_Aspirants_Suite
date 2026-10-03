@@ -12,29 +12,35 @@ const generateTokens = (userId) => {
   return { accessToken, refreshToken };
 };
 
-let globalTransporter = null;
-const getSecureTransporter = async () => {
-  if (globalTransporter) return globalTransporter;
+const sendResendEmail = async (to, subject, html) => {
+  if (!process.env.RESEND_API_KEY) {
+    console.log(`[DEVELOPMENT MOCK EMAIL] -> ${subject} to: ${to}`);
+    return true;
+  }
 
-  const nodemailer = require('nodemailer');
+  const payload = {
+    from: process.env.RESEND_SENDER || 'IASuite Security <onboarding@resend.dev>',
+    to,
+    subject,
+    html
+  };
 
-  // Cache a single pooled connection 
-  globalTransporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: process.env.SMTP_HOST ? (parseInt(process.env.SMTP_PORT) || 587) : 587,
-    secure: process.env.SMTP_HOST ? (parseInt(process.env.SMTP_PORT) === 465) : false,
-    family: 4, // 🛡️ Force IPv4 explicitly inside Nodemailer root config
-    auth: {
-      user: process.env.SMTP_HOST ? process.env.SMTP_USER : process.env.EMAIL_USER,
-      pass: process.env.SMTP_HOST ? process.env.SMTP_PASS : process.env.EMAIL_PASS,
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json'
     },
-    tls: { rejectUnauthorized: false },
-    pool: true,
-    maxConnections: 1,
-    maxMessages: 100
+    body: JSON.stringify(payload)
   });
 
-  return globalTransporter;
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('[RESEND HTTP API ERROR]', errorText);
+    throw new Error(`Resend API failed: ${errorText}`);
+  }
+
+  return true;
 };
 
 // Master Seeding Arrays to initialize new registered users with the exact same data
@@ -462,39 +468,26 @@ exports.forgotPassword = async (req, res) => {
     user.otpExpiry = expiry;
     await user.save();
 
-    // 🚀 Authentic Nodemailer Email Gateway 
-    if (process.env.SMTP_HOST || (process.env.EMAIL_USER && process.env.EMAIL_PASS)) {
-      const transporter = await getSecureTransporter();
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;">
+        <h2 style="color: #ef4444;">Password Reset Request</h2>
+        <p>Hello,</p>
+        <p>We received a request to reset your IASuite password. Your 6-digit Reset OTP is:</p>
+        <div style="margin: 24px 0; padding: 16px; background-color: #f3f4f6; border-radius: 8px; text-align: center;">
+          <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #ef4444;">${otp}</span>
+        </div>
+        <p>This code will explicitly expire in 15 minutes. If you did not request this, please ignore this email.</p>
+      </div>
+    `;
 
-      const senderEmail = process.env.SMTP_HOST ? process.env.SMTP_USER : process.env.EMAIL_USER;
-      const mailOptions = {
-        from: `"IASuite Security" <${senderEmail}>`,
-        to: email,
-        subject: 'Password Reset Request',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;">
-            <h2 style="color: #ef4444;">Password Reset Request</h2>
-            <p>Hello,</p>
-            <p>We received a request to reset your IASuite password. Your 6-digit Reset OTP is:</p>
-            <div style="margin: 24px 0; padding: 16px; background-color: #f3f4f6; border-radius: 8px; text-align: center;">
-              <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #ef4444;">${otp}</span>
-            </div>
-            <p>This code will explicitly expire in 15 minutes. If you did not request this, please ignore this email.</p>
-          </div>
-        `,
-      };
-
-      // Send asynchronously so the API responds instantly
-      transporter.sendMail(mailOptions)
-        .then(() => console.log(`[SECURE MAIL] -> Dispatching Password Reset OTP [ ${otp} ] to -> ${email}`))
-        .catch((mailError) => console.error('[EMAIL] Failed to send Reset OTP', mailError));
-    } else {
-      console.log(`[DEVELOPMENT MOCK EMAIL] -> Dispatching Password Reset OTP [ ${otp} ] to -> ${email}`);
-    }
+    // Send asynchronously over Resend HTTP to decouple from response latency
+    sendResendEmail(email, 'Password Reset Request', html)
+      .then(() => console.log(`[RESEND] -> Dispatching Password Reset OTP [ ${otp} ] to -> ${email}`))
+      .catch((err) => console.error('[RESEND] Failed to dispatch', err));
 
     res.json({
       message: `Reset OTP sent successfully to ${email}`,
-      devOtp: !(process.env.EMAIL_USER && process.env.EMAIL_PASS) ? otp : undefined
+      devOtp: !process.env.RESEND_API_KEY ? otp : undefined
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -556,40 +549,27 @@ exports.sendOtp = async (req, res) => {
     });
     await otpDoc.save();
 
-    // 🚀 Nodemailer Email Transport
-    if (process.env.SMTP_HOST || (process.env.EMAIL_USER && process.env.EMAIL_PASS)) {
-      const transporter = await getSecureTransporter();
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;">
+        <h2 style="color: #2563eb;">Intelligent Aspirant's Suite</h2>
+        <p>Hello,</p>
+        <p>Your OTP securely generated for IAS Registration is:</p>
+        <div style="margin: 24px 0; padding: 16px; background-color: #f3f4f6; border-radius: 8px; text-align: center;">
+          <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px;">${otpCode}</span>
+        </div>
+        <p>This code will expire securely in 5 minutes. Do not share it with anyone.</p>
+        <p style="font-size: 12px; color: #6b7280; margin-top: 32px;">This is an automated security email. Please do not reply.</p>
+      </div>
+    `;
 
-      const senderEmail = process.env.SMTP_HOST ? process.env.SMTP_USER : process.env.EMAIL_USER;
-      const mailOptions = {
-        from: `"IASuite Security" <${senderEmail}>`,
-        to: email,
-        subject: 'Your IASuite Verification Code',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;">
-            <h2 style="color: #2563eb;">Intelligent Aspirant's Suite</h2>
-            <p>Hello,</p>
-            <p>Your OTP securely generated for IAS Registration is:</p>
-            <div style="margin: 24px 0; padding: 16px; background-color: #f3f4f6; border-radius: 8px; text-align: center;">
-              <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px;">${otpCode}</span>
-            </div>
-            <p>This code will expire securely in 5 minutes. Do not share it with anyone.</p>
-            <p style="font-size: 12px; color: #6b7280; margin-top: 32px;">This is an automated security email. Please do not reply.</p>
-          </div>
-        `,
-      };
-
-      // Send asynchronously so the API responds instantly
-      transporter.sendMail(mailOptions)
-        .then(() => console.log(`[EMAIL] OTP Sent securely to ${email}. The Code is: [ ${otpCode} ]`))
-        .catch((mailError) => console.error('[EMAIL] Failed to send via Nodemailer', mailError));
-    } else {
-      console.log(`[DEVELOPMENT MOCK EMAIL] -> Sent Setup OTP [ ${otpCode} ] to -> ${email}`);
-    }
+    // Send asynchronously over Resend HTTP to decouple from response latency
+    sendResendEmail(email, 'Your IASuite Verification Code', html)
+      .then(() => console.log(`[RESEND] OTP Sent to ${email}. Code: [ ${otpCode} ]`))
+      .catch((err) => console.error('[RESEND] Failed to send setup OTP', err));
 
     res.json({
       message: 'OTP sent successfully',
-      devOtp: !(process.env.EMAIL_USER && process.env.EMAIL_PASS) ? otpCode : undefined
+      devOtp: !process.env.RESEND_API_KEY ? otpCode : undefined
     });
   } catch (error) {
     res.status(500).json({ message: 'Failed to send OTP server-side', error: error.message });

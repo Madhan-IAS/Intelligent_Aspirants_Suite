@@ -452,12 +452,13 @@ exports.forgotPassword = async (req, res) => {
         }
         : {
           host: 'smtp.gmail.com',
-          port: 465,
-          secure: true,
+          port: 587,
+          secure: false,
           auth: {
             user: process.env.EMAIL_USER,
             pass: process.env.EMAIL_PASS,
           },
+          tls: { rejectUnauthorized: false },
         };
       transportConfig.family = 4; // Force IPv4 to avoid ENETUNREACH on cloud hosts
       const transporter = nodemailer.createTransport(transportConfig);
@@ -567,12 +568,13 @@ exports.sendOtp = async (req, res) => {
         }
         : {
           host: 'smtp.gmail.com',
-          port: 465,
-          secure: true,
+          port: 587,
+          secure: false,
           auth: {
             user: process.env.EMAIL_USER,
             pass: process.env.EMAIL_PASS,
           },
+          tls: { rejectUnauthorized: false },
         };
       transportConfig.family = 4; // Force IPv4 to avoid ENETUNREACH on cloud hosts
       const transporter = nodemailer.createTransport(transportConfig);

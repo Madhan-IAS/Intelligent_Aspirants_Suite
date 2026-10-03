@@ -66,17 +66,12 @@ app.get('/api/test-email', async (req, res) => {
       return res.status(400).json({ error: "EMAIL_USER is not set in this environment!" });
     }
     const nodemailer = require('nodemailer');
-    const dns = require('dns');
-    const { promisify } = require('util');
-    const lookup = promisify(dns.lookup);
-    let resolvedAddress = 'smtp.gmail.com';
-    try {
-      const { address } = await lookup('smtp.gmail.com', { family: 4 });
-      resolvedAddress = address;
-    } catch (_) { }
 
     const transporter = nodemailer.createTransport({
-      host: resolvedAddress, port: 587, secure: false,
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      family: 4, // 🛡️ Fixes Render IPv6 issue
       auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
       tls: { rejectUnauthorized: false, servername: 'smtp.gmail.com' }
     });

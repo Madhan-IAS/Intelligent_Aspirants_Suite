@@ -2,6 +2,7 @@ const User = require('../models/User');
 const TimetableSlot = require('../models/TimetableSlot');
 const ChecklistItem = require('../models/ChecklistItem');
 const WeeklySchedule = require('../models/WeeklySchedule');
+const Otp = require('../models/Otp');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -81,6 +82,12 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: 'Please provide a valid 10-digit mobile number' });
     }
 
+    // Require OTP Verification before allowing signup
+    const verifiedOtp = await Otp.findOne({ phoneNumber: mobile, verified: true });
+    if (!verifiedOtp) {
+      return res.status(400).json({ message: 'Mobile number not verified or OTP expired. Please verify your mobile number first.' });
+    }
+
     let user = await User.findOne({ email });
     if (user) return res.status(400).json({ message: 'User already exists' });
 
@@ -118,6 +125,9 @@ exports.register = async (req, res) => {
     const { accessToken, refreshToken } = generateTokens(user._id);
     user.refreshToken = refreshToken;
     await user.save();
+
+    // Consume the OTP so it cannot be reused
+    await Otp.deleteOne({ _id: verifiedOtp._id });
 
     res.status(201).json({ token: accessToken, refreshToken, user });
   } catch (error) {
@@ -454,6 +464,98 @@ exports.resetPassword = async (req, res) => {
     await user.save();
 
     res.json({ message: 'Password reset successfully!' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// POST /api/auth/send-otp
+// Generates and sends a 6-digit OTP to the user's mobile number
+exports.sendOtp = async (req, res) => {
+  try {
+    const { mobile } = req.body;
+    if (!mobile || !/^[0-9]{10}$/.test(mobile)) {
+      return res.status(400).json({ message: 'Please provide a valid 10-digit mobile number' });
+    }
+
+    // Generate random 6-digit OTP
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Delete any existing unverified OTP for this number to prevent clutter
+    await Otp.deleteMany({ phoneNumber: mobile, verified: false });
+
+    // Save to database
+    const otpDoc = new Otp({
+      phoneNumber: mobile,
+      otp: otpCode, // Will be hashed via schema pre-save hook
+    });
+    await otpDoc.save();
+
+    // 🚀 Fallback Mock Sending or Real SMS Gateway Integration
+    if (process.env.FAST2SMS_API_KEY) {
+      const axios = require('axios');
+      try {
+        await axios.get('https://www.fast2sms.com/dev/bulkV2', {
+          params: {
+            authorization: process.env.FAST2SMS_API_KEY,
+            variables_values: otpCode,
+            route: 'otp',
+            numbers: mobile,
+          }
+        });
+        console.log(`[SMS] Fast2SMS OTP Sent to ${mobile}`);
+      } catch (smsError) {
+        console.error('[SMS] Failed to send via Fast2SMS', smsError.response?.data || smsError.message);
+        // Continue anyway if the developer wants to test via response / console
+      }
+    } else {
+      console.log(`[DEVELOPMENT MOCK SMS] -> Sent Setup OTP [ ${otpCode} ] to -> ${mobile}`);
+    }
+
+    res.json({
+      message: 'OTP sent successfully',
+      devOtp: !process.env.FAST2SMS_API_KEY ? otpCode : undefined // Expose for easy testing in dev
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to send OTP server-side', error: error.message });
+  }
+};
+
+// POST /api/auth/verify-otp
+// Verifies the provided 6-digit OTP matches our database
+exports.verifyOtp = async (req, res) => {
+  try {
+    const { mobile, otp } = req.body;
+
+    if (!mobile || !otp) {
+      return res.status(400).json({ message: 'Mobile number and OTP are required' });
+    }
+
+    // Find the OTP document for this number (most recent first if multiple exist)
+    const otpRecords = await Otp.find({ phoneNumber: mobile }).sort({ createdAt: -1 });
+    if (!otpRecords || otpRecords.length === 0) {
+      return res.status(400).json({ message: 'No OTP found for this number or it has expired. Please resend.' });
+    }
+
+    // Take the most recent one
+    const latestOtpRecord = otpRecords[0];
+
+    // Check if it's already verified (edge case)
+    if (latestOtpRecord.verified) {
+      return res.json({ message: 'Number already verified successfully.' });
+    }
+
+    // Check if the OTP matches
+    const isMatch = await latestOtpRecord.matchOTP(otp);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid OTP provided.' });
+    }
+
+    // Mark as verified
+    latestOtpRecord.verified = true;
+    await latestOtpRecord.save();
+
+    res.json({ message: 'Mobile number verified successfully!' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

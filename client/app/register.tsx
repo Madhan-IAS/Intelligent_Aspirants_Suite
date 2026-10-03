@@ -16,9 +16,48 @@ export default function Register() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [mobile, setMobile] = useState('');
+  const [otp, setOtp] = useState('');
+  const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const handleSendOtp = async () => {
+    if (!/^[0-9]{10}$/.test(mobile)) {
+      setError('Please enter a valid 10-digit mobile number');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const res = await api.post('/auth/send-otp', { mobile });
+      // If devOtp is provided via backend, we could console.log it or auto-fill for dev convenience.
+      if (res.data.devOtp) {
+        console.log("Dev OTP:", res.data.devOtp);
+      }
+      setStep(2);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to send OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (otp.length !== 6) {
+      setError('Please enter the 6-digit OTP');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      await api.post('/auth/verify-otp', { mobile, otp });
+      setStep(3);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Invalid OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleRegister = async () => {
     if (!name || !username || !password || !mobile) {
@@ -78,90 +117,127 @@ export default function Register() {
           </View>
         ) : null}
 
-        {/* Form Inputs */}
+        {/* Form Inputs & Stages */}
         <View style={{ gap: 16, marginBottom: 24 }}>
-          {/* Full Name */}
-          <View>
-            <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', marginBottom: 8, fontWeight: '500' }}>Full Name</Text>
-            <TextInput
-              style={{ backgroundColor: isDark ? '#111827' : '#f9fafb', color: isDark ? 'white' : '#111827', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', outlineStyle: Platform.OS === 'web' ? 'none' : undefined } as any}
-              placeholder="Madhan Mohan"
-              placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
-              value={name}
-              onChangeText={setName}
-            />
-          </View>
 
-          {/* Username prefix with static @upsc.kms suffix */}
-          <View>
-            <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', marginBottom: 8, fontWeight: '500' }}>Username</Text>
-            <View style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              backgroundColor: isDark ? '#111827' : '#f9fafb',
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: isDark ? '#374151' : '#e5e7eb'
-            }}>
-              <TextInput
-                style={{
-                  flex: 1,
-                  color: isDark ? 'white' : '#111827',
-                  padding: 16,
-                  outlineStyle: Platform.OS === 'web' ? 'none' : undefined
-                } as any}
-                placeholder="madhan"
-                placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
-                value={username}
-                onChangeText={(val) => setUsername(val.replace(/[^a-zA-Z0-9._-]/g, ''))}
-                autoCapitalize="none"
-              />
-              <Text style={{
-                color: isDark ? '#9ca3af' : '#4b5563',
-                fontWeight: 'bold',
-                fontSize: 14,
-                paddingRight: 16
-              }}>
-                @upsc.kms
-              </Text>
+          {/* STEP 1: MOBILE NUMBER ENTRY */}
+          {step === 1 && (
+            <View>
+              <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', marginBottom: 8, fontWeight: '500' }}>Mobile Number</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: isDark ? '#111827' : '#f9fafb', borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb' }}>
+                <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', paddingLeft: 16, fontSize: 16, fontWeight: 'bold' }}>+91</Text>
+                <TextInput
+                  style={{ flex: 1, color: isDark ? 'white' : '#111827', padding: 16, outlineStyle: Platform.OS === 'web' ? 'none' : undefined, fontSize: 16, letterSpacing: 2 } as any}
+                  placeholder="9876543210"
+                  placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
+                  value={mobile}
+                  onChangeText={(val) => setMobile(val.replace(/[^0-9]/g, '').slice(0, 10))}
+                  keyboardType="phone-pad"
+                  maxLength={10}
+                />
+              </View>
             </View>
-          </View>
+          )}
 
-          {/* Mobile Number */}
-          <View>
-            <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', marginBottom: 8, fontWeight: '500' }}>Mobile Number</Text>
-            <TextInput
-              style={{ backgroundColor: isDark ? '#111827' : '#f9fafb', color: isDark ? 'white' : '#111827', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', outlineStyle: Platform.OS === 'web' ? 'none' : undefined } as any}
-              placeholder="9876543210"
-              placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
-              value={mobile}
-              onChangeText={(val) => setMobile(val.replace(/[^0-9]/g, '').slice(0, 10))}
-              keyboardType="phone-pad"
-              maxLength={10}
-            />
-          </View>
+          {/* STEP 2: OTP VERIFICATION */}
+          {step === 2 && (
+            <View>
+              <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', marginBottom: 8, fontWeight: '500' }}>Enter 6-Digit OTP</Text>
+              <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 12, marginBottom: 12 }}>Sent securely to +91 {mobile}</Text>
+              <TextInput
+                style={{ backgroundColor: isDark ? '#111827' : '#f9fafb', color: isDark ? 'white' : '#111827', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', outlineStyle: Platform.OS === 'web' ? 'none' : undefined, letterSpacing: 8, textAlign: 'center', fontSize: 24, fontWeight: 'bold' } as any}
+                placeholder="••••••"
+                placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
+                value={otp}
+                onChangeText={(val) => setOtp(val.replace(/[^0-9]/g, '').slice(0, 6))}
+                keyboardType="number-pad"
+                maxLength={6}
+              />
+              <TouchableOpacity onPress={() => { setStep(1); setOtp(''); }} style={{ marginTop: 12 }}>
+                <Text style={{ color: '#2563eb', textAlign: 'center', fontSize: 12 }}>Change Mobile Number</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
-          {/* Password */}
-          <View>
-            <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', marginBottom: 8, fontWeight: '500' }}>Password</Text>
-            <TextInput
-              style={{ backgroundColor: isDark ? '#111827' : '#f9fafb', color: isDark ? 'white' : '#111827', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', outlineStyle: Platform.OS === 'web' ? 'none' : undefined } as any}
-              placeholder="••••••••"
-              placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
-          </View>
+          {/* STEP 3: FINAL ACCOUNT DETAILS */}
+          {step === 3 && (
+            <>
+              {/* Full Name */}
+              <View>
+                <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', marginBottom: 8, fontWeight: '500' }}>Full Name</Text>
+                <TextInput
+                  style={{ backgroundColor: isDark ? '#111827' : '#f9fafb', color: isDark ? 'white' : '#111827', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', outlineStyle: Platform.OS === 'web' ? 'none' : undefined } as any}
+                  placeholder="Madhan Mohan"
+                  placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
+                  value={name}
+                  onChangeText={setName}
+                />
+              </View>
+
+              {/* Username prefix with static @upsc.kms suffix */}
+              <View>
+                <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', marginBottom: 8, fontWeight: '500' }}>Username</Text>
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: isDark ? '#111827' : '#f9fafb',
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: isDark ? '#374151' : '#e5e7eb'
+                }}>
+                  <TextInput
+                    style={{
+                      flex: 1,
+                      color: isDark ? 'white' : '#111827',
+                      padding: 16,
+                      outlineStyle: Platform.OS === 'web' ? 'none' : undefined
+                    } as any}
+                    placeholder="madhan"
+                    placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
+                    value={username}
+                    onChangeText={(val) => setUsername(val.replace(/[^a-zA-Z0-9._-]/g, ''))}
+                    autoCapitalize="none"
+                  />
+                  <Text style={{
+                    color: isDark ? '#9ca3af' : '#4b5563',
+                    fontWeight: 'bold',
+                    fontSize: 14,
+                    paddingRight: 16
+                  }}>
+                    @upsc.kms
+                  </Text>
+                </View>
+              </View>
+
+              {/* Password */}
+              <View>
+                <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', marginBottom: 8, fontWeight: '500' }}>Password</Text>
+                <TextInput
+                  style={{ backgroundColor: isDark ? '#111827' : '#f9fafb', color: isDark ? 'white' : '#111827', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', outlineStyle: Platform.OS === 'web' ? 'none' : undefined } as any}
+                  placeholder="••••••••"
+                  placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                />
+              </View>
+            </>
+          )}
         </View>
 
-        {/* Submit Button */}
+        {/* Dynamic Action Button */}
         <TouchableOpacity
-          onPress={handleRegister}
+          onPress={step === 1 ? handleSendOtp : step === 2 ? handleVerifyOtp : handleRegister}
           disabled={loading}
           style={{ backgroundColor: loading ? '#1e40af' : '#2563eb', padding: 16, borderRadius: 12, alignItems: 'center', marginBottom: 20 }}
         >
-          {loading ? <ActivityIndicator color="white" /> : <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 18 }}>Sign Up</Text>}
+          {loading ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 18 }}>
+              {step === 1 ? 'Get OTP' : step === 2 ? 'Verify OTP' : 'Complete Sign Up'}
+            </Text>
+          )}
         </TouchableOpacity>
 
         {/* Toggle to Login */}

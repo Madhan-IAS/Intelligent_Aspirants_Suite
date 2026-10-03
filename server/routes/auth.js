@@ -14,6 +14,15 @@ router.post('/register', authLimiter, validate([
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
 ]), authController.register);
 
+router.post('/send-otp', authLimiter, validate([
+    body('mobile').isLength({ min: 10, max: 15 }).withMessage('Valid mobile number required')
+]), authController.sendOtp);
+
+router.post('/verify-otp', authLimiter, validate([
+    body('mobile').isLength({ min: 10, max: 15 }).withMessage('Valid mobile number required'),
+    body('otp').notEmpty().withMessage('OTP is required')
+]), authController.verifyOtp);
+
 router.post('/login', authLimiter, validate([
     body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
     body('password').notEmpty().withMessage('Password cannot be empty')

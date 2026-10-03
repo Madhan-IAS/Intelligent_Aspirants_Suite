@@ -440,25 +440,27 @@ exports.forgotPassword = async (req, res) => {
     // 🚀 Authentic Nodemailer Email Gateway 
     if (process.env.SMTP_HOST || (process.env.EMAIL_USER && process.env.EMAIL_PASS)) {
       const nodemailer = require('nodemailer');
-      const transporter = nodemailer.createTransport(
-        process.env.SMTP_HOST
-          ? {
-            host: process.env.SMTP_HOST,
-            port: parseInt(process.env.SMTP_PORT) || 587,
-            secure: parseInt(process.env.SMTP_PORT) === 465,
-            auth: {
-              user: process.env.SMTP_USER,
-              pass: process.env.SMTP_PASS,
-            },
-          }
-          : {
-            service: 'gmail',
-            auth: {
-              user: process.env.EMAIL_USER,
-              pass: process.env.EMAIL_PASS,
-            },
-          }
-      );
+      const transportConfig = process.env.SMTP_HOST
+        ? {
+          host: process.env.SMTP_HOST,
+          port: parseInt(process.env.SMTP_PORT) || 587,
+          secure: parseInt(process.env.SMTP_PORT) === 465,
+          auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS,
+          },
+        }
+        : {
+          host: 'smtp.gmail.com',
+          port: 465,
+          secure: true,
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+          },
+        };
+      transportConfig.family = 4; // Force IPv4 to avoid ENETUNREACH on cloud hosts
+      const transporter = nodemailer.createTransport(transportConfig);
 
       const senderEmail = process.env.SMTP_HOST ? process.env.SMTP_USER : process.env.EMAIL_USER;
       const mailOptions = {
@@ -553,25 +555,27 @@ exports.sendOtp = async (req, res) => {
     // 🚀 Nodemailer Email Transport
     if (process.env.SMTP_HOST || (process.env.EMAIL_USER && process.env.EMAIL_PASS)) {
       const nodemailer = require('nodemailer');
-      const transporter = nodemailer.createTransport(
-        process.env.SMTP_HOST
-          ? {
-            host: process.env.SMTP_HOST,
-            port: parseInt(process.env.SMTP_PORT) || 587,
-            secure: parseInt(process.env.SMTP_PORT) === 465,
-            auth: {
-              user: process.env.SMTP_USER,
-              pass: process.env.SMTP_PASS,
-            },
-          }
-          : {
-            service: 'gmail',
-            auth: {
-              user: process.env.EMAIL_USER,
-              pass: process.env.EMAIL_PASS,
-            },
-          }
-      );
+      const transportConfig = process.env.SMTP_HOST
+        ? {
+          host: process.env.SMTP_HOST,
+          port: parseInt(process.env.SMTP_PORT) || 587,
+          secure: parseInt(process.env.SMTP_PORT) === 465,
+          auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS,
+          },
+        }
+        : {
+          host: 'smtp.gmail.com',
+          port: 465,
+          secure: true,
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+          },
+        };
+      transportConfig.family = 4; // Force IPv4 to avoid ENETUNREACH on cloud hosts
+      const transporter = nodemailer.createTransport(transportConfig);
 
       const senderEmail = process.env.SMTP_HOST ? process.env.SMTP_USER : process.env.EMAIL_USER;
       const mailOptions = {

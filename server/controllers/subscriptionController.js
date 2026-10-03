@@ -38,12 +38,22 @@ exports.requestSubscription = async (req, res) => {
         const temporaryExpiry = new Date();
         temporaryExpiry.setDate(temporaryExpiry.getDate() + 3);
 
-        const updatedUser = await User.findByIdAndUpdate(req.user.id, {
-            subscriptionStatus: 'pending',
-            subscriptionTier: requestedTier,
-            subscriptionExpiry: temporaryExpiry,
-            isTrial: true
-        }, { new: true }).select('-passwordHash');
+        let updateData = {};
+        if (requestedTier === 'notes-addon') {
+            updateData = {
+                hasNotesAccess: true,
+                notesAccessExpiry: temporaryExpiry,
+            };
+        } else {
+            updateData = {
+                subscriptionStatus: 'pending',
+                subscriptionTier: requestedTier,
+                subscriptionExpiry: temporaryExpiry,
+                isTrial: true
+            };
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(req.user.id, updateData, { new: true }).select('-passwordHash');
 
         res.status(201).json({
             message: 'Subscription requested. You have been granted 3 days temporary access while awaiting admin approval!',

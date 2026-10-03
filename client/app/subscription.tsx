@@ -373,6 +373,47 @@ export default function SubscriptionScreen() {
             )}
 
 
+            {/* ====== INDEPENDENT ADD-ONS ====== */}
+            {!showPayment && (
+                <View style={{ width: '100%', maxWidth: 800, marginTop: 40, borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#e5e7eb', paddingTop: 30, alignItems: 'center' }}>
+                    <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 20, fontWeight: 'bold', marginBottom: 6 }}>Independent Add-Ons</Text>
+                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 13, marginBottom: 20, textAlign: 'center' }}>Enhance your preparation with these standalone features</Text>
+
+                    <View style={{
+                        width: '100%', backgroundColor: isDark ? '#1f2937' : '#ffffff',
+                        borderRadius: 20, padding: 24, borderWidth: 1,
+                        borderColor: TIER_INFO['notes-addon'].color, elevation: 4, shadowColor: TIER_INFO['notes-addon'].color, shadowOpacity: 0.15, shadowRadius: 8, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 20
+                    }}>
+                        <View style={{ flex: 1, minWidth: 200 }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                                <Text style={{ fontSize: 24 }}>{TIER_INFO['notes-addon'].icon}</Text>
+                                <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 20, fontWeight: 'bold' }}>{TIER_INFO['notes-addon'].name}</Text>
+                            </View>
+                            <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', fontSize: 13 }}>{TIER_INFO['notes-addon'].tagline}</Text>
+                        </View>
+                        <View style={{ alignItems: 'flex-end' }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4 }}>
+                                <Text style={{ color: TIER_INFO['notes-addon'].color, fontSize: 28, fontWeight: 'bold' }}>{isAnnual ? TIER_INFO['notes-addon'].annualPrice : TIER_INFO['notes-addon'].price}</Text>
+                                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12 }}>{isAnnual ? '/ year' : '/ month'}</Text>
+                            </View>
+                            {isAnnual && <Text style={{ color: '#10b981', fontSize: 11, fontWeight: 'bold', marginTop: 4 }}>{TIER_INFO['notes-addon'].annualSavings}</Text>}
+                        </View>
+
+                        <TouchableOpacity
+                            onPress={() => setSelectedTier('notes-addon')}
+                            style={{
+                                width: '100%', backgroundColor: selectedTier === 'notes-addon' ? TIER_INFO['notes-addon'].color : 'transparent',
+                                padding: 14, borderRadius: 12, alignItems: 'center', borderWidth: 2, borderColor: TIER_INFO['notes-addon'].color,
+                                marginTop: 10
+                            }}>
+                            <Text style={{ color: selectedTier === 'notes-addon' ? 'white' : TIER_INFO['notes-addon'].color, fontWeight: 'bold' }}>
+                                {selectedTier === 'notes-addon' ? '✓ Selected' : 'Select Notes Plan'}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            )}
+
             {/* ====== TRANSACTION HISTORY ====== */}
             {!showPayment && history.length > 0 && (
                 <View style={{ width: '100%', maxWidth: 800, marginTop: 40, borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#e5e7eb', paddingTop: 20 }}>

@@ -18,7 +18,7 @@ export default function FeatureGate({ children }: { children: React.ReactNode })
 
     // If user has access to the current route, render children
     const userTier = user?.subscriptionTier || 'foundation';
-    if (hasAccess(userTier, pathname)) return <>{children}</>;
+    if (hasAccess(user, pathname)) return <>{children}</>;
 
     // User doesn't have access — show upgrade card
     const requiredTier = getRequiredTier(pathname);

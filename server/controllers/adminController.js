@@ -88,7 +88,8 @@ exports.approveUser = async (req, res) => {
         const TIER_PRICES = {
             foundation: { monthly: 99, annual: 999 },
             aspirant: { monthly: 199, annual: 1999 },
-            topper: { monthly: 299, annual: 2999 }
+            topper: { monthly: 299, annual: 2999 },
+            'notes-addon': { monthly: 49, annual: 499 }
         };
 
         const finalTier = tier || fallbackTier || 'foundation';
@@ -102,25 +103,30 @@ exports.approveUser = async (req, res) => {
             expiry.setMonth(expiry.getMonth() + months);
         }
 
+        const updateFields = finalTier === 'notes-addon' ? {
+            hasNotesAccess: true,
+            notesAccessExpiry: expiry
+        } : {
+            subscriptionStatus: 'active',
+            subscriptionTier: finalTier,
+            subscriptionExpiry: expiry,
+            isTrial: false,
+            usageStats: {
+                aiQuizGenerated: 0,
+                aiQuestionGenerated: 0,
+                aiAnswerEvaluations: 0,
+                aiEssayEvaluations: aiEssayLimitOverride || 0,
+                aiTopicSummaries: 0,
+                aiRecommendations: 0,
+                aiAnalyticPrompts: 0,
+                customFlashcards: 0,
+                customNotes: 0
+            }
+        };
+
         const user = await User.findByIdAndUpdate(
             req.params.id,
-            {
-                subscriptionStatus: 'active',
-                subscriptionTier: finalTier,
-                subscriptionExpiry: expiry,
-                isTrial: false,
-                usageStats: {
-                    aiQuizGenerated: 0,
-                    aiQuestionGenerated: 0,
-                    aiAnswerEvaluations: 0,
-                    aiEssayEvaluations: aiEssayLimitOverride || 0,
-                    aiTopicSummaries: 0,
-                    aiRecommendations: 0,
-                    aiAnalyticPrompts: 0,
-                    customFlashcards: 0,
-                    customNotes: 0
-                }
-            },
+            updateFields,
             { new: true }
         ).select('-passwordHash');
 
@@ -224,7 +230,8 @@ exports.revokeUser = async (req, res) => {
             req.params.id,
             {
                 subscriptionStatus: 'expired',
-                subscriptionTier: 'foundation'
+                subscriptionTier: 'foundation',
+                hasNotesAccess: false
             },
             { new: true }
         ).select('-passwordHash');

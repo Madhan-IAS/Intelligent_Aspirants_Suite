@@ -39,6 +39,17 @@ export const TIER_INFO: Record<string, { name: string; price: string; priceNum: 
         color: '#8b5cf6',
         icon: '🥇',
     },
+    'notes-addon': {
+        name: 'IASuite Notes Plan',
+        price: '₹49',
+        priceNum: 49,
+        annualPrice: '₹499',
+        annualPriceNum: 499,
+        annualSavings: 'Save ₹89',
+        tagline: 'Unlock all premium study notes',
+        color: '#0ea5e9',
+        icon: '📝',
+    }
 };
 
 // Maps each route to the minimum tier required to access it
@@ -61,7 +72,6 @@ export const ROUTE_TIER_MAP: Record<string, string> = {
     '/revision': 'aspirant',
     '/mind-maps': 'aspirant',
     '/current-affairs': 'aspirant',
-    '/ai-notes': 'aspirant',
     '/answer-gallery': 'aspirant',
     '/flashcards': 'aspirant',
 
@@ -76,8 +86,9 @@ export const ROUTE_TIER_MAP: Record<string, string> = {
 };
 
 // Helper: check if a user tier has access to a given route
-export function hasAccess(userTier: string | undefined, route: string): boolean {
-    const tier = userTier || 'foundation';
+export function hasAccess(user: any, route: string): boolean {
+    if (route === '/ai-notes') return !!user?.hasNotesAccess || user?.role === 'admin';
+    const tier = user?.subscriptionTier || 'foundation';
     const requiredTier = ROUTE_TIER_MAP[route];
     // If route not in map, allow access (e.g. /admin, /subscription, etc.)
     if (!requiredTier) return true;
@@ -105,7 +116,6 @@ export const TIER_FEATURES: Record<string, string[]> = {
         'CSAT (Paper II)',
         '3-5-7 Spaced Revision',
         'Mind Maps',
-        'IASuite Notes',
         'Answer Gallery',
         'Current Affairs',
         'Flashcards',

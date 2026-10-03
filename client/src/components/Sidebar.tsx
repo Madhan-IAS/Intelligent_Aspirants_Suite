@@ -20,7 +20,7 @@ const SidebarItem = ({ icon, label, href, onNavigate }: { icon: any, label: stri
   const isDark = mode === 'dark';
   const isActive = pathname === href || (href !== '/' && pathname.startsWith(href + '/'));
 
-  const locked = user?.role !== 'admin' && !hasAccess(user?.subscriptionTier, href);
+  const locked = user?.role !== 'admin' && !hasAccess(user, href);
 
   return (
     <TouchableOpacity

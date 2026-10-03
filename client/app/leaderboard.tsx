@@ -44,6 +44,30 @@ export default function LeaderboardScreen() {
 
             <View style={{ padding: 24, maxWidth: 800, width: '100%', alignSelf: 'center', marginTop: -20 }}>
                 <View style={{ backgroundColor: isDark ? '#1f2937' : 'white', borderRadius: 20, padding: 20, elevation: 5, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10 }}>
+
+                    {/* Rules Info Box */}
+                    <View style={{ backgroundColor: isDark ? 'rgba(79, 70, 229, 0.15)' : '#eef2ff', borderRadius: 12, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: isDark ? '#4f46e5' : '#c3dafe' }}>
+                        <Text style={{ color: isDark ? '#a5b4fc' : '#4338ca', fontSize: 14, fontWeight: 'bold', marginBottom: 8, flexDirection: 'row', alignItems: 'center' }}>
+                            <Ionicons name="information-circle" size={16} /> How is Power Score (XP) Calculated?
+                        </Text>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+                            <View style={{ flex: 1, minWidth: 140 }}>
+                                <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', fontSize: 13, marginBottom: 4 }}>• <Text style={{ fontWeight: 'bold' }}>+10 XP</Text> per completed Syllabus Topic</Text>
+                                <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', fontSize: 13 }}>• <Text style={{ fontWeight: 'bold' }}>+1 XP</Text> per minute of Deep Focus Session</Text>
+                            </View>
+                            <View style={{ flex: 1, minWidth: 140 }}>
+                                <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', fontSize: 13, marginBottom: 4 }}>• <Text style={{ fontWeight: 'bold' }}>+25 XP</Text> per Evaluated Answer</Text>
+                                <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', fontSize: 13 }}>• <Text style={{ fontWeight: 'bold' }}>+100 XP</Text> per Featured Answer</Text>
+                            </View>
+                        </View>
+                        <View style={{ marginTop: 12, backgroundColor: isDark ? 'rgba(245, 158, 11, 0.1)' : '#fffbeb', padding: 10, borderRadius: 8, borderWidth: 1, borderColor: isDark ? 'rgba(245, 158, 11, 0.3)' : '#fde68a' }}>
+                            <Text style={{ color: isDark ? '#fbbf24' : '#d97706', fontSize: 12, fontWeight: 'bold' }}>🔥 Streak Multiplier (Consistency beats volume!)</Text>
+                            <Text style={{ color: isDark ? '#fbbf24' : '#d97706', fontSize: 11, marginTop: 4 }}>
+                                Under 4 days: 1x XP  |  4+ days: 1.2x XP  |  10+ days: 1.5x XP  |  30+ days: 2x (Double XP)
+                            </Text>
+                        </View>
+                    </View>
+
                     {loading ? (
                         <ActivityIndicator color="#4f46e5" size="large" style={{ padding: 40 }} />
                     ) : leaderboard.length === 0 ? (

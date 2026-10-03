@@ -438,18 +438,31 @@ exports.forgotPassword = async (req, res) => {
     await user.save();
 
     // 🚀 Authentic Nodemailer Email Gateway 
-    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    if (process.env.SMTP_HOST || (process.env.EMAIL_USER && process.env.EMAIL_PASS)) {
       const nodemailer = require('nodemailer');
-      const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS,
-        },
-      });
+      const transporter = nodemailer.createTransport(
+        process.env.SMTP_HOST
+          ? {
+            host: process.env.SMTP_HOST,
+            port: parseInt(process.env.SMTP_PORT) || 587,
+            secure: parseInt(process.env.SMTP_PORT) === 465,
+            auth: {
+              user: process.env.SMTP_USER,
+              pass: process.env.SMTP_PASS,
+            },
+          }
+          : {
+            service: 'gmail',
+            auth: {
+              user: process.env.EMAIL_USER,
+              pass: process.env.EMAIL_PASS,
+            },
+          }
+      );
 
+      const senderEmail = process.env.SMTP_HOST ? process.env.SMTP_USER : process.env.EMAIL_USER;
       const mailOptions = {
-        from: `"IASuite Security" <${process.env.EMAIL_USER}>`,
+        from: `"IASuite Security" <${senderEmail}>`,
         to: email,
         subject: 'Password Reset Request',
         html: `
@@ -538,18 +551,31 @@ exports.sendOtp = async (req, res) => {
     await otpDoc.save();
 
     // 🚀 Nodemailer Email Transport
-    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    if (process.env.SMTP_HOST || (process.env.EMAIL_USER && process.env.EMAIL_PASS)) {
       const nodemailer = require('nodemailer');
-      const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS,
-        },
-      });
+      const transporter = nodemailer.createTransport(
+        process.env.SMTP_HOST
+          ? {
+            host: process.env.SMTP_HOST,
+            port: parseInt(process.env.SMTP_PORT) || 587,
+            secure: parseInt(process.env.SMTP_PORT) === 465,
+            auth: {
+              user: process.env.SMTP_USER,
+              pass: process.env.SMTP_PASS,
+            },
+          }
+          : {
+            service: 'gmail',
+            auth: {
+              user: process.env.EMAIL_USER,
+              pass: process.env.EMAIL_PASS,
+            },
+          }
+      );
 
+      const senderEmail = process.env.SMTP_HOST ? process.env.SMTP_USER : process.env.EMAIL_USER;
       const mailOptions = {
-        from: `"IASuite Security" <${process.env.EMAIL_USER}>`,
+        from: `"IASuite Security" <${senderEmail}>`,
         to: email,
         subject: 'Your IASuite Verification Code',
         html: `

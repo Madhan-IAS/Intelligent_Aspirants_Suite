@@ -7,6 +7,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { hasAccess } from '../services/tierConfig';
 import { scheduleLocalNotification } from '../services/notifications';
+import { BOOK_LIST, COVERAGE_MATRIX } from '../data/bookListData';
 
 interface SidebarProps {
   onNavigate?: () => void;
@@ -43,6 +44,8 @@ const SidebarItem = ({ icon, label, href, onNavigate }: { icon: any, label: stri
 export default function Sidebar({ onNavigate }: SidebarProps) {
   const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false);
+  const [bookListOpen, setBookListOpen] = useState(false);
+  const [coverageOpen, setCoverageOpen] = useState(false);
   const { mode, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
   const isDark = mode === 'dark';
@@ -178,6 +181,106 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
           <SidebarItem icon="search" label="PYQs" href="/pyqs" onNavigate={onNavigate} />
           <SidebarItem icon="ribbon" label="Directives & Quotes" href="/directives-quotes" onNavigate={onNavigate} />
           <SidebarItem icon="pencil" label="Essay Lab" href="/essays" onNavigate={onNavigate} />
+        </View>
+
+        {/* Coverage Matrix Section */}
+        <View style={{ marginBottom: 20 }}>
+          <TouchableOpacity
+            onPress={() => setCoverageOpen(!coverageOpen)}
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 8, marginBottom: 10 }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="grid" size={14} color={isDark ? '#6b7280' : '#9ca3af'} style={{ marginRight: 6 }} />
+              <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1 }}>Coverage Matrix</Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ backgroundColor: isDark ? '#374151' : '#e5e7eb', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 8, marginRight: 6 }}>
+                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 10, fontWeight: 'bold' }}>46</Text>
+              </View>
+              <Ionicons name={coverageOpen ? 'chevron-up' : 'chevron-down'} size={14} color={isDark ? '#6b7280' : '#9ca3af'} />
+            </View>
+          </TouchableOpacity>
+
+          {coverageOpen && COVERAGE_MATRIX.map((entry, idx) => {
+            const badgeColor = entry.coverage === '🔴 Essential' ? '#ef4444' : entry.coverage === '🟢 Dynamic' ? '#f59e0b' : '#22c55e';
+            const badgeLabel = entry.coverage.replace('🟢 ', '').replace('🔴 ', '');
+            return (
+              <View
+                key={idx}
+                style={{
+                  paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, marginBottom: 3,
+                  backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.01)',
+                }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <Text style={{ color: isDark ? '#e5e7eb' : '#1f2937', fontSize: 12, fontWeight: '700', flex: 1 }}>{entry.subject}</Text>
+                  <View style={{ backgroundColor: badgeColor + '22', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 6, marginLeft: 6 }}>
+                    <Text style={{ color: badgeColor, fontSize: 9, fontWeight: 'bold' }}>{badgeLabel}</Text>
+                  </View>
+                </View>
+                {entry.ncerts !== '—' && (
+                  <View style={{ flexDirection: 'row', marginBottom: 2 }}>
+                    <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 10, width: 58 }}>NCERT</Text>
+                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 10, flex: 1 }}>{entry.ncerts}</Text>
+                  </View>
+                )}
+                {entry.standardBooks !== '—' && (
+                  <View style={{ flexDirection: 'row', marginBottom: 2 }}>
+                    <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 10, width: 58 }}>Book</Text>
+                    <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 10, flex: 1, fontWeight: '600' }}>{entry.standardBooks}</Text>
+                  </View>
+                )}
+                <View style={{ flexDirection: 'row' }}>
+                  <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 10, width: 58 }}>Extra</Text>
+                  <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 10, flex: 1 }}>{entry.additionalSources}</Text>
+                </View>
+              </View>
+            );
+          })}
+        </View>
+
+        {/* Core Bookshelf Section */}
+        <View style={{ marginBottom: 20 }}>
+          <TouchableOpacity
+            onPress={() => setBookListOpen(!bookListOpen)}
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 8, marginBottom: 10 }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="book" size={14} color={isDark ? '#6b7280' : '#9ca3af'} style={{ marginRight: 6 }} />
+              <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 11, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1 }}>Core Bookshelf</Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ backgroundColor: isDark ? '#374151' : '#e5e7eb', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 8, marginRight: 6 }}>
+                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 10, fontWeight: 'bold' }}>30</Text>
+              </View>
+              <Ionicons name={bookListOpen ? 'chevron-up' : 'chevron-down'} size={14} color={isDark ? '#6b7280' : '#9ca3af'} />
+            </View>
+          </TouchableOpacity>
+
+          {bookListOpen && BOOK_LIST.map((group) => (
+            <View key={group.category} style={{ marginBottom: 12 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, marginBottom: 6 }}>
+                <Ionicons name={group.icon as any} size={13} color={group.color} style={{ marginRight: 6 }} />
+                <Text style={{ color: group.color, fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{group.category}</Text>
+              </View>
+              {group.books.map((book) => (
+                <View
+                  key={book.id}
+                  style={{
+                    flexDirection: 'row', alignItems: 'flex-start', paddingVertical: 7, paddingHorizontal: 12,
+                    borderRadius: 8, marginBottom: 2,
+                    backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.01)',
+                  }}
+                >
+                  <Text style={{ color: isDark ? '#4b5563' : '#d1d5db', fontSize: 11, fontWeight: 'bold', width: 22, marginTop: 1 }}>{book.id}.</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: isDark ? '#d1d5db' : '#374151', fontSize: 12.5, fontWeight: '600', lineHeight: 17 }}>{book.title}</Text>
+                    <Text style={{ color: isDark ? '#6b7280' : '#9ca3af', fontSize: 10.5, marginTop: 1 }}>{book.purpose}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          ))}
         </View>
       </ScrollView>
 

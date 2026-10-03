@@ -22,12 +22,11 @@ const otpSchema = new mongoose.Schema({
 });
 
 // Hash the OTP before saving
-otpSchema.pre('save', async function (next) {
-    if (!this.isModified('otp')) return next();
+otpSchema.pre('save', async function () {
+    if (!this.isModified('otp')) return;
 
     const salt = await bcrypt.genSalt(10);
     this.otp = await bcrypt.hash(this.otp, salt);
-    next();
 });
 
 // Method to verify OTP

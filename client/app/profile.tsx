@@ -38,6 +38,9 @@ export default function Profile() {
   const [passwords, setPasswords] = useState({ oldPassword: '', newPassword: '' });
   const [changingPassword, setChangingPassword] = useState(false);
 
+  // Email Update State
+  const [emailState, setEmailState] = useState({ editing: false, step: 1, newEmail: '', otp: '', loading: false });
+
   useEffect(() => {
     if (user) {
       setFormData({
@@ -159,6 +162,41 @@ export default function Profile() {
       showToast('error', 'Failed to update profile.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleInitiateEmailUpdate = async () => {
+    if (!emailState.newEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailState.newEmail)) {
+      showToast('error', 'Please enter a valid email address');
+      return;
+    }
+    setEmailState(prev => ({ ...prev, loading: true }));
+    try {
+      const res = await api.post('/auth/send-otp', { email: emailState.newEmail });
+      setEmailState(prev => ({ ...prev, step: 2, loading: false }));
+      if (res.data.devOtp) console.log("Dev OTP:", res.data.devOtp);
+      showToast('success', `OTP securely sent to ${emailState.newEmail}`);
+    } catch (err: any) {
+      showToast('error', err.response?.data?.message || 'Failed to dispatch email');
+      setEmailState(prev => ({ ...prev, loading: false }));
+    }
+  };
+
+  const handleVerifyEmailUpdate = async () => {
+    if (emailState.otp.length !== 6) {
+      showToast('error', 'Enter the full 6-digit OTP');
+      return;
+    }
+    setEmailState(prev => ({ ...prev, loading: true }));
+    try {
+      await api.post('/auth/verify-otp', { email: emailState.newEmail, otp: emailState.otp });
+      // Verification succeeded. Send strict payload to profile update.
+      await updateProfile({ email: emailState.newEmail });
+      showToast('success', 'Email updated successfully!');
+      setEmailState({ editing: false, step: 1, newEmail: '', otp: '', loading: false });
+    } catch (err: any) {
+      showToast('error', err.response?.data?.message || 'Invalid OTP');
+      setEmailState(prev => ({ ...prev, loading: false }));
     }
   };
 
@@ -469,6 +507,67 @@ export default function Profile() {
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}>
               <Ionicons name="lock-closed" size={20} color="#f43f5e" style={{ marginRight: 8 }} />
               <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 20, fontWeight: 'bold' }}>Security Settings</Text>
+            </View>
+
+            {/* Email Address Updator */}
+            <View style={{ marginBottom: 24, paddingBottom: 24, borderBottomWidth: 1, borderBottomColor: isDark ? '#374151' : '#e5e7eb' }}>
+              <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', fontSize: 13, fontWeight: '600', marginBottom: 6 }}>Registered Email Address</Text>
+
+              {!emailState.editing ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: isDark ? '#374151' : '#f9fafb', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: isDark ? '#4b5563' : '#e5e7eb' }}>
+                  <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold' }}>{user.email}</Text>
+                  <TouchableOpacity onPress={() => setEmailState(prev => ({ ...prev, editing: true }))} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <Ionicons name="pencil" size={14} color="#3b82f6" />
+                    <Text style={{ color: '#3b82f6', fontWeight: 'bold', fontSize: 12 }}>Edit Email</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View style={{ backgroundColor: isDark ? '#111827' : '#f0f9ff', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: isDark ? '#1e3a5f' : '#bfdbfe' }}>
+
+                  {emailState.step === 1 ? (
+                    <>
+                      <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', fontSize: 12, marginBottom: 8 }}>Enter your new target email address.</Text>
+                      <TextInput
+                        placeholder="new.aspirant@gmail.com"
+                        placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
+                        value={emailState.newEmail}
+                        onChangeText={(t) => setEmailState(prev => ({ ...prev, newEmail: t.trim() }))}
+                        autoCapitalize="none"
+                        keyboardType="email-address"
+                        style={{ backgroundColor: isDark ? '#1f2937' : 'white', color: isDark ? 'white' : '#111827', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: isDark ? '#374151' : '#cbd5e1', marginBottom: 12 }}
+                      />
+                      <View style={{ flexDirection: 'row', gap: 12 }}>
+                        <TouchableOpacity onPress={handleInitiateEmailUpdate} disabled={emailState.loading} style={{ flex: 1, backgroundColor: '#3b82f6', padding: 12, borderRadius: 8, alignItems: 'center' }}>
+                          {emailState.loading ? <ActivityIndicator size="small" color="white" /> : <Text style={{ color: 'white', fontWeight: 'bold' }}>Send OTP</Text>}
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => setEmailState({ editing: false, step: 1, newEmail: '', otp: '', loading: false })} style={{ padding: 12, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: isDark ? '#4b5563' : '#d1d5db' }}>
+                          <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', fontWeight: 'bold' }}>Cancel</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </>
+                  ) : (
+                    <>
+                      <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', fontSize: 12, marginBottom: 8 }}>Enter the 6-Digit PIN securely dispatched to {emailState.newEmail}</Text>
+                      <TextInput
+                        placeholder="••••••"
+                        placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
+                        value={emailState.otp}
+                        onChangeText={(t) => setEmailState(prev => ({ ...prev, otp: t.replace(/[^0-9]/g, '').slice(0, 6) }))}
+                        keyboardType="number-pad"
+                        style={{ backgroundColor: isDark ? '#1f2937' : 'white', color: isDark ? 'white' : '#111827', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: isDark ? '#374151' : '#cbd5e1', marginBottom: 12, letterSpacing: 8, textAlign: 'center', fontSize: 20, fontWeight: 'bold' }}
+                      />
+                      <View style={{ flexDirection: 'row', gap: 12 }}>
+                        <TouchableOpacity onPress={handleVerifyEmailUpdate} disabled={emailState.loading} style={{ flex: 1, backgroundColor: '#10b981', padding: 12, borderRadius: 8, alignItems: 'center' }}>
+                          {emailState.loading ? <ActivityIndicator size="small" color="white" /> : <Text style={{ color: 'white', fontWeight: 'bold' }}>Verify & Save</Text>}
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => setEmailState(prev => ({ ...prev, step: 1, otp: '' }))} style={{ padding: 12, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: isDark ? '#4b5563' : '#d1d5db' }}>
+                          <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', fontWeight: 'bold' }}>Back</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </>
+                  )}
+                </View>
+              )}
             </View>
             <View style={{ marginBottom: 16 }}>
               <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', fontSize: 13, fontWeight: '600', marginBottom: 6 }}>Current Password</Text>

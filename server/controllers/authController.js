@@ -259,7 +259,7 @@ exports.getNetwork = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const {
-      name, bio, mobile, targetAttempt, attemptNumber, optionalSubject,
+      name, email, bio, mobile, targetAttempt, attemptNumber, optionalSubject,
       dailyTargetHours, preferredRevisionPattern,
       examStage, theme, studyPreferences, onboardingComplete, expoPushToken
     } = req.body;
@@ -268,11 +268,24 @@ exports.updateProfile = async (req, res) => {
       return res.status(400).json({ message: 'Please provide a valid 10-digit mobile number' });
     }
 
+    const userToUpdate = await User.findById(req.user.id);
+    if (!userToUpdate) return res.status(404).json({ message: 'User not found' });
+
+    if (email && email !== userToUpdate.email) {
+      // Security Enforcement: Ensure they verified this new email via OTP
+      const verifiedOtp = await Otp.findOne({ email, verified: true });
+      if (!verifiedOtp) {
+        return res.status(403).json({ message: 'Unauthorized email modification. You must verify the new email first.' });
+      }
+      // Consume OTP so it cannot be reused
+      await Otp.deleteOne({ _id: verifiedOtp._id });
+    }
+
     const user = await User.findByIdAndUpdate(
       req.user.id,
       {
         $set: {
-          name, bio, mobile, targetAttempt, attemptNumber, optionalSubject,
+          name, email, bio, mobile, targetAttempt, attemptNumber, optionalSubject,
           dailyTargetHours, preferredRevisionPattern,
           examStage, theme, studyPreferences, onboardingComplete, expoPushToken
         }

@@ -15,11 +15,11 @@ router.post('/register', authLimiter, validate([
 ]), authController.register);
 
 router.post('/send-otp', authLimiter, validate([
-    body('mobile').isLength({ min: 10, max: 15 }).withMessage('Valid mobile number required')
+    body('email').isEmail().normalizeEmail().withMessage('Valid email required')
 ]), authController.sendOtp);
 
 router.post('/verify-otp', authLimiter, validate([
-    body('mobile').isLength({ min: 10, max: 15 }).withMessage('Valid mobile number required'),
+    body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
     body('otp').notEmpty().withMessage('OTP is required')
 ]), authController.verifyOtp);
 

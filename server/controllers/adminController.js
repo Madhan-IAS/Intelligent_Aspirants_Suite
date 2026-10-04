@@ -648,10 +648,14 @@ exports.exportUsersCSV = async (req, res) => {
 // Send a mass notification to all users natively inside the DB and externally via FCM Hardware Pings
 exports.broadcastNotification = async (req, res) => {
     try {
-        const { title, message, type } = req.body;
+        const { title, message, type, targetGroup } = req.body;
         if (!title || !message) return res.status(400).json({ message: 'Title and message are required' });
 
-        const users = await User.find({ role: 'user' }).select('_id expoPushToken');
+        let query = { role: 'user' };
+        if (targetGroup === 'active') query.subscriptionStatus = 'active';
+        if (targetGroup === 'pending') query.subscriptionStatus = 'pending_review';
+
+        const users = await User.find(query).select('_id expoPushToken');
 
         // Batch insertion for internal UI performance
         const notifications = users.map(u => ({
@@ -703,10 +707,10 @@ exports.broadcastNotification = async (req, res) => {
             adminId: req.user.id,
             action: 'BROADCAST',
             targetUserId: req.user.id, // Self-targeted since it's global
-            details: { title, internalCount: notifications.length, nativePushCount: expoMessages.length }
+            details: { title, targetGroup: targetGroup || 'all', internalCount: notifications.length, nativePushCount: expoMessages.length }
         });
 
-        res.json({ message: `Successfully broadcasted to ${notifications.length} internal users and vibrated ${expoMessages.length} hardware devices!` });
+        res.json({ message: `Successfully broadcasted to ${notifications.length} ${targetGroup || 'all'} internal users and vibrated ${expoMessages.length} hardware devices!` });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

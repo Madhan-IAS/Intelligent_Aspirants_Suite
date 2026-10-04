@@ -659,9 +659,39 @@ export default function AdminDashboard() {
                 {/* Right Workspace Area */}
                 <ScrollView
                     style={{ flex: 1 }}
-                    contentContainerStyle={{ padding: 32, paddingBottom: 60 }}
+                    contentContainerStyle={{ padding: Platform.OS === 'web' ? 32 : 20, paddingBottom: 60 }}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#2563eb" />}
                 >
+                    {/* Mobile Navigation Tabs */}
+                    {Platform.OS !== 'web' && (
+                        <View style={{ marginBottom: 20 }}>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 20 }}>
+                                {[
+                                    { key: 'overview', icon: 'grid', label: 'Overview' },
+                                    { key: 'users', icon: 'people', label: 'Users' },
+                                    { key: 'cms', icon: 'server', label: 'CMS' },
+                                    { key: 'broadcast', icon: 'megaphone', label: 'Broadcast' },
+                                    { key: 'ai-notes', icon: 'document-text', label: 'Notes' },
+                                    { key: 'audit-logs', icon: 'time', label: 'Audit Logs' },
+                                ].map(tab => (
+                                    <TouchableOpacity
+                                        key={tab.key}
+                                        onPress={() => setAdminTab(tab.key as any)}
+                                        style={{
+                                            paddingVertical: 10, paddingHorizontal: 16, borderRadius: 20,
+                                            backgroundColor: adminTab === tab.key ? '#2563eb' : (isDark ? '#374151' : '#e5e7eb'),
+                                            flexDirection: 'row', alignItems: 'center', gap: 6,
+                                            borderWidth: 1, borderColor: adminTab === tab.key ? '#2563eb' : (isDark ? '#4b5563' : '#d1d5db')
+                                        }}
+                                    >
+                                        <Ionicons name={tab.icon as any} size={16} color={adminTab === tab.key ? 'white' : (isDark ? '#d1d5db' : '#4b5563')} />
+                                        <Text style={{ color: adminTab === tab.key ? 'white' : (isDark ? '#d1d5db' : '#4b5563'), fontWeight: 'bold', fontSize: 13 }}>{tab.label}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+                        </View>
+                    )}
+
                     {/* Workspace Header */}
                     <View style={{ marginBottom: 28, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <View>

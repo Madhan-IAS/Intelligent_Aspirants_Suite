@@ -34,6 +34,8 @@ export default function Dashboard() {
   const [pendingRevisions, setPendingRevisions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [priorityAlert, setPriorityAlert] = useState<{ id: string, title: string, type: 'subscription' | 'admin_message' } | null>(null);
+  const [alertDismissed, setAlertDismissed] = useState(false);
   const [dashMission, setDashMission] = useState<any>(null);
   const [studyStats, setStudyStats] = useState<any>(null);
   const [isMissionCollapsed, setIsMissionCollapsed] = useState(false);
@@ -187,10 +189,20 @@ export default function Dashboard() {
 
   const fetchUnreadCount = async () => {
     try {
-      const res = await api.get('/notifications/unread-count');
-      setUnreadNotifications(res.data.count || 0);
+      const countRes = await api.get('/notifications/unread-count');
+      setUnreadNotifications(countRes.data.count || 0);
+
+      // Proactively check for critical alerts
+      if (!alertDismissed) {
+        const notifRes = await api.get('/notifications');
+        const notifs = notifRes.data?.notifications || [];
+        const unreadAlert = notifs.find((n: any) => !n.read && (n.type === 'subscription' || n.type === 'admin_message'));
+        if (unreadAlert) {
+          setPriorityAlert({ id: unreadAlert._id, title: unreadAlert.title, type: unreadAlert.type as ('subscription' | 'admin_message') });
+        }
+      }
     } catch (error) {
-      console.error('Error fetching unread count:', error);
+      console.error('Error fetching unread count/alerts:', error);
     }
   };
 
@@ -280,6 +292,29 @@ export default function Dashboard() {
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Proactive Priority Alert Banner */}
+        {priorityAlert && !alertDismissed && (
+          <View style={{ backgroundColor: priorityAlert.type === 'admin_message' ? 'rgba(236, 72, 153, 0.15)' : 'rgba(245, 158, 11, 0.15)', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: priorityAlert.type === 'admin_message' ? '#ec4899' : '#f59e0b', flexDirection: isDesktop ? 'row' : 'column', alignItems: isDesktop ? 'center' : 'flex-start', justifyContent: 'space-between', marginBottom: 20, gap: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
+              <View style={{ backgroundColor: priorityAlert.type === 'admin_message' ? '#ec4899' : '#f59e0b', width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name={priorityAlert.type === 'admin_message' ? 'mail' : 'card'} size={24} color="white" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: priorityAlert.type === 'admin_message' ? '#be185d' : '#b45309', fontWeight: 'bold', fontSize: 16 }}>{priorityAlert.type === 'admin_message' ? 'New Message from Admin' : 'Subscription Notice'}</Text>
+                <Text style={{ color: isDark ? '#d1d5db' : '#4b5563', fontSize: 13, marginTop: 2 }}>{priorityAlert.title}</Text>
+              </View>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 10, width: isDesktop ? 'auto' : '100%' }}>
+              <TouchableOpacity onPress={() => setAlertDismissed(true)} style={{ backgroundColor: isDark ? '#374151' : '#e5e7eb', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, flex: isDesktop ? 0 : 1, alignItems: 'center' }}>
+                <Text style={{ color: isDark ? 'white' : '#374151', fontWeight: 'bold', fontSize: 13 }}>Dismiss</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => router.push('/notifications')} style={{ backgroundColor: priorityAlert.type === 'admin_message' ? '#ec4899' : '#f59e0b', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, flex: isDesktop ? 0 : 1, alignItems: 'center' }}>
+                <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 13 }}>View Message</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
         {/* Free Trial Banner */}
         {user?.subscriptionStatus === 'active' && user?.subscriptionExpiry && user?.role !== 'admin' && (

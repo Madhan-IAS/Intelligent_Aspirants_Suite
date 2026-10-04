@@ -24,6 +24,13 @@ router.get('/demographics', auth, adminAuth, adminController.getDemographics);
 router.get('/gallery-curation', auth, adminAuth, adminController.getUnfeaturedAnswers);
 router.post('/feature-answer/:id', auth, adminAuth, adminController.featureAnswer);
 
+// Phase 12: Admin Direct Messaging
+router.post('/notify-user/:id', auth, adminAuth, validate([
+    ...idValidation,
+    body('title').trim().notEmpty().withMessage('Title is required'),
+    body('message').trim().notEmpty().withMessage('Message is required')
+]), adminController.sendDirectNotification);
+
 // Phase 11: Admin User Observability
 router.get('/user-progress/:id', auth, adminAuth, validate(idValidation), adminController.getUserProgress);
 

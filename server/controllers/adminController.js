@@ -5,6 +5,8 @@ const UserTopicProgress = require('../models/UserTopicProgress');
 const FocusSession = require('../models/FocusSession');
 const Answer = require('../models/Answer');
 const mongoose = require('mongoose');
+const Notification = require('../models/Notification');
+const { sendResendEmail } = require('../utils/email');
 
 // GET /api/admin/pending
 // List all users with pending_review subscription status
@@ -189,6 +191,32 @@ exports.approveUser = async (req, res) => {
             targetUserId: user._id,
             details: { finalTier, months, manualAmount, paymentMethod: finalMethod }
         });
+
+        // Send Notifications
+        await Notification.create({
+            userId: user._id,
+            type: 'subscription',
+            title: '✅ Subscription Approved!',
+            message: `Your ${finalTier} plan has been activated for ${months} month(s). Enjoy full access!`
+        });
+
+        if (user.email) {
+            await sendResendEmail(
+                user.email,
+                'IASuite Subscription Approved',
+                `<p>Your <b>${finalTier}</b> plan has been activated for ${months} month(s).</p><p><a href="https://app.iasuite.in/login">Login to your dashboard</a> to start studying.</p>`
+            ).catch(() => { });
+        }
+
+        if (user.expoPushToken && user.expoPushToken.startsWith('ExponentPushToken')) {
+            try {
+                const axios = require('axios');
+                await axios.post('https://exp.host/--/api/v2/push/send', {
+                    to: user.expoPushToken, sound: 'default', title: '✅ Subscription Approved!',
+                    body: `Your ${finalTier} plan is active!`, data: { type: 'subscription' }
+                });
+            } catch (e) { }
+        }
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -226,6 +254,32 @@ exports.rejectUser = async (req, res) => {
             targetUserId: user._id,
             details: { reason }
         });
+
+        // Send notifications
+        await Notification.create({
+            userId: user._id,
+            type: 'subscription',
+            title: '❌ Subscription Request Declined',
+            message: `Your subscription request was not approved. Reason: ${reason || 'Not specified'}. Please contact support.`
+        });
+
+        if (user.email) {
+            await sendResendEmail(
+                user.email,
+                'IASuite Subscription Declined',
+                `<p>Your subscription request was not approved.</p><p>Reason: ${reason || 'Not specified'}.</p><p>Please contact support if you believe this is an error.</p>`
+            ).catch(() => { });
+        }
+
+        if (user.expoPushToken && user.expoPushToken.startsWith('ExponentPushToken')) {
+            try {
+                const axios = require('axios');
+                await axios.post('https://exp.host/--/api/v2/push/send', {
+                    to: user.expoPushToken, sound: 'default',
+                    title: 'Subscription Declined', body: reason || 'Not specified', data: { type: 'subscription' }
+                });
+            } catch (e) { }
+        }
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -551,7 +605,6 @@ exports.getTrafficStats = async (req, res) => {
     }
 };
 
-const Notification = require('../models/Notification');
 
 // GET /api/admin/export-users
 // Export all users to a CSV string
@@ -724,6 +777,70 @@ exports.getUserProgress = async (req, res) => {
             answersEvaluated,
             answersFeatured
         });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// POST /api/admin/notify-user/:id
+// Admin sends a direct message to a specific user
+exports.sendDirectNotification = async (req, res) => {
+    try {
+        const { title, message } = req.body;
+        const targetUserId = req.params.id;
+
+        if (!title || !message) return res.status(400).json({ message: 'Title and message are required' });
+
+        const targetUser = await User.findById(targetUserId).select('email expoPushToken');
+        if (!targetUser) return res.status(404).json({ message: 'User not found' });
+
+        // Internal App Notification
+        await Notification.create({
+            userId: targetUserId,
+            title,
+            message,
+            type: 'admin_message',
+            read: false
+        });
+
+        // External Email
+        if (targetUser.email) {
+            await sendResendEmail(
+                targetUser.email,
+                `Admin Message: ${title}`,
+                `<p>You have received a direct message from the administrator regarding your account.</p>
+                 <hr/>
+                 <p><b>${title}</b><br/>${message}</p>
+                 <hr/>
+                 <p><a href="https://app.iasuite.in/login">Login to your dashboard</a> to reply via support.</p>`
+            ).catch(err => console.error('[DM EMAIL ERR]', err));
+        }
+
+        // External Push
+        if (targetUser.expoPushToken && targetUser.expoPushToken.startsWith('ExponentPushToken')) {
+            try {
+                const axios = require('axios');
+                await axios.post('https://exp.host/--/api/v2/push/send', {
+                    to: targetUser.expoPushToken,
+                    sound: 'default',
+                    title: title,
+                    body: message,
+                    data: { type: 'admin_message' }
+                });
+            } catch (e) {
+                console.error('[HARDWARE PUSH ERR]', e.message);
+            }
+        }
+
+        // Audit Logging
+        await AuditLog.create({
+            adminId: req.user.id,
+            action: 'DIRECT_NOTIFY',
+            targetUserId,
+            details: { title }
+        });
+
+        res.json({ message: 'Direct message sent successfully!' });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

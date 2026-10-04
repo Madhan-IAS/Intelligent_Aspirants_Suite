@@ -72,6 +72,12 @@ export default function AdminDashboard() {
     // Audit Logs
     const [auditLogs, setAuditLogs] = useState<any[]>([]);
 
+    // Direct Message State
+    const [dmModalUser, setDmModalUser] = useState<{ id: string, name: string } | null>(null);
+    const [dmTitle, setDmTitle] = useState('');
+    const [dmMessage, setDmMessage] = useState('');
+    const [dmLoading, setDmLoading] = useState(false);
+
     // Admin Progress Tracker State
     const [progressModalVisible, setProgressModalVisible] = useState(false);
     const [progressData, setProgressData] = useState<any>(null);
@@ -91,6 +97,30 @@ export default function AdminDashboard() {
             setProgressModalVisible(false);
         } finally {
             setProgressLoading(false);
+        }
+    };
+
+    const handleSendDM = async () => {
+        if (!dmModalUser) return;
+        if (!dmTitle.trim() || !dmMessage.trim()) {
+            return showToast('Please enter both title and message', 'error');
+        }
+        setDmLoading(true);
+        try {
+            await api.post(`/admin/notify-user/${dmModalUser.id}`, {
+                title: dmTitle.trim(),
+                message: dmMessage.trim(),
+                type: 'admin_message'
+            });
+            showToast('✅ Direct message sent successfully!');
+            setDmModalUser(null);
+            setDmTitle('');
+            setDmMessage('');
+        } catch (error: any) {
+            console.error('Failed to send DM:', error);
+            showToast(`Error: ${error.response?.data?.message || 'Failed to send direct message'}`, 'error');
+        } finally {
+            setDmLoading(false);
         }
     };
 
@@ -531,6 +561,58 @@ export default function AdminDashboard() {
                 </View>
             )}
 
+            {/* Direct Message Modal */}
+            {dmModalUser && (
+                <View style={{
+                    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)',
+                    justifyContent: 'center', alignItems: 'center', zIndex: 9999
+                }}>
+                    <View style={{ backgroundColor: isDark ? '#1f2937' : 'white', borderRadius: 20, padding: 24, width: '90%', maxWidth: 450, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 15 }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                            <View>
+                                <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 20, fontWeight: 'bold' }}>Send Message</Text>
+                                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 13, marginTop: 2 }}>To: {dmModalUser.name}</Text>
+                            </View>
+                            <TouchableOpacity onPress={() => setDmModalUser(null)} style={{ backgroundColor: isDark ? '#374151' : '#f3f4f6', padding: 8, borderRadius: 20 }}>
+                                <Ionicons name="close" size={20} color={isDark ? '#d1d5db' : '#4b5563'} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', fontSize: 13, marginBottom: 6, fontWeight: '600' }}>Message Title</Text>
+                        <TextInput
+                            style={{ backgroundColor: isDark ? '#111827' : '#f9fafb', color: isDark ? 'white' : '#111827', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', marginBottom: 16 } as any}
+                            placeholder="e.g. Account Notice"
+                            placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
+                            value={dmTitle}
+                            onChangeText={setDmTitle}
+                        />
+
+                        <Text style={{ color: isDark ? '#9ca3af' : '#4b5563', fontSize: 13, marginBottom: 6, fontWeight: '600' }}>Message Body</Text>
+                        <TextInput
+                            style={{ backgroundColor: isDark ? '#111827' : '#f9fafb', color: isDark ? 'white' : '#111827', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', marginBottom: 24, minHeight: 100, textAlignVertical: 'top' } as any}
+                            placeholder="Type your private message here..."
+                            placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
+                            value={dmMessage}
+                            onChangeText={setDmMessage}
+                            multiline={true}
+                            numberOfLines={4}
+                        />
+
+                        <TouchableOpacity
+                            onPress={handleSendDM}
+                            disabled={dmLoading}
+                            style={{ backgroundColor: '#2563eb', padding: 14, borderRadius: 12, alignItems: 'center', opacity: dmLoading ? 0.7 : 1 }}
+                        >
+                            {dmLoading ? (
+                                <ActivityIndicator size="small" color="white" />
+                            ) : (
+                                <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 15 }}>Send Secure Message</Text>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            )}
+
             <View style={{ flex: 1, flexDirection: 'row', backgroundColor: isDark ? '#111827' : '#f3f4f6' }}>
                 {/* Left Sidebar (Desktop Only) */}
                 {Platform.OS === 'web' && (
@@ -949,6 +1031,12 @@ export default function AdminDashboard() {
                                                                 {/* ACTIONS COL */}
                                                                 <View style={{ width: 100, alignItems: 'flex-end', justifyContent: 'center', flexDirection: 'row', gap: 6 }}>
                                                                     <TouchableOpacity
+                                                                        onPress={() => setDmModalUser({ id: u._id, name: u.name })}
+                                                                        style={{ padding: 6, backgroundColor: isDark ? '#374151' : '#e5e7eb', borderRadius: 6 }}
+                                                                    >
+                                                                        <Ionicons name="mail" size={14} color={isDark ? '#d1d5db' : '#4b5563'} />
+                                                                    </TouchableOpacity>
+                                                                    <TouchableOpacity
                                                                         onPress={() => handleLoadProgress(u._id, u.name)}
                                                                         style={{ padding: 6, backgroundColor: isDark ? '#374151' : '#e5e7eb', borderRadius: 6 }}
                                                                     >
@@ -1295,6 +1383,9 @@ export default function AdminDashboard() {
 
                                                         {/* ACTIONS COL */}
                                                         <View style={{ width: 140, flexDirection: 'row', justifyContent: 'flex-end', gap: 6 }}>
+                                                            <TouchableOpacity onPress={() => setDmModalUser({ id: u._id, name: u.name })} style={{ padding: 6, backgroundColor: isDark ? '#374151' : '#e5e7eb', borderRadius: 6 }}>
+                                                                <Ionicons name="mail" size={14} color={isDark ? '#d1d5db' : '#4b5563'} />
+                                                            </TouchableOpacity>
                                                             <TouchableOpacity onPress={() => handleLoadProgress(u._id, u.name)} style={{ padding: 6, backgroundColor: isDark ? '#374151' : '#e5e7eb', borderRadius: 6 }}>
                                                                 <Ionicons name="bar-chart" size={14} color={isDark ? '#d1d5db' : '#4b5563'} />
                                                             </TouchableOpacity>

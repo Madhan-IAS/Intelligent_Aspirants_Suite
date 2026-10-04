@@ -273,18 +273,81 @@ if (MONGO_URI) {
 
       // Schedule Subscription Auto-Expire at midnight IST (= 18:30 UTC)
       cron.schedule('30 18 * * *', async () => {
-        console.log('[CRON] Running subscription auto-expire check...');
+        console.log('[CRON] Running subscription auto-expire and notification check...');
         try {
           const User = require('./models/User');
-          const result = await User.updateMany(
-            { subscriptionStatus: 'active', subscriptionExpiry: { $lte: new Date() }, role: { $ne: 'admin' } },
-            { $set: { subscriptionStatus: 'expired', subscriptionTier: 'foundation' } }
-          );
-          if (result.modifiedCount > 0) {
-            console.log(`[CRON] Expired ${result.modifiedCount} subscription(s).`);
+          const Notification = require('./models/Notification');
+          const { sendResendEmail } = require('./utils/email');
+          const axios = require('axios');
+          const now = new Date();
+
+          // 1. Process EXPIRED users
+          const expiredUsers = await User.find({
+            subscriptionStatus: 'active',
+            subscriptionExpiry: { $lte: now },
+            role: { $ne: 'admin' }
+          });
+
+          for (const u of expiredUsers) {
+            u.subscriptionStatus = 'expired';
+            u.subscriptionTier = 'foundation';
+            await u.save();
+
+            const title = u.isTrial ? 'Trial Expired' : 'Subscription Expired';
+            const msg = 'Your subscription has ended. Please renew to regain full access.';
+
+            await Notification.create({ userId: u._id, type: 'subscription', title, message: msg });
+            if (u.email) await sendResendEmail(u.email, 'IASuite ' + title, `<p>Hi ${u.name || ''},</p><p>${msg}</p><p><a href="https://app.iasuite.in/login">Login to renew</a></p>`).catch(() => { });
+            if (u.expoPushToken && u.expoPushToken.startsWith('ExponentPushToken')) {
+              await axios.post('https://exp.host/--/api/v2/push/send', { to: u.expoPushToken, sound: 'default', title, body: msg, data: { type: 'subscription' } }).catch(() => { });
+            }
           }
+          if (expiredUsers.length > 0) console.log(`[CRON] Expired ${expiredUsers.length} subscription(s).`);
+
+          // 2. Process EXPIRING IN 3 DAYS (Regular)
+          const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+          const twoDaysFromNow = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
+
+          const expiringUsers = await User.find({
+            subscriptionStatus: 'active',
+            isTrial: { $ne: true },
+            subscriptionExpiry: { $gt: twoDaysFromNow, $lte: threeDaysFromNow },
+            role: { $ne: 'admin' }
+          });
+
+          for (const u of expiringUsers) {
+            const title = 'Subscription Expiring Soon';
+            const msg = 'Your subscription expires in 3 days. Renew now to avoid interruption.';
+            await Notification.create({ userId: u._id, type: 'subscription', title, message: msg });
+            if (u.email) await sendResendEmail(u.email, 'IASuite ' + title, `<p>Hi ${u.name || ''},</p><p>${msg}</p><p><a href="https://app.iasuite.in/login">Login to renew</a></p>`).catch(() => { });
+            if (u.expoPushToken && u.expoPushToken.startsWith('ExponentPushToken')) {
+              await axios.post('https://exp.host/--/api/v2/push/send', { to: u.expoPushToken, sound: 'default', title, body: msg, data: { type: 'subscription' } }).catch(() => { });
+            }
+          }
+          if (expiringUsers.length > 0) console.log(`[CRON] Notified ${expiringUsers.length} user(s) about 3-day expiry.`);
+
+          // 3. Process TRIAL EXPIRING IN 1 DAY
+          const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+          const trialExpiringUsers = await User.find({
+            subscriptionStatus: 'active',
+            isTrial: true,
+            subscriptionExpiry: { $gt: now, $lte: tomorrow },
+            role: { $ne: 'admin' }
+          });
+
+          for (const u of trialExpiringUsers) {
+            const title = 'Trial Ends Tomorrow';
+            const msg = 'Your 3-day trial access ends tomorrow. Subscribe to keep all platform features.';
+            await Notification.create({ userId: u._id, type: 'subscription', title, message: msg });
+            if (u.email) await sendResendEmail(u.email, 'IASuite ' + title, `<p>Hi ${u.name || ''},</p><p>${msg}</p><p><a href="https://app.iasuite.in/login">Check out subscription plans</a></p>`).catch(() => { });
+            if (u.expoPushToken && u.expoPushToken.startsWith('ExponentPushToken')) {
+              await axios.post('https://exp.host/--/api/v2/push/send', { to: u.expoPushToken, sound: 'default', title, body: msg, data: { type: 'subscription' } }).catch(() => { });
+            }
+          }
+          if (trialExpiringUsers.length > 0) console.log(`[CRON] Notified ${trialExpiringUsers.length} trial user(s) about 1-day expiry.`);
+
         } catch (err) {
-          console.error('[CRON] Subscription auto-expire failed:', err.message);
+          console.error('[CRON] Subscription auto-expire and notify failed:', err.message);
         }
       });
 

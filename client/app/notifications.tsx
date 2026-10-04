@@ -8,7 +8,7 @@ import api from '../src/services/api';
 
 interface NotificationItem {
   _id: string;
-  type: 'current_affairs' | 'revision_due' | 'system' | 'achievement';
+  type: 'current_affairs' | 'revision_due' | 'system' | 'achievement' | 'subscription' | 'admin_message';
   title: string;
   message: string;
   metadata?: {
@@ -25,6 +25,8 @@ const TYPE_CONFIG: Record<string, { icon: string; color: string; bgColor: string
   revision_due: { icon: 'refresh', color: '#f97316', bgColor: 'rgba(249, 115, 22, 0.15)' },
   system: { icon: 'settings', color: '#8b5cf6', bgColor: 'rgba(139, 92, 246, 0.15)' },
   achievement: { icon: 'trophy', color: '#10b981', bgColor: 'rgba(16, 185, 129, 0.15)' },
+  subscription: { icon: 'card', color: '#f59e0b', bgColor: 'rgba(245, 158, 11, 0.15)' },
+  admin_message: { icon: 'mail', color: '#ec4899', bgColor: 'rgba(236, 72, 153, 0.15)' },
 };
 
 export default function NotificationsPage() {
@@ -127,12 +129,12 @@ export default function NotificationsPage() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? '#111827' : '#f9fafb', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }}>
-      <ScrollView 
-        contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 24, paddingBottom: 80 }} 
+      <ScrollView
+        contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 24, paddingBottom: 80 }}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchNotifications(); }} tintColor="#3b82f6" />}
       >
-        
+
         {/* Header */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -186,7 +188,7 @@ export default function NotificationsPage() {
                   {grouped[dateKey].map(notification => {
                     const config = TYPE_CONFIG[notification.type] || TYPE_CONFIG.system;
                     return (
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         key={notification._id}
                         onPress={() => handleTapNotification(notification)}
                         style={{

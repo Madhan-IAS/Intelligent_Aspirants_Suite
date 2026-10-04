@@ -6,7 +6,7 @@ const notificationSchema = new mongoose.Schema({
   readBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   type: {
     type: String,
-    enum: ['current_affairs', 'revision_due', 'system', 'achievement'],
+    enum: ['current_affairs', 'revision_due', 'system', 'achievement', 'subscription', 'admin_message'],
     default: 'system'
   },
   title: { type: String, required: true },

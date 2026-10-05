@@ -26,6 +26,12 @@ const topicSchema = new mongoose.Schema({
     currentAffairs: { type: String, default: '' },
     analytics: { type: String, default: '' }
   },
+  pyqMatrix: [{
+    year: { type: Number },
+    marks: { type: Number },
+    question: { type: String },
+    theme: { type: String }
+  }],
   notes: {
     theory: { type: String, default: '' },
     definitions: { type: String, default: '' },
@@ -44,8 +50,8 @@ const topicSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-topicSchema.index({ 
-  title: 'text', 
+topicSchema.index({
+  title: 'text',
   tags: 'text',
   paper: 'text',
   subjectName: 'text',

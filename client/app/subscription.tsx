@@ -11,6 +11,7 @@ import * as Clipboard from 'expo-clipboard';
 // UPI Payment details — update these with your real values
 const UPI_ID = 'your-upi-id@paytm'; // TODO: Replace with your actual UPI ID
 const UPI_MOBILE = '9XXXXXXXXX'; // TODO: Replace with your mobile number
+const WHATSAPP_NUMBER = '919999999999'; // TODO: Replace with your personal WhatsApp number
 
 // QR codes rotate every 10 seconds — replace with actual QR images
 const QR_IMAGES = [
@@ -148,19 +149,12 @@ export default function SubscriptionScreen() {
         }
     };
 
-    const handleInstagramClick = async (tierName: string) => {
+    const handleSupportClick = async (tierName: string) => {
         const message = `Hi Spectrum IAS team! I'm interested in subscribing to the ${tierName || 'Premium'} plan. Please guide me with the steps!`;
-        try {
-            await Clipboard.setStringAsync(message);
-            if (Platform.OS === 'web') {
-                window.alert('✅ Message copied to clipboard! Paste it directly into the Instagram chat.');
-            } else {
-                alert('✅ Message copied to clipboard! Paste it directly into the Instagram chat.');
-            }
-        } catch (e) {
-            console.error('Failed to copy to clipboard', e);
-        }
-        Linking.openURL('https://ig.me/m/spectrum_ias');
+        const encodedMessage = encodeURIComponent(message);
+
+        // WhatsApp natively supports pre-filling the text box
+        Linking.openURL(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`);
     };
 
     const statusLabel = user?.subscriptionStatus === 'rejected'
@@ -372,19 +366,19 @@ export default function SubscriptionScreen() {
                         )}
                     </TouchableOpacity>
 
-                    {/* Instagram DM Button */}
+                    {/* WhatsApp Support Button */}
                     <TouchableOpacity
-                        onPress={() => handleInstagramClick(TIER_INFO[selectedTier]?.name)}
+                        onPress={() => handleSupportClick(TIER_INFO[selectedTier]?.name)}
                         style={{
                             marginTop: 16, width: '100%', maxWidth: 400,
-                            backgroundColor: '#E1306C',
+                            backgroundColor: '#25D366',
                             padding: 16, borderRadius: 14, alignItems: 'center',
                             flexDirection: 'row', justifyContent: 'center', gap: 8,
                         }}
                     >
-                        <Ionicons name="logo-instagram" size={20} color="white" />
+                        <Ionicons name="logo-whatsapp" size={20} color="white" />
                         <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>
-                            Message us on Instagram to Subscribe
+                            Message Spectrum IAS to Subscribe
                         </Text>
                     </TouchableOpacity>
 

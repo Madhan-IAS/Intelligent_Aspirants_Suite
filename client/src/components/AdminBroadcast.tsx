@@ -9,7 +9,8 @@ export default function AdminBroadcast() {
     const isDark = mode === 'dark';
     const [title, setTitle] = useState('');
     const [message, setMessage] = useState('');
-    const [targetGroup, setTargetGroup] = useState<'all' | 'pending' | 'active'>('all');
+    const [targetGroup, setTargetGroup] = useState<'all' | 'pending' | 'active' | 'optional'>('all');
+    const [optionalSubject, setOptionalSubject] = useState('');
     const [template, setTemplate] = useState('custom');
 
     const [loading, setLoading] = useState(false);
@@ -60,13 +61,17 @@ export default function AdminBroadcast() {
         }
 
         if (Platform.OS === 'web') {
-            const groupName = targetGroup === 'all' ? 'ALL users' : (targetGroup === 'active' ? 'ACTIVE users' : 'PENDING users');
+            let groupName = 'ALL users';
+            if (targetGroup === 'active') groupName = 'ACTIVE users';
+            else if (targetGroup === 'pending') groupName = 'PENDING users';
+            else if (targetGroup === 'optional') groupName = `users assigned to ${optionalSubject || 'an unspecified'} optional`;
+
             if (!window.confirm(`Are you sure you want to broadcast this message to ${groupName}?\n\n"${title}"`)) return;
         }
 
         setLoading(true);
         try {
-            const res = await api.post('/admin/broadcast', { title, message, type: 'system', targetGroup });
+            const res = await api.post('/admin/broadcast', { title, message, type: 'system', targetGroup, optionalSubject });
             setToast({ message: `✅ ${res.data.message}`, type: 'success' });
             setTitle('');
             setMessage('');
@@ -108,7 +113,8 @@ export default function AdminBroadcast() {
                     {[
                         { id: 'all', label: 'All Users' },
                         { id: 'active', label: 'Active Subscribers' },
-                        { id: 'pending', label: 'Pending Approvals' }
+                        { id: 'pending', label: 'Pending Approvals' },
+                        { id: 'optional', label: 'Specific Optional' }
                     ].map(group => (
                         <TouchableOpacity
                             key={group.id}
@@ -125,6 +131,24 @@ export default function AdminBroadcast() {
                         </TouchableOpacity>
                     ))}
                 </View>
+
+                {targetGroup === 'optional' && (
+                    <View style={{ marginTop: 12, flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                        {['Geography', 'PSIR', 'Sociology', 'Anthropology', 'Public Administration', 'History', 'Maths', 'Agriculture'].map(sub => (
+                            <TouchableOpacity
+                                key={sub}
+                                onPress={() => setOptionalSubject(sub)}
+                                style={{
+                                    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8,
+                                    backgroundColor: optionalSubject === sub ? 'rgba(16, 185, 129, 0.1)' : (isDark ? '#374151' : '#f3f4f6'),
+                                    borderWidth: 1, borderColor: optionalSubject === sub ? '#10b981' : (isDark ? '#4b5563' : '#e5e7eb')
+                                }}
+                            >
+                                <Text style={{ color: optionalSubject === sub ? '#10b981' : (isDark ? '#d1d5db' : '#4b5563'), fontWeight: 'bold', fontSize: 12 }}>{sub}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                )}
             </View>
 
             <View style={{ marginBottom: 20 }}>

@@ -648,12 +648,15 @@ exports.exportUsersCSV = async (req, res) => {
 // Send a mass notification to all users natively inside the DB and externally via FCM Hardware Pings
 exports.broadcastNotification = async (req, res) => {
     try {
-        const { title, message, type, targetGroup } = req.body;
+        const { title, message, type, targetGroup, optionalSubject } = req.body;
         if (!title || !message) return res.status(400).json({ message: 'Title and message are required' });
 
         let query = { role: 'user' };
         if (targetGroup === 'active') query.subscriptionStatus = 'active';
         if (targetGroup === 'pending') query.subscriptionStatus = 'pending_review';
+        if (targetGroup === 'optional' && optionalSubject) {
+            query.optionalSubject = optionalSubject;
+        }
 
         const users = await User.find(query).select('_id expoPushToken');
 

@@ -11,7 +11,7 @@ import * as Clipboard from 'expo-clipboard';
 // UPI Payment details — update these with your real values
 const UPI_ID = 'your-upi-id@paytm'; // TODO: Replace with your actual UPI ID
 const UPI_MOBILE = '9XXXXXXXXX'; // TODO: Replace with your mobile number
-const WHATSAPP_NUMBER = '919999999999'; // TODO: Replace with your personal WhatsApp number
+const WHATSAPP_NUMBER = '918639083766'; // Mapped to Madhan's personal number for now
 
 // QR codes rotate every 10 seconds — replace with actual QR images
 const QR_IMAGES = [

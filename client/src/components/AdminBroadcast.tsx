@@ -134,7 +134,20 @@ export default function AdminBroadcast() {
 
                 {targetGroup === 'optional' && (
                     <View style={{ marginTop: 12, flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                        {['Geography', 'PSIR', 'Sociology', 'Anthropology', 'Public Administration', 'History', 'Maths', 'Agriculture'].map(sub => (
+                        {[
+                            'Political Science & International Relations', 'Anthropology', 'Sociology', 'Geography',
+                            'Mathematics', 'History', 'Public Administration', 'Philosophy', 'Economics', 'Law',
+                            'Commerce & Accountancy', 'Psychology', 'Medical Science', 'Mechanical Engineering',
+                            'Physics', 'Electrical Engineering', 'Chemistry', 'Civil Engineering', 'Agriculture',
+                            'Management', 'Zoology', 'Animal Husbandry & Veterinary Science', 'Botany', 'Geology',
+                            'Statistics', 'Hindi Literature', 'English Literature', 'Telugu Literature', 'Tamil Literature',
+                            'Kannada Literature', 'Malayalam Literature', 'Marathi Literature', 'Gujarati Literature',
+                            'Bengali Literature', 'Punjabi Literature', 'Sanskrit Literature', 'Urdu Literature',
+                            'Assamese Literature', 'Bodo Literature', 'Dogri Literature', 'Kashmiri Literature',
+                            'Konkani Literature', 'Maithili Literature', 'Manipuri Literature', 'Nepali Literature',
+                            'Odia Literature', 'Pali Literature', 'Persian Literature', 'Santhali Literature',
+                            'Sindhi Literature'
+                        ].sort().map(sub => (
                             <TouchableOpacity
                                 key={sub}
                                 onPress={() => setOptionalSubject(sub)}

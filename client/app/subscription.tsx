@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, ScrollView, Image, Animated, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, ScrollView, Image, Animated, Platform, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../src/context/AuthContext';
 import { useTheme } from '../src/context/ThemeContext';
@@ -354,6 +354,22 @@ export default function SubscriptionScreen() {
                                 </Text>
                             </>
                         )}
+                    </TouchableOpacity>
+
+                    {/* Instagram DM Button */}
+                    <TouchableOpacity
+                        onPress={() => Linking.openURL('https://ig.me/m/spectrum_ias')}
+                        style={{
+                            marginTop: 16, width: '100%', maxWidth: 400,
+                            backgroundColor: '#E1306C',
+                            padding: 16, borderRadius: 14, alignItems: 'center',
+                            flexDirection: 'row', justifyContent: 'center', gap: 8,
+                        }}
+                    >
+                        <Ionicons name="logo-instagram" size={20} color="white" />
+                        <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>
+                            Message us on Instagram to Subscribe
+                        </Text>
                     </TouchableOpacity>
 
                     {/* Error / Success Overlay */}

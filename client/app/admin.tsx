@@ -1314,6 +1314,23 @@ export default function AdminDashboard() {
                                                                                 </>
                                                                             )}
                                                                         </TouchableOpacity>
+                                                                        <TouchableOpacity
+                                                                            onPress={() => handleExpireSubscription(u._id)}
+                                                                            disabled={actionLoading === u._id}
+                                                                            style={{
+                                                                                flex: 1, padding: 14, borderRadius: 12, alignItems: 'center',
+                                                                                backgroundColor: '#f59e0b', flexDirection: 'row', justifyContent: 'center', gap: 6
+                                                                            }}
+                                                                        >
+                                                                            {actionLoading === u._id ? (
+                                                                                <ActivityIndicator color="white" size="small" />
+                                                                            ) : (
+                                                                                <>
+                                                                                    <Ionicons name="hourglass" size={18} color="white" />
+                                                                                    <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 14 }}>End Trial</Text>
+                                                                                </>
+                                                                            )}
+                                                                        </TouchableOpacity>
                                                                     </View>
 
                                                                     {/* Reject Reason Input */}

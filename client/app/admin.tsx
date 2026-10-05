@@ -393,6 +393,23 @@ export default function AdminDashboard() {
         }
     };
 
+    const handleExpireSubscription = async (userId: string) => {
+        if (Platform.OS === 'web') {
+            if (!window.confirm("Are you sure you want to manually end this user's current trial/subscription?")) return;
+        }
+        setActionLoading(userId);
+        try {
+            await api.post(`/admin/expire-subscription/${userId}`);
+            await fetchData();
+            showToast('⏰ Subscription/Trial manually expired');
+        } catch (e: any) {
+            console.error('Expire failed:', e.response?.data?.message);
+            showToast(`Failed to expire: ${e.response?.data?.message || 'Unknown error'}`, 'error');
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
     const getStatusBadge = (status: string) => {
         const config: Record<string, { bg: string; text: string; label: string }> = {
             active: { bg: 'rgba(34, 197, 94, 0.15)', text: '#22c55e', label: '✅ Active' },
@@ -1443,6 +1460,11 @@ export default function AdminDashboard() {
                                                             {(u.subscriptionStatus === 'pending' || u.subscriptionStatus === 'pending_review') && u.role !== 'admin' && (
                                                                 <TouchableOpacity onPress={() => handleReject(u._id)} disabled={actionLoading === u._id} style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: 6, borderRadius: 6 }}>
                                                                     {actionLoading === u._id ? <ActivityIndicator size="small" color="#ef4444" /> : <Ionicons name="close-circle" size={14} color="#ef4444" />}
+                                                                </TouchableOpacity>
+                                                            )}
+                                                            {u.role !== 'admin' && u.subscriptionStatus === 'active' && (
+                                                                <TouchableOpacity onPress={() => handleExpireSubscription(u._id)} disabled={actionLoading === u._id} style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: 6, borderRadius: 6 }}>
+                                                                    {actionLoading === u._id ? <ActivityIndicator size="small" color="#ef4444" /> : <Ionicons name="hourglass" size={14} color="#ef4444" />}
                                                                 </TouchableOpacity>
                                                             )}
                                                             {u.role !== 'admin' && (

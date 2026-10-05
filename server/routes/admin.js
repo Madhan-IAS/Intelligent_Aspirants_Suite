@@ -45,6 +45,8 @@ router.post('/reject/:id', auth, adminAuth, validate([
     body('reason').optional().isString()
 ]), adminController.rejectUser);
 
+router.post('/expire-subscription/:id', auth, adminAuth, validate(idValidation), adminController.expireUserSubscription);
+
 router.post('/revoke/:id', auth, adminAuth, validate(idValidation), adminController.revokeUser);
 router.delete('/user/:id', auth, adminAuth, validate(idValidation), adminController.deleteUser);
 

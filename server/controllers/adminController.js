@@ -285,6 +285,43 @@ exports.rejectUser = async (req, res) => {
     }
 };
 
+// POST /api/admin/expire-subscription/:id
+// Manually expire a user's subscription (End Free Trial)
+exports.expireUserSubscription = async (req, res) => {
+    try {
+        const user = await User.findByIdAndUpdate(
+            req.params.id,
+            {
+                subscriptionStatus: 'expired',
+                subscriptionExpiry: new Date()
+            },
+            { new: true }
+        ).select('-passwordHash');
+
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        res.json({ message: 'User subscription manually expired', user });
+
+        await AuditLog.create({
+            adminId: req.user.id,
+            action: 'EXPIRE_SUBSCRIPTION',
+            targetUserId: user._id,
+            details: { manualExpiry: true }
+        });
+
+        // Send Notifications
+        await Notification.create({
+            userId: user._id,
+            type: 'subscription',
+            title: '❗ Subscription Expired',
+            message: `Your access has been ended by the admin.`
+        });
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 // POST /api/admin/revoke/:id
 // Revoke an active user's subscription instantly
 exports.revokeUser = async (req, res) => {

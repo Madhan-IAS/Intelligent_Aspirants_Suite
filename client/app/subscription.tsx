@@ -6,6 +6,7 @@ import { useTheme } from '../src/context/ThemeContext';
 import { TIER_INFO, TIER_FEATURES } from '../src/services/tierConfig';
 import api from '../src/services/api';
 import { Ionicons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
 
 // UPI Payment details — update these with your real values
 const UPI_ID = 'your-upi-id@paytm'; // TODO: Replace with your actual UPI ID
@@ -145,6 +146,21 @@ export default function SubscriptionScreen() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleInstagramClick = async (tierName: string) => {
+        const message = `Hi Spectrum IAS team! I'm interested in subscribing to the ${tierName || 'Premium'} plan. Please guide me with the steps!`;
+        try {
+            await Clipboard.setStringAsync(message);
+            if (Platform.OS === 'web') {
+                window.alert('✅ Message copied to clipboard! Paste it directly into the Instagram chat.');
+            } else {
+                alert('✅ Message copied to clipboard! Paste it directly into the Instagram chat.');
+            }
+        } catch (e) {
+            console.error('Failed to copy to clipboard', e);
+        }
+        Linking.openURL('https://ig.me/m/spectrum_ias');
     };
 
     const statusLabel = user?.subscriptionStatus === 'rejected'
@@ -358,7 +374,7 @@ export default function SubscriptionScreen() {
 
                     {/* Instagram DM Button */}
                     <TouchableOpacity
-                        onPress={() => Linking.openURL('https://ig.me/m/spectrum_ias')}
+                        onPress={() => handleInstagramClick(TIER_INFO[selectedTier]?.name)}
                         style={{
                             marginTop: 16, width: '100%', maxWidth: 400,
                             backgroundColor: '#E1306C',

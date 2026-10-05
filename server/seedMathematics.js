@@ -1,10 +1,9 @@
 /**
  * seedMathematics.js
  * 
- * Seeds the complete Mathematics optional syllabus (Paper I + Paper II)
- * with proper paper, subjectName, chapter, topicCode fields.
- * 
- * Run: node seedMathematics.js
+ * Master Mathematics Framework (63 Major Units)
+ * Paper I: 29 Units
+ * Paper II: 34 Units
  */
 const mongoose = require('mongoose');
 const Subject = require('./models/Subject');
@@ -14,263 +13,456 @@ require('dotenv').config();
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/upsc-kms';
 
 // ═══════════════════════════════════════════════════════════════
-// PAPER I — MATHEMATICS
+// PAPER I — MATHEMATICS (29 Units)
 // ═══════════════════════════════════════════════════════════════
 
 const PAPER_1_DATA = [
     {
-        chapter: "Linear Algebra — Vector Spaces",
+        chapter: "1. Vector Spaces",
         topics: [
-            "Vector Spaces — vector spaces over a field, subspaces, linear combinations, span, linear dependence/independence, basis, dimension, coordinates relative to a basis.",
-            "Vector Spaces (Theorems) — basis extension theorem, dimension theorem, dimension of sum of subspaces, dimension of intersection, quotient spaces."
+            "Vector spaces over a field", "Subspaces", "Linear combinations", "Span", "Linear dependence", "Linear independence", "Basis", "Dimension", "Coordinates relative to a basis",
+            "Basis extension theorem", "Dimension theorem", "Dimension of sum of subspaces", "Dimension of intersection", "Quotient spaces",
+            "Testing whether a set is a vector space", "Finding span", "Testing independence", "Finding basis", "Finding dimension", "Coordinate transformations"
         ]
     },
     {
-        chapter: "Linear Algebra — Linear Transformations",
+        chapter: "2. Linear Transformations",
         topics: [
-            "Linear Transformations — linear transformation, kernel/null space, range/image, rank, nullity.",
-            "Linear Transformations (Theorems) — rank-nullity theorem, one-one & onto transformations, isomorphisms.",
-            "Linear Transformations (Matrix) — matrix associated with transformation, change of basis, similarity transformation, coordinate representation."
+            "Linear transformation", "Kernel/null space", "Range/image", "Rank (Linear Transformation)", "Nullity",
+            "Rank-nullity theorem", "Applications of Rank-nullity", "One-one transformations", "Onto transformations", "Isomorphisms",
+            "Matrix associated with a linear transformation", "Change of basis", "Similarity transformation", "Coordinate representation"
         ]
     },
     {
-        chapter: "Linear Algebra — Matrices",
+        chapter: "3. Matrices",
         topics: [
-            "Matrices — operations (addition, multiplication, transpose, inverse, elementary operations).",
-            "Matrices (Rank) — row rank, column rank, rank by reduction, rank using minors.",
-            "Matrices (Systems of Equations) — homogeneous/non-homogeneous equations, consistency, Gaussian elimination, Gauss-Jordan method, rank criterion.",
-            "Matrices (Determinants) — properties, expansion, cofactors, minors, applications."
+            "Matrix Addition", "Matrix Multiplication", "Matrix Transpose", "Matrix Inverse", "Elementary operations",
+            "Row rank", "Column rank", "Rank by reduction", "Rank using minors",
+            "Homogeneous equations", "Non-homogeneous equations", "Consistency", "Gaussian elimination", "Gauss-Jordan method", "Rank criterion",
+            "Determinants Properties", "Determinant Expansion", "Cofactors", "Minors", "Applications of Determinants"
         ]
     },
     {
-        chapter: "Linear Algebra — Eigenvalues & Canonical Forms",
+        chapter: "4. Eigenvalues & Eigenvectors",
         topics: [
-            "Eigenvalues & Eigenvectors — characteristic equation, characteristic polynomial, eigenvalues, eigenvectors, eigenspaces.",
-            "Diagonalisation — diagonalizable matrices, conditions for diagonalisation, similar matrices, spectral properties.",
-            "Cayley-Hamilton Theorem — statement, verification, applications (powers of matrices, finding inverse).",
-            "Canonical Forms — characteristic polynomial, minimal polynomial, Jordan canonical form, rational canonical form, similarity."
+            "Characteristic equation", "Characteristic polynomial", "Eigenvalues", "Eigenvectors", "Eigenspaces",
+            "Diagonalizable matrices", "Conditions for diagonalisation", "Similar matrices", "Spectral properties",
+            "Cayley-Hamilton Theorem Statement", "Cayley-Hamilton Verification", "Applications of Cayley-Hamilton", "Finding powers of matrices", "Finding inverse matrices"
         ]
     },
     {
-        chapter: "Calculus — Real Numbers & Sequences",
+        chapter: "5. Canonical Forms",
         topics: [
-            "Real Numbers & Functions — supremum, infimum, completeness, Archimedean property.",
-            "Sequences — convergence, divergence, monotonic sequences, bounded sequences, Cauchy sequences, subsequences, Bolzano-Weierstrass theorem."
+            "Characteristic polynomial (Canonical)", "Minimal polynomial", "Jordan canonical form", "Rational canonical form", "Similarity (Canonical)",
+            "Finding canonical form", "Determining diagonalizability", "Finding minimal polynomial", "Matrix powers (Canonical)"
         ]
     },
     {
-        chapter: "Calculus — Limits, Continuity & Differentiability",
+        chapter: "6. Real Numbers & Functions",
         topics: [
-            "Limits & Continuity — limits of functions, one-sided limits, infinite limits, limits at infinity.",
-            "Continuity — continuous functions, uniform continuity, discontinuities, Intermediate Value Theorem.",
-            "Differentiability — derivatives, higher derivatives, derivative of composite functions, Leibniz theorem.",
-            "Mean Value Theorems — Rolle's theorem, Lagrange Mean Value Theorem, Cauchy Mean Value Theorem.",
-            "Applications of Differentiation — increasing/decreasing functions, maxima, minima, concavity, convexity, points of inflection.",
-            "Taylor & Maclaurin Series — Taylor/Maclaurin theorems, expansions, remainder terms (Lagrange, Cauchy), applications to approximation/limits."
+            "Supremum", "Infimum", "Completeness", "Archimedean property",
+            "Convergence (Sequences)", "Divergence (Sequences)", "Monotonic sequences", "Bounded sequences", "Cauchy sequences", "Subsequences", "Bolzano-Weierstrass theorem"
         ]
     },
     {
-        chapter: "Calculus — Functions of Several Variables",
+        chapter: "7. Limits & Continuity",
         topics: [
-            "Functions of Several Variables — partial derivatives, higher-order partial derivatives, total derivative, chain rule.",
-            "Homogeneous Functions — Euler's theorem and its applications.",
-            "Maxima and Minima (Several Variables) — critical points, local maxima/minima, saddle points, Hessian matrix, second derivative test.",
-            "Lagrange Multipliers — constrained extrema, multiple constraints."
+            "Limit of functions", "One-sided limits", "Infinite limits", "Limits at infinity",
+            "Continuous functions", "Uniform continuity", "Discontinuities", "Intermediate Value Theorem",
+            "Extreme Value Theorem", "Intermediate Value Theorem (Proof)", "Uniform continuity theorem"
         ]
     },
     {
-        chapter: "Calculus — Multiple Integrals & Vector Calculus",
+        chapter: "8. Differentiability",
         topics: [
-            "Multiple Integrals (Double) — iterated integrals, change of order, change of variables.",
-            "Multiple Integrals (Triple) — Cartesian, cylindrical, and spherical coordinates.",
-            "Applications of Multiple Integrals — area, volume, centre of mass, moments.",
-            "Vector Calculus — scalar/vector fields, gradient, divergence, curl.",
-            "Directional Derivatives — directional derivative, normal derivative, tangent plane.",
-            "Integral Theorems — Green's theorem, Gauss divergence theorem, Stokes' theorem.",
-            "Applications of Vector Calculus — flux, circulation, surface integrals, line integrals, volume integrals."
+            "Differentiability (Calculus)", "Higher derivatives", "Derivative of composite functions", "Leibniz theorem",
+            "Rolle's theorem", "Lagrange Mean Value Theorem", "Cauchy Mean Value Theorem",
+            "Increasing/decreasing functions", "Maxima", "Minima", "Concavity", "Convexity", "Points of inflection"
         ]
     },
     {
-        chapter: "Analytical Geometry — 2D",
+        chapter: "9. Taylor & Maclaurin Series",
         topics: [
-            "Two-Dimensional Geometry — straight lines (Cartesian, parametric, normal form), pair of straight lines, angle between lines, distance to line.",
-            "Two-Dimensional Geometry — circle (general/standard equations, tangent, normal, chord, pair of tangents).",
-            "Conic Sections (Parabola) — standard forms, tangent, normal, chord, parametric coordinates, subtangent, subnormal.",
-            "Conic Sections (Ellipse) — standard equation, eccentricity, foci, directrices, tangents, normals, chords, parametric equations.",
-            "Conic Sections (Hyperbola) — standard equation, conjugate hyperbola, asymptotes, tangents, normals, chords, parametric form."
+            "Taylor theorem", "Maclaurin theorem", "Taylor expansion", "Remainder terms", "Lagrange remainder", "Cauchy remainder",
+            "Approximation", "Limits (Series)", "Maxima/minima (Series)", "Series expansions"
         ]
     },
     {
-        chapter: "Analytical Geometry — 3D",
+        chapter: "10. Functions of Several Variables",
         topics: [
-            "Three-Dimensional Geometry (Plane) — equation of plane, normal/intercept forms, angle between planes, distance from point to plane.",
-            "Three-Dimensional Geometry (Straight Line) — Cartesian, vector, parametric, symmetric forms, angle between lines, shortest distance.",
-            "Three-Dimensional Geometry (Line & Plane) — angle between line and plane, intersection, coplanarity.",
-            "Sphere — standard/general equations, tangent plane, normal, plane section, great circle, intersection of spheres, orthogonal spheres.",
-            "Quadrics — general second-degree equation, classification, ellipsoid, paraboloid, hyperboloid, cone, cylinder."
+            "Partial derivatives", "Higher-order partial derivatives", "Total derivative", "Chain rule",
+            "Euler's theorem", "Applications of Euler's theorem",
+            "Critical points", "Local maxima/minima", "Saddle points", "Hessian matrix", "Second derivative test",
+            "Constrained extrema", "Multiple constraints", "Lagrange Multipliers"
         ]
     },
     {
-        chapter: "Ordinary Differential Equations — First Order",
+        chapter: "11. Multiple Integrals",
         topics: [
-            "First-Order ODE — basic concepts (order, degree, general/particular solutions).",
-            "First-Order Equations — variable separable, homogeneous, reducible to homogeneous, exact equations, integrating factor, linear, Bernoulli equations.",
-            "Orthogonal Trajectories — definition, Cartesian trajectories, polar trajectories, finding orthogonal trajectories."
+            "Iterated integrals", "Change of order", "Change of variables",
+            "Cartesian coordinates (Triple)", "Cylindrical coordinates", "Spherical coordinates",
+            "Area", "Volume", "Centre of mass", "Moments"
         ]
     },
     {
-        chapter: "Ordinary Differential Equations — Higher Order",
+        chapter: "12. Vector Calculus",
         topics: [
-            "Higher-Order Linear ODE — constant coefficients, complementary function, particular integral.",
-            "Auxiliary Equation — distinct roots, repeated roots, complex roots.",
-            "Particular Integrals — polynomial, exponential, trigonometric, and mixed RHS functions.",
-            "Cauchy-Euler Equations — homogeneous Cauchy-Euler, non-homogeneous equations, transformation methods.",
-            "Variation of Parameters — fundamental solutions, particular solution, variation of parameters formula.",
-            "Simultaneous Differential Equations — first-order simultaneous equations, linear systems, elimination method, matrix approach."
+            "Scalar fields", "Vector fields", "Gradient", "Divergence", "Curl",
+            "Directional derivative", "Normal derivative", "Tangent plane",
+            "Green's theorem", "Gauss divergence theorem", "Stokes' theorem",
+            "Flux", "Circulation", "Surface integrals", "Line integrals", "Volume integrals"
         ]
     },
     {
-        chapter: "Partial Differential Equations",
+        chapter: "13. Two-Dimensional Analytical Geometry",
         topics: [
-            "Partial Differential Equations (PDE) — formation of PDE, general solution, complete/singular integral for first-order PDE.",
-            "Lagrange's Linear PDE — auxiliary equations, complete solution.",
-            "Higher-Order PDE — linear PDE, homogeneous PDE, constant coefficient PDE."
+            "Cartesian form (Straight Lines)", "Parametric form (Straight Lines)", "Normal form", "Pair of straight lines", "Angle between lines", "Distance from point to line",
+            "General equation of Circle", "Standard equation of Circle", "Tangent (Circle)", "Normal (Circle)", "Chord (Circle)", "Pair of tangents"
         ]
     },
     {
-        chapter: "Dynamics",
+        chapter: "14. Conic Sections",
         topics: [
-            "Dynamics (Kinematics) — motion in a straight line, motion in a plane, position, velocity, acceleration.",
-            "Projectile Motion — equation of trajectory, max height, range, time of flight, horizontal/inclined projection.",
-            "Newton's Laws — momentum, impulse, variable forces, equations of motion.",
-            "Work, Energy & Power — work, kinetic/potential energy, conservation of energy, work-energy theorem, power.",
-            "Motion Under Central Forces — central force, angular momentum, conservation laws, planetary motion, Kepler's laws, inverse-square law."
+            "Standard forms (Parabola)", "Tangent (Parabola)", "Normal (Parabola)", "Chord (Parabola)", "Parametric coordinates", "Subtangent", "Subnormal",
+            "Standard equation (Ellipse)", "Eccentricity", "Foci", "Directrices", "Tangents (Ellipse)", "Normals (Ellipse)", "Chords (Ellipse)", "Parametric equations (Ellipse)",
+            "Standard equation (Hyperbola)", "Conjugate hyperbola", "Asymptotes", "Tangents (Hyperbola)", "Normals (Hyperbola)", "Chords (Hyperbola)", "Parametric form (Hyperbola)"
         ]
     },
     {
-        chapter: "Statics",
+        chapter: "15. Three-Dimensional Geometry",
         topics: [
-            "Statics (Forces) — resultant, equilibrium, resolution of forces.",
-            "Statics (Moments) — moment of force, couple, Varignon's theorem.",
-            "Friction — laws of friction, limiting friction, angle of friction, equilibrium with friction.",
-            "Centre of Gravity — centre of gravity, centroid, lamina.",
-            "Virtual Work — principle of virtual work, applications."
+            "Equation of plane", "Normal form (Plane)", "Intercept form", "Angle between planes", "Distance from point to plane",
+            "Cartesian form (3D Line)", "Vector form (3D Line)", "Parametric form (3D Line)", "Symmetric form", "Angle between lines (3D)", "Shortest distance",
+            "Angle between line and plane", "Intersection (Line/Plane)", "Coplanarity"
+        ]
+    },
+    {
+        chapter: "16. Sphere",
+        topics: [
+            "Standard equation (Sphere)", "General equation (Sphere)", "Tangent plane (Sphere)", "Normal (Sphere)", "Plane section", "Great circle", "Intersection of spheres", "Orthogonal spheres"
+        ]
+    },
+    {
+        chapter: "17. Quadrics",
+        topics: [
+            "General second-degree equation", "Classification of Quadrics", "Ellipsoid", "Paraboloid", "Hyperboloid", "Cone", "Cylinder"
+        ]
+    },
+    {
+        chapter: "18. First-Order Differential Equations",
+        topics: [
+            "Order of DE", "Degree of DE", "General solution", "Particular solution",
+            "Variable separable", "Homogeneous DE", "Reducible to homogeneous", "Exact equations", "Integrating factor", "Linear differential equations", "Bernoulli equations"
+        ]
+    },
+    {
+        chapter: "19. Orthogonal Trajectories",
+        topics: [
+            "Definition of Orthogonal Trajectories", "Cartesian trajectories", "Polar trajectories", "Finding orthogonal trajectories"
+        ]
+    },
+    {
+        chapter: "20. Higher-Order Differential Equations",
+        topics: [
+            "Constant coefficients", "Complementary function", "Particular integral",
+            "Distinct roots", "Repeated roots", "Complex roots",
+            "Polynomial RHS", "Exponential RHS", "Trigonometric RHS", "Mixed functions"
+        ]
+    },
+    {
+        chapter: "21. Cauchy-Euler Equations",
+        topics: [
+            "Homogeneous Cauchy-Euler", "Non-homogeneous Cauchy-Euler equations", "Transformation methods"
+        ]
+    },
+    {
+        chapter: "22. Variation of Parameters",
+        topics: [
+            "Fundamental solutions", "Particular solution (Variation)", "Variation of parameters formula"
+        ]
+    },
+    {
+        chapter: "23. Simultaneous Differential Equations",
+        topics: [
+            "First-order simultaneous equations", "Linear systems of DE", "Elimination method", "Matrix approach to DE"
+        ]
+    },
+    {
+        chapter: "24. Partial Differential Equations",
+        topics: [
+            "Formation of PDE", "General solution (PDE)", "Complete integral", "Singular integral",
+            "Lagrange's auxiliary equations", "Complete solution (Lagrange)",
+            "Linear PDE", "Homogeneous PDE", "Constant coefficient PDE"
+        ]
+    },
+    {
+        chapter: "25. Dynamics",
+        topics: [
+            "Motion in a straight line", "Motion in a plane", "Position", "Velocity", "Acceleration",
+            "Equation of trajectory", "Maximum height", "Range", "Time of flight", "Horizontal projection", "Projection from inclined plane"
+        ]
+    },
+    {
+        chapter: "26. Newton's Laws",
+        topics: [
+            "Newton's laws of motion", "Momentum", "Impulse", "Variable forces", "Equations of motion"
+        ]
+    },
+    {
+        chapter: "27. Work, Energy & Power",
+        topics: [
+            "Work", "Kinetic energy", "Potential energy", "Conservation of energy", "Work-energy theorem", "Power"
+        ]
+    },
+    {
+        chapter: "28. Motion Under Central Forces",
+        topics: [
+            "Central force", "Angular momentum", "Conservation laws (Central forces)", "Planetary motion", "Kepler's laws", "Inverse-square law"
+        ]
+    },
+    {
+        chapter: "29. Statics",
+        topics: [
+            "Resultant", "Equilibrium", "Resolution of forces",
+            "Moment of force", "Couple", "Varignon's theorem",
+            "Laws of friction", "Limiting friction", "Angle of friction", "Equilibrium with friction",
+            "Centre of gravity", "Centroid", "Lamina",
+            "Principle of virtual work", "Applications of virtual work"
         ]
     }
 ];
 
 // ═══════════════════════════════════════════════════════════════
-// PAPER II — MATHEMATICS
+// PAPER II — MATHEMATICS (34 Units)
 // ═══════════════════════════════════════════════════════════════
 
 const PAPER_2_DATA = [
     {
-        chapter: "Real Analysis — Real Numbers & Sequences",
+        chapter: "1. Real Number System",
         topics: [
-            "Real Number System — completeness, least upper bound property, greatest lower bound, Archimedean property, density of rationals, intervals.",
-            "Sequences (Convergence) — limit, bounded, monotone, Cauchy sequences.",
-            "Sequences (Subsequences) — limit points, Bolzano-Weierstrass theorem."
+            "Completeness (Real Analysis)", "Least upper bound property", "Greatest lower bound", "Archimedean property (Real Analysis)", "Density of rationals", "Intervals"
         ]
     },
     {
-        chapter: "Real Analysis — Series",
+        chapter: "2. Sequences",
         topics: [
-            "Infinite Series (Positive-Term) — comparison test, limit comparison, ratio test, root test, integral test.",
-            "Infinite Series (Other) — alternating series, absolute/conditional convergence.",
-            "Power Series — radius of convergence, interval of convergence."
+            "Limit (Sequences)", "Bounded sequences (Real Analysis)", "Monotone sequences", "Cauchy sequences (Real Analysis)",
+            "Limit points", "Bolzano-Weierstrass theorem (Sequences)",
+            "lim sup", "lim inf"
         ]
     },
     {
-        chapter: "Real Analysis — Continuity & Differentiability",
+        chapter: "3. Infinite Series",
         topics: [
-            "Continuity — continuity at point/interval, uniform continuity, sequential criterion, intermediate value property.",
-            "Continuity Theorems — Extreme Value, Intermediate Value, Uniform continuity theorem.",
-            "Differentiability — definition, derivative, Taylor theorem, maxima/minima, convexity.",
-            "Mean Value Theorems — Rolle, Lagrange, Cauchy."
+            "Comparison test", "Limit comparison", "Ratio test", "Root test", "Integral test",
+            "Alternating series", "Absolute convergence", "Conditional convergence",
+            "Power series", "Radius of convergence", "Interval of convergence"
         ]
     },
     {
-        chapter: "Real Analysis — Riemann Integration",
+        chapter: "4. Continuity",
         topics: [
-            "Riemann Integration — partitions, upper/lower sums, integrability, properties of integral.",
-            "Riemann Integration Theorems — fundamental theorem of calculus, mean value theorem for integrals.",
-            "Improper Integrals — infinite intervals, infinite discontinuities, convergence tests."
+            "Continuity at a point", "Continuity on an interval", "Uniform continuity (Real Analysis)", "Sequential criterion", "Intermediate value property",
+            "Extreme Value theorem (Real Analysis)", "Intermediate Value theorem (Real Analysis)", "Uniform continuity theorem (Real Analysis)"
         ]
     },
     {
-        chapter: "Complex Analysis — Fundamentals",
+        chapter: "5. Differentiability",
         topics: [
-            "Complex Numbers — complex plane, modulus, argument, polar form, De Moivre's theorem, roots.",
-            "Complex Functions — functions of complex variable, limits, continuity, differentiability.",
-            "Analytic Functions — analyticity, Cauchy-Riemann equations, harmonic functions, harmonic conjugates."
+            "Differentiability (Real Analysis)", "Derivative (Real Analysis)", "Mean value theorems (Real Analysis)", "Rolle's Theorem (Real Analysis)", "Lagrange Theorem (Real Analysis)", "Cauchy Theorem (Real Analysis)",
+            "Taylor theorem (Real Analysis)", "Maxima/minima (Real Analysis)", "Convexity", "Mean value applications"
         ]
     },
     {
-        chapter: "Complex Analysis — Integration & Residues",
+        chapter: "6. Riemann Integration",
         topics: [
-            "Complex Integration — contour, contour integration, Cauchy's theorem, Cauchy's integral formula.",
-            "Power Series (Complex) — Taylor series, Laurent series, annulus of convergence.",
-            "Singularities — removable, pole, essential, isolated singularities, classification.",
-            "Residues — calculation, residue theorem, contour integration using residues.",
-            "Applications of Residues — real definite integrals, improper integrals, trigonometric integrals."
+            "Partitions", "Upper sums", "Lower sums", "Riemann integrability", "Properties of Riemann integral",
+            "Fundamental theorem of calculus", "Mean value theorem for integrals",
+            "Improper Integrals (Infinite intervals)", "Infinite discontinuities", "Convergence tests (Integrals)"
         ]
     },
     {
-        chapter: "Linear Algebra (Advanced)",
+        chapter: "7. Complex Numbers",
         topics: [
-            "Vector Spaces (Review) — spaces, subspaces, basis, dimension, quotient spaces.",
-            "Linear Transformations (Review) — kernel, range, rank, nullity, rank-nullity theorem, matrix representation.",
-            "Matrices (Review) — rank, determinants, inverse, transformations, systems of equations.",
-            "Eigenvalues & Eigenvectors (Review) — characteristic eq, eigenspaces, diagonalisation.",
-            "Inner Product Spaces — inner product, norm, orthogonality, orthogonal sets, orthonormal basis.",
-            "Inner Product Inequalities — Cauchy-Schwarz, triangle inequality, Bessel's inequality.",
-            "Orthogonal Transformations — orthogonal matrices/transformations, projections, Gram-Schmidt orthogonalisation.",
-            "Quadratic Forms — matrix representation, rank, index, signature, positive/negative definite forms, reduction to canonical form.",
-            "Quadratic Forms Theorems — Sylvester's law of inertia, eigenvalue criterion."
+            "Complex plane", "Modulus", "Argument", "Polar form", "De Moivre's theorem", "Roots of complex numbers"
         ]
     },
     {
-        chapter: "Linear Programming",
+        chapter: "8. Complex Functions",
         topics: [
-            "Linear Programming Problems (LPP) — objective function, constraints, feasible region, basic feasible/optimal solution.",
-            "Graphical Method — two-variable LPP, feasible region, corner-point method, unbounded/infeasible solutions.",
-            "Simplex Method — standard form, slack/surplus/artificial variables, simplex tableau, pivoting, optimality condition.",
-            "Duality — primal/dual problem, construction, weak/strong duality, complementary slackness.",
-            "Transportation Problems — initial basic feasible solution, North-West Corner, Least-cost, Vogel's approximation, optimality test.",
-            "Assignment Problems — Hungarian method, balanced/unbalanced assignment, maximisation problems."
+            "Functions of complex variable", "Limits (Complex)", "Continuity (Complex)", "Differentiability (Complex)"
         ]
     },
     {
-        chapter: "Numerical Analysis",
+        chapter: "9. Analytic Functions",
         topics: [
-            "Roots of Equations — Bisection, Regula Falsi, Newton-Raphson, Secant method.",
-            "Roots of Equations (Study) — convergence, error, rate of convergence, iteration.",
-            "Interpolation (Finite Differences) — forward, backward, central differences.",
-            "Interpolation (Formulae) — Newton forward/backward interpolation, Lagrange interpolation.",
-            "Numerical Differentiation — first/second derivative, difference formulae, error estimation.",
-            "Numerical Integration — Trapezoidal rule, Simpson's 1/3 rule, Simpson's 3/8 rule, error terms, composite rules.",
-            "Numerical Solution of ODE — Euler method, Modified Euler, Runge-Kutta methods, Predictor-corrector methods."
+            "Analyticity", "Cauchy-Riemann equations", "Harmonic functions", "Harmonic conjugates", "Analytic function construction"
         ]
     },
     {
-        chapter: "Mechanics & Rigid Body Dynamics",
+        chapter: "10. Complex Integration",
         topics: [
-            "Mechanics (Particle Dynamics) — motion, velocity, acceleration, Newton's laws, momentum.",
-            "Mechanics (Work-Energy) — work, energy, conservation laws, potential energy.",
-            "Mechanics (Central Forces) — central force, angular momentum, orbits, Kepler's laws.",
-            "Rigid Body Dynamics — centre of mass, moment of inertia, angular momentum, rotational motion, torque, principal axes."
+            "Contour", "Contour integration", "Cauchy's theorem", "Cauchy's integral formula"
         ]
     },
     {
-        chapter: "Fluid Dynamics",
+        chapter: "11. Power Series",
         topics: [
-            "Fluid Dynamics (Basic Concepts) — fluid, pressure, density, velocity field, streamlines.",
-            "Fluid Dynamics (Equations) — continuity equation, Euler's equation, Bernoulli's equation.",
-            "Fluid Dynamics (Flow) — irrotational, rotational, potential flow, vorticity.",
-            "Fluid Dynamics (Applications) — flow through pipes, sources and sinks, vortex motion."
+            "Taylor series (Complex)", "Laurent series", "Annulus of convergence", "Singularities (Power Series)"
+        ]
+    },
+    {
+        chapter: "12. Singularities",
+        topics: [
+            "Removable singularity", "Pole singularity", "Essential singularity",
+            "Isolated singularities", "Classification of singularities", "Behaviour near singularities"
+        ]
+    },
+    {
+        chapter: "13. Residues",
+        topics: [
+            "Residue definition", "Residue calculation", "Residue theorem", "Contour integration using residues",
+            "Real definite integrals", "Improper integrals (Residues)", "Trigonometric integrals"
+        ]
+    },
+    {
+        chapter: "14. Vector Spaces",
+        topics: [
+            "Vector spaces (Paper II)", "Subspaces (Paper II)", "Basis (Paper II)", "Dimension (Paper II)", "Quotient spaces (Paper II)"
+        ]
+    },
+    {
+        chapter: "15. Linear Transformations",
+        topics: [
+            "Kernel (Paper II)", "Range (Paper II)", "Rank (Paper II)", "Nullity (Paper II)", "Rank-nullity theorem (Paper II)", "Matrix representation (Paper II)"
+        ]
+    },
+    {
+        chapter: "16. Matrices",
+        topics: [
+            "Rank (Matrices Paper II)", "Determinants (Paper II)", "Inverse (Paper II)", "Elementary transformations (Paper II)", "Systems of equations (Paper II)"
+        ]
+    },
+    {
+        chapter: "17. Eigenvalues & Eigenvectors",
+        topics: [
+            "Characteristic equation (Paper II)", "Eigenvalues (Paper II)", "Eigenvectors (Paper II)", "Eigenspaces (Paper II)", "Diagonalisation (Paper II)"
+        ]
+    },
+    {
+        chapter: "18. Inner Product Spaces",
+        topics: [
+            "Inner product", "Norm", "Orthogonality", "Orthogonal sets", "Orthonormal basis",
+            "Cauchy-Schwarz inequality", "Triangle inequality", "Bessel's inequality"
+        ]
+    },
+    {
+        chapter: "19. Orthogonal Transformations",
+        topics: [
+            "Orthogonal matrices", "Orthogonal transformations", "Projections", "Gram-Schmidt orthogonalisation"
+        ]
+    },
+    {
+        chapter: "20. Quadratic Forms",
+        topics: [
+            "Quadratic forms", "Matrix representation (Quadratic)", "Rank (Quadratic)", "Index", "Signature", "Positive definite forms", "Negative definite forms", "Reduction to canonical form",
+            "Sylvester's law of inertia", "Eigenvalue criterion"
+        ]
+    },
+    {
+        chapter: "21. Linear Programming Problems",
+        topics: [
+            "Linear objective function", "Constraints (LPP)", "Feasible region (LPP)", "Basic feasible solution", "Optimal solution"
+        ]
+    },
+    {
+        chapter: "22. Graphical Method",
+        topics: [
+            "Two-variable LPP", "Feasible region (Graphical)", "Corner-point method", "Unbounded solutions", "Infeasible problems"
+        ]
+    },
+    {
+        chapter: "23. Simplex Method",
+        topics: [
+            "Standard form (Simplex)", "Slack variables", "Surplus variables", "Artificial variables", "Simplex tableau", "Pivoting", "Optimality condition"
+        ]
+    },
+    {
+        chapter: "24. Duality",
+        topics: [
+            "Primal problem", "Dual problem", "Construction of dual", "Weak duality", "Strong duality", "Complementary slackness"
+        ]
+    },
+    {
+        chapter: "25. Transportation Problems",
+        topics: [
+            "Transportation table", "Initial basic feasible solution", "North-West Corner method", "Least-cost method", "Vogel's approximation method", "Optimality test"
+        ]
+    },
+    {
+        chapter: "26. Assignment Problems",
+        topics: [
+            "Hungarian method", "Balanced assignment", "Unbalanced assignment", "Maximisation problems"
+        ]
+    },
+    {
+        chapter: "27. Numerical Solution of Algebraic & Transcendental Equations",
+        topics: [
+            "Bisection method", "Regula Falsi", "Newton-Raphson", "Secant method",
+            "Convergence (Numerical)", "Error (Numerical)", "Rate of convergence", "Iteration"
+        ]
+    },
+    {
+        chapter: "28. Interpolation",
+        topics: [
+            "Forward differences", "Backward differences", "Central differences",
+            "Newton forward interpolation", "Newton backward interpolation", "Lagrange interpolation"
+        ]
+    },
+    {
+        chapter: "29. Numerical Differentiation",
+        topics: [
+            "First derivative (Numerical)", "Second derivative (Numerical)", "Difference formulae", "Error estimation"
+        ]
+    },
+    {
+        chapter: "30. Numerical Integration",
+        topics: [
+            "Trapezoidal rule", "Simpson's 1/3 rule", "Simpson's 3/8 rule",
+            "Error terms (Integration)", "Composite rules"
+        ]
+    },
+    {
+        chapter: "31. Numerical Solution of ODE",
+        topics: [
+            "Euler method", "Modified Euler", "Runge-Kutta methods", "Predictor-corrector methods"
+        ]
+    },
+    {
+        chapter: "32. Mechanics",
+        topics: [
+            "Motion (Mechanics)", "Velocity (Mechanics)", "Acceleration (Mechanics)", "Newton's laws (Mechanics)", "Momentum (Mechanics)",
+            "Work (Mechanics)", "Energy (Mechanics)", "Conservation laws (Mechanics)", "Potential energy (Mechanics)",
+            "Central force (Mechanics)", "Angular momentum (Mechanics)", "Orbits", "Kepler's laws (Mechanics)"
+        ]
+    },
+    {
+        chapter: "33. Rigid Body Dynamics",
+        topics: [
+            "Centre of mass (Rigid Body)", "Moment of inertia", "Angular momentum (Rigid Body)", "Rotational motion", "Torque", "Principal axes"
+        ]
+    },
+    {
+        chapter: "34. Fluid Dynamics",
+        topics: [
+            "Fluid basics", "Pressure", "Density", "Velocity field", "Streamlines",
+            "Continuity equation", "Euler's equation", "Bernoulli's equation",
+            "Irrotational flow", "Rotational flow", "Potential flow", "Vorticity",
+            "Flow through pipes", "Sources and sinks", "Vortex motion"
         ]
     }
 ];
+
 
 // ═══════════════════════════════════════════════════════════════
 // SEEDER
@@ -281,12 +473,12 @@ async function seed() {
         await mongoose.connect(MONGO_URI);
         console.log('Connected to MongoDB');
 
-        let mathsSubject = await Subject.findOne({ name: 'Mathematics' });
-        if (!mathsSubject) {
+        let mathSubject = await Subject.findOne({ name: 'Mathematics' });
+        if (!mathSubject) {
             console.log('Mathematics subject not found, creating it...');
-            mathsSubject = await Subject.create({ name: 'Mathematics', description: 'Mathematics Optional Subject' });
+            mathSubject = await Subject.create({ name: 'Mathematics', description: 'Mathematics Optional Subject' });
         }
-        const subjectId = mathsSubject._id;
+        const subjectId = mathSubject._id;
 
         const deleteRes = await Topic.deleteMany({ subjectId });
         console.log(`Deleted ${deleteRes.deletedCount} existing Mathematics topics.`);
@@ -295,18 +487,20 @@ async function seed() {
         let p1Count = 0;
         let p2Count = 0;
 
-        PAPER_1_DATA.forEach(chapterObj => {
-            chapterObj.topics.forEach(title => {
+        PAPER_1_DATA.forEach((chapterObj, cIndex) => {
+            const chapterCleanName = chapterObj.chapter;
+
+            chapterObj.topics.forEach((title, tIndex) => {
                 p1Count++;
                 topicsToInsert.push({
                     subjectId,
                     paper: 'Mathematics',
                     subjectName: 'Mathematics Paper I',
-                    chapter: chapterObj.chapter,
-                    heading: chapterObj.chapter,
-                    topicCode: `MATH1-${String(p1Count).padStart(3, '0')}`,
+                    chapter: chapterCleanName,
+                    heading: chapterCleanName,
+                    topicCode: `MATH1-${String(cIndex + 1).padStart(2, '0')}-${String(tIndex + 1).padStart(2, '0')}`,
                     title,
-                    tags: ['Mathematics', 'Mathematics Paper I', chapterObj.chapter],
+                    tags: ['Mathematics', 'Mathematics Paper I', chapterCleanName],
                     difficulty: 'Medium',
                     status: 'Pending',
                     completed: false,
@@ -315,16 +509,20 @@ async function seed() {
             });
         });
 
-        PAPER_2_DATA.forEach(chapterObj => {
-            chapterObj.topics.forEach(title => {
+        // Make sure we number the codes incrementally continuing from Paper I if wanted, or starting at 1. Let's do 1 for Paper 2.
+        PAPER_2_DATA.forEach((chapterObj, cIndex) => {
+            const chapterCleanName = chapterObj.chapter;
+            const displayNumber = cIndex + 1; // 1 to 34
+
+            chapterObj.topics.forEach((title, tIndex) => {
                 p2Count++;
                 topicsToInsert.push({
                     subjectId,
                     paper: 'Mathematics',
                     subjectName: 'Mathematics Paper II',
-                    chapter: chapterObj.chapter,
+                    chapter: `${displayNumber}. ${chapterCleanName.split('. ')[1] || chapterCleanName}`, // Already has number? chapterObj.chapter has "1. Real.." so this is fine.
                     heading: chapterObj.chapter,
-                    topicCode: `MATH2-${String(p2Count).padStart(3, '0')}`,
+                    topicCode: `MATH2-${String(displayNumber).padStart(2, '0')}-${String(tIndex + 1).padStart(2, '0')}`,
                     title,
                     tags: ['Mathematics', 'Mathematics Paper II', chapterObj.chapter],
                     difficulty: 'Medium',
@@ -336,9 +534,9 @@ async function seed() {
         });
 
         const inserted = await Topic.insertMany(topicsToInsert);
-        console.log(`\n✅ Successfully seeded ${inserted.length} Mathematics topics!`);
-        console.log(`  - Mathematics Paper I: ${p1Count} topics`);
-        console.log(`  - Mathematics Paper II: ${p2Count} topics`);
+        console.log(`\n✅ Successfully seeded ${inserted.length} Mathematics topics across 63 Major Units!`);
+        console.log(`  - Mathematics Paper I (29 Units): ${p1Count} micro-topics`);
+        console.log(`  - Mathematics Paper II (34 Units): ${p2Count} micro-topics`);
 
         process.exit(0);
     } catch (err) {

@@ -26,7 +26,8 @@ export default function AdminBroadcast() {
         { id: 'trial_end', label: 'Trial Ends Soon', title: 'Trial Ending Tomorrow', message: 'Your trial ends tomorrow. Subscribe to keep full access.' },
         { id: 'doc_req', label: 'Doc Required', title: 'Document Verification', message: 'Please upload your ID proof or previous scorecards.' },
         { id: 'test_remind', label: 'Test Reminder', title: 'Weekly Test Due', message: 'Reminder: Complete your weekly topic test for evaluation.' },
-        { id: 'mentor', label: 'Mentorship', title: 'Mentorship Scheduled', message: 'Your 1-on-1 mentoring session is coming up. Check your email.' }
+        { id: 'mentor', label: 'Mentorship', title: 'Mentorship Scheduled', message: 'Your 1-on-1 mentoring session is coming up. Check your email.' },
+        { id: 'optional', label: 'Optional Added', title: 'Optional Checklist Live 📚', message: 'Your Optional Paper breakdown and detailed syllabus checklist have been added to your planner. Start tracking your progress today!' }
     ];
 
     const handleTemplateChange = (tId: string) => {

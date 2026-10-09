@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Platform, StatusBar } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Platform, StatusBar, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -29,29 +29,60 @@ export default function TopicQuiz() {
     const [generating, setGenerating] = useState(false);
     const [expandedSubjects, setExpandedSubjects] = useState<Set<string>>(new Set());
 
-    useEffect(() => {
-        fetchSubjectsForPaper(activePaper);
-    }, [activePaper]);
+    // Search state
+    const [searchQuery, setSearchQuery] = useState('');
+    const [allSubjects, setAllSubjects] = useState<any[]>([]);
+    const [allTopicsBySubject, setAllTopicsBySubject] = useState<Record<string, any[]>>({});
+    const [allDataLoaded, setAllDataLoaded] = useState(false);
+    const searchInputRef = useRef<TextInput>(null);
 
-    const fetchSubjectsForPaper = async (paper: string) => {
+    // Fetch all subjects and topics once on mount for search
+    useEffect(() => {
+        fetchAllData();
+    }, []);
+
+    // When active paper changes (and no search is active), derive the visible subjects
+    useEffect(() => {
+        if (!searchQuery.trim() && allDataLoaded) {
+            const paperSubjects = allSubjects.filter((s: any) =>
+                s.name.startsWith(activePaper) || s.name.includes(activePaper)
+            );
+            setSubjects(paperSubjects);
+            // Derive topicsBySubject for this paper from the master map
+            const topicsMap: Record<string, any[]> = {};
+            for (const subject of paperSubjects) {
+                topicsMap[subject._id] = allTopicsBySubject[subject._id] || [];
+            }
+            setTopicsBySubject(topicsMap);
+        }
+    }, [activePaper, allDataLoaded, searchQuery]);
+
+    const fetchAllData = async () => {
         try {
             setLoadingTopics(true);
             const res = await api.get('/subjects');
-            const allSubjects = res.data || [];
+            const fetchedSubjects = res.data || [];
+            setAllSubjects(fetchedSubjects);
 
-            // Filter subjects belonging to this paper
-            const paperSubjects = allSubjects.filter((s: any) =>
-                s.name.startsWith(paper) || s.name.includes(paper)
-            );
-            setSubjects(paperSubjects);
-
-            // Fetch topics for each subject
+            // Fetch topics for ALL subjects across all papers
             const topicsMap: Record<string, any[]> = {};
-            for (const subject of paperSubjects) {
+            for (const subject of fetchedSubjects) {
                 const topicRes = await api.get(`/topics/subject/${subject._id}`);
                 topicsMap[subject._id] = topicRes.data || [];
             }
-            setTopicsBySubject(topicsMap);
+            setAllTopicsBySubject(topicsMap);
+
+            // Set initial paper view
+            const paperSubjects = fetchedSubjects.filter((s: any) =>
+                s.name.startsWith('GS I') || s.name.includes('GS I')
+            );
+            setSubjects(paperSubjects);
+            const initialTopicsMap: Record<string, any[]> = {};
+            for (const subject of paperSubjects) {
+                initialTopicsMap[subject._id] = topicsMap[subject._id] || [];
+            }
+            setTopicsBySubject(initialTopicsMap);
+            setAllDataLoaded(true);
         } catch (error) {
             console.error('Error fetching subjects/topics:', error);
         } finally {
@@ -100,6 +131,34 @@ export default function TopicQuiz() {
         });
     };
 
+    // Search filtering logic
+    const getFilteredData = () => {
+        const q = searchQuery.trim().toLowerCase();
+        if (!q) return { filteredSubjects: subjects, filteredTopicsBySubject: topicsBySubject };
+
+        // Search across ALL papers
+        const matchingSubjects: any[] = [];
+        const matchingTopicsMap: Record<string, any[]> = {};
+
+        for (const subject of allSubjects) {
+            const subjectTopics = allTopicsBySubject[subject._id] || [];
+            const matchedTopics = subjectTopics.filter((t: any) =>
+                t.title?.toLowerCase().includes(q) ||
+                t.chapter?.toLowerCase().includes(q) ||
+                subject.name?.toLowerCase().includes(q)
+            );
+            if (matchedTopics.length > 0) {
+                matchingSubjects.push(subject);
+                matchingTopicsMap[subject._id] = matchedTopics;
+            }
+        }
+
+        return { filteredSubjects: matchingSubjects, filteredTopicsBySubject: matchingTopicsMap };
+    };
+
+    const { filteredSubjects, filteredTopicsBySubject } = getFilteredData();
+    const isSearching = searchQuery.trim().length > 0;
+
     const handleGenerate = async () => {
         if (selectedTopicIds.size < 5) {
             alert('Please select at least 5 topics.');
@@ -138,27 +197,65 @@ export default function TopicQuiz() {
                 </View>
 
                 {/* GS Paper Tabs */}
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    <View style={{ flexDirection: 'row', gap: 10 }}>
-                        {GS_PAPERS.map(paper => {
-                            const isActive = activePaper === paper;
-                            const color = PAPER_COLORS[paper];
-                            return (
-                                <TouchableOpacity
-                                    key={paper}
-                                    onPress={() => setActivePaper(paper)}
-                                    style={{
-                                        paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20,
-                                        backgroundColor: isActive ? color : (isDark ? '#1f2937' : '#f3f4f6'),
-                                        borderWidth: 1, borderColor: isActive ? color : (isDark ? '#374151' : '#e5e7eb')
-                                    }}
-                                >
-                                    <Text style={{ color: isActive ? 'white' : (isDark ? '#d1d5db' : '#4b5563'), fontWeight: 'bold', fontSize: 14 }}>{paper}</Text>
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </View>
-                </ScrollView>
+                {!isSearching && (
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
+                        <View style={{ flexDirection: 'row', gap: 10 }}>
+                            {GS_PAPERS.map(paper => {
+                                const isActive = activePaper === paper;
+                                const color = PAPER_COLORS[paper];
+                                return (
+                                    <TouchableOpacity
+                                        key={paper}
+                                        onPress={() => setActivePaper(paper)}
+                                        style={{
+                                            paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20,
+                                            backgroundColor: isActive ? color : (isDark ? '#1f2937' : '#f3f4f6'),
+                                            borderWidth: 1, borderColor: isActive ? color : (isDark ? '#374151' : '#e5e7eb')
+                                        }}
+                                    >
+                                        <Text style={{ color: isActive ? 'white' : (isDark ? '#d1d5db' : '#4b5563'), fontWeight: 'bold', fontSize: 14 }}>{paper}</Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+                    </ScrollView>
+                )}
+
+                {/* Search Bar */}
+                <View style={{
+                    flexDirection: 'row', alignItems: 'center',
+                    backgroundColor: isDark ? '#1f2937' : '#ffffff',
+                    borderRadius: 14, borderWidth: 1,
+                    borderColor: isSearching ? '#8b5cf6' : (isDark ? '#374151' : '#e5e7eb'),
+                    paddingHorizontal: 14, paddingVertical: Platform.OS === 'web' ? 10 : 4,
+                }}>
+                    <Ionicons name="search" size={18} color={isSearching ? '#8b5cf6' : (isDark ? '#6b7280' : '#9ca3af')} />
+                    <TextInput
+                        ref={searchInputRef}
+                        style={{
+                            flex: 1, marginLeft: 10, fontSize: 14,
+                            color: isDark ? 'white' : '#111827',
+                            ...(Platform.OS === 'web' ? { outlineStyle: 'none' } as any : {}),
+                            paddingVertical: 6,
+                        }}
+                        placeholder="Search topics across all papers..."
+                        placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        autoCorrect={false}
+                        autoCapitalize="none"
+                    />
+                    {isSearching && (
+                        <TouchableOpacity onPress={() => { setSearchQuery(''); searchInputRef.current?.blur(); }} style={{ padding: 4 }}>
+                            <Ionicons name="close-circle" size={20} color={isDark ? '#9ca3af' : '#6b7280'} />
+                        </TouchableOpacity>
+                    )}
+                </View>
+                {isSearching && (
+                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12, marginTop: 8 }}>
+                        Found {filteredSubjects.reduce((acc, s) => acc + (filteredTopicsBySubject[s._id]?.length || 0), 0)} topics across {filteredSubjects.length} subjects
+                    </Text>
+                )}
             </View>
 
             {/* Topics List */}
@@ -168,17 +265,25 @@ export default function TopicQuiz() {
                         <ActivityIndicator size="large" color="#8b5cf6" />
                         <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', marginTop: 12 }}>Loading topics...</Text>
                     </View>
-                ) : subjects.length === 0 ? (
+                ) : filteredSubjects.length === 0 ? (
                     <View style={{ alignItems: 'center', paddingVertical: 60 }}>
-                        <Ionicons name="folder-open-outline" size={48} color={isDark ? '#4b5563' : '#d1d5db'} />
-                        <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', marginTop: 12 }}>No subjects found for {activePaper}</Text>
+                        <Ionicons name={isSearching ? 'search-outline' : 'folder-open-outline'} size={48} color={isDark ? '#4b5563' : '#d1d5db'} />
+                        <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', marginTop: 12 }}>
+                            {isSearching ? `No topics matching "${searchQuery}"` : `No subjects found for ${activePaper}`}
+                        </Text>
+                        {isSearching && (
+                            <TouchableOpacity onPress={() => setSearchQuery('')} style={{ marginTop: 12, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#8b5cf620', borderRadius: 20 }}>
+                                <Text style={{ color: '#8b5cf6', fontWeight: 'bold', fontSize: 13 }}>Clear Search</Text>
+                            </TouchableOpacity>
+                        )}
                     </View>
                 ) : (
-                    subjects.map(subject => {
-                        const topics = topicsBySubject[subject._id] || [];
-                        const isExpanded = expandedSubjects.has(subject._id);
-                        const selectedInSubject = topics.filter(t => selectedTopicIds.has(t._id)).length;
-                        const allSelectedInSubject = topics.length > 0 && selectedInSubject === topics.length;
+                    filteredSubjects.map(subject => {
+                        const topics = filteredTopicsBySubject[subject._id] || [];
+                        const isExpanded = isSearching || expandedSubjects.has(subject._id);
+                        const allSubjectTopics = allTopicsBySubject[subject._id] || [];
+                        const selectedInSubject = allSubjectTopics.filter(t => selectedTopicIds.has(t._id)).length;
+                        const allSelectedInSubject = allSubjectTopics.length > 0 && selectedInSubject === allSubjectTopics.length;
 
                         return (
                             <View key={subject._id} style={{ marginBottom: 16, backgroundColor: isDark ? '#1f2937' : '#ffffff', borderRadius: 16, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', overflow: 'hidden' }}>
@@ -190,18 +295,20 @@ export default function TopicQuiz() {
                                     <View style={{ flex: 1 }}>
                                         <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 16, fontWeight: 'bold' }}>{subject.name}</Text>
                                         <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12, marginTop: 2 }}>
-                                            {topics.length} topics • {selectedInSubject} selected
+                                            {isSearching ? `${topics.length} matches` : `${topics.length} topics`} • {selectedInSubject} selected
                                         </Text>
                                     </View>
                                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                                        <TouchableOpacity
-                                            onPress={(e) => { e.stopPropagation(); selectAllInSubject(subject._id); }}
-                                            style={{ backgroundColor: allSelectedInSubject ? '#10b98120' : (isDark ? '#374151' : '#f3f4f6'), paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 }}
-                                        >
-                                            <Text style={{ color: allSelectedInSubject ? '#10b981' : (isDark ? '#d1d5db' : '#6b7280'), fontSize: 12, fontWeight: 'bold' }}>
-                                                {allSelectedInSubject ? 'Deselect All' : 'Select All'}
-                                            </Text>
-                                        </TouchableOpacity>
+                                        {!isSearching && (
+                                            <TouchableOpacity
+                                                onPress={(e) => { e.stopPropagation(); selectAllInSubject(subject._id); }}
+                                                style={{ backgroundColor: allSelectedInSubject ? '#10b98120' : (isDark ? '#374151' : '#f3f4f6'), paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 }}
+                                            >
+                                                <Text style={{ color: allSelectedInSubject ? '#10b981' : (isDark ? '#d1d5db' : '#6b7280'), fontSize: 12, fontWeight: 'bold' }}>
+                                                    {allSelectedInSubject ? 'Deselect All' : 'Select All'}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        )}
                                         <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={20} color={isDark ? '#9ca3af' : '#6b7280'} />
                                     </View>
                                 </TouchableOpacity>

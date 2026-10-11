@@ -16,54 +16,443 @@ const BLUEPRINT = [
 ];
 
 const EXTENDED_FORMULAS = [
+  // ═══════════════════════════════════════════════════════════════
+  // 1. NUMBER SYSTEM (Days 1–7)
+  // ═══════════════════════════════════════════════════════════════
   {
-    category: 'Advanced Number System',
+    category: 'Number System',
+    title: 'Divisibility Rules (2–13)',
+    formula: '2→Even | 3→DigitSum÷3 | 4→Last2Digits÷4 | 5→Ends0/5 | 6→Div by 2&3 | 7→Double last, subtract | 8→Last3÷8 | 9→DigitSum÷9 | 11→(OddPos−EvenPos)÷11',
+    note: 'For 7: Remove last digit, double it, subtract from remaining. Repeat. For 13: similar with ×4 and add.'
+  },
+  {
+    category: 'Number System',
+    title: 'HCF & LCM Fundamentals',
+    formula: 'HCF × LCM = Product of two numbers | LCM(fractions) = LCM(numerators) / HCF(denominators) | HCF(fractions) = HCF(numerators) / LCM(denominators)',
+    note: 'For 3+ numbers: find HCF/LCM pairwise. HCF uses lowest powers; LCM uses highest powers of prime factors.'
+  },
+  {
+    category: 'Number System',
+    title: 'Remainder & Cyclicity',
+    formula: 'Cyclicity of units digits: 2→{2,4,8,6} | 3→{3,9,7,1} | 7→{7,9,3,1} | 8→{8,4,2,6} | Cycle length = 4',
+    note: 'Divide exponent by 4; remainder gives position in cycle. Powers of 0,1,5,6 always end in themselves.'
+  },
+  {
+    category: 'Number System',
     title: 'Fermat\'s Little Theorem & Euler Totient',
-    formula: 'a^(p-1) ≡ 1 (mod p)  [where p is prime and gcd(a,p)=1]',
-    note: 'Used for evaluating high-exponent remainders e.g. 2^100 mod 101 = 1.'
+    formula: 'a^(p-1) ≡ 1 (mod p) [p prime, gcd(a,p)=1] | φ(n) = n × ∏(1 − 1/p) for each prime factor p',
+    note: 'Used for high-exponent remainders. Example: 2^100 mod 101 = 1. Euler: a^φ(n) ≡ 1 (mod n).'
   },
   {
-    category: 'Advanced Number System',
-    title: 'Trailing Zeros in Factorials',
-    formula: 'Count of 5s = ⌊N/5⌋ + ⌊N/25⌋ + ⌊N/125⌋ + ...',
-    note: 'Example: 100! has ⌊100/5⌋ + ⌊100/25⌋ = 20 + 4 = 24 trailing zeros.'
+    category: 'Number System',
+    title: 'Trailing Zeros & Highest Power in n!',
+    formula: 'Trailing zeros in n! = ⌊n/5⌋ + ⌊n/25⌋ + ⌊n/125⌋ + ... | Highest power of prime p in n! = ⌊n/p⌋ + ⌊n/p²⌋ + ...',
+    note: '100! has ⌊100/5⌋+⌊100/25⌋ = 24 zeros. For highest power of 2 in 10!: ⌊10/2⌋+⌊10/4⌋+⌊10/8⌋ = 5+2+1 = 8.'
   },
   {
-    category: 'Core Arithmetic',
-    title: 'Mixture & Alligation Cross Formula',
-    formula: '(Cheaper Qty) / (Dearer Qty) = (Dearer Price - Mean Price) / (Mean Price - Cheaper Price)',
-    note: 'Used for solving multi-vessel liquid replacements and price blending.'
+    category: 'Number System',
+    title: 'Factors & Divisors Count',
+    formula: 'If N = p₁^a × p₂^b × p₃^c then: Total factors = (a+1)(b+1)(c+1) | Sum of factors = [(p₁^(a+1)−1)/(p₁−1)] × ...',
+    note: 'Even factors: reduce power of 2 by 1 in count. Odd factors: set power of 2 to 0.'
   },
   {
-    category: 'Time, Speed & Distance',
-    title: 'Average Speed & Relative Intercept',
-    formula: 'S_avg = 2xy/(x+y)  |  Relative Speed (Opposite) = S1 + S2',
-    note: 'Used when equal distance is traveled at different speeds x and y.'
+    category: 'Number System',
+    title: 'Squares, Cubes & Roots',
+    formula: 'Perfect squares have odd number of factors | (a+b)² = a²+2ab+b² | (a−b)² = a²−2ab+b² | a²−b² = (a+b)(a−b)',
+    note: 'Sum of first n odd numbers = n². √(a×b) = √a × √b. Cube root of perfect cube: group digits in threes from right.'
   },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 2. PERCENTAGES (Days 9–11)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Percentages',
+    title: 'Fraction-to-Percentage Quick Table',
+    formula: '1/2=50% | 1/3=33.3% | 1/4=25% | 1/5=20% | 1/6=16.67% | 1/7=14.28% | 1/8=12.5% | 1/9=11.11% | 1/11=9.09% | 1/12=8.33%',
+    note: 'Memorise these for instant mental calculations in CSAT. 2/3=66.67%, 3/8=37.5%, 5/6=83.33%.'
+  },
+  {
+    category: 'Percentages',
+    title: 'Successive Percentage Change',
+    formula: 'Net effect of a% then b% = a + b + (ab/100) | Two successive discounts: a% & b% ≠ (a+b)%',
+    note: '+20% then −20% net = 20−20+(20×−20)/100 = −4% loss. Three changes: apply formula twice.'
+  },
+  {
+    category: 'Percentages',
+    title: 'Population & Depreciation',
+    formula: 'Growth: P × (1 + r/100)^n | Depreciation: P × (1 − r/100)^n | % change = [(New−Old)/Old] × 100',
+    note: 'If price ↑ by x%, to restore original, reduce by [x/(100+x)]×100%. If ↓ by x%, increase by [x/(100−x)]×100%.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 3. RATIO & PROPORTION (Days 12–13)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Ratio & Proportion',
+    title: 'Ratio & Proportion Rules',
+    formula: 'a:b = c:d ⟹ ad = bc (cross multiply) | Componendo: (a+b)/b = (c+d)/d | Dividendo: (a−b)/b = (c−d)/d',
+    note: 'Componendo-Dividendo combined: (a+b)/(a−b) = (c+d)/(c−d). Chain ratios: make common term equal.'
+  },
+  {
+    category: 'Ratio & Proportion',
+    title: 'Partnership & Profit Sharing',
+    formula: 'Profit share ∝ Capital × Time | A:B = (C₁×T₁) : (C₂×T₂)',
+    note: 'For working vs sleeping partner: working partner gets salary first, remaining profit shared by capital ratio.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 4. AVERAGES (Days 15–16)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Averages',
+    title: 'Weighted & Combined Averages',
+    formula: 'Avg = Sum/Count | Weighted Avg = (n₁A₁ + n₂A₂) / (n₁ + n₂) | New avg when item added = (Old sum + New) / (n+1)',
+    note: 'If avg of n numbers is A, and one number x is removed: new avg = (nA − x)/(n−1). Age of group increases by 1 each year.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 5. PROFIT, LOSS & DISCOUNT (Days 17–18)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Profit & Loss',
+    title: 'CP, SP, MP & Discount Relations',
+    formula: 'Profit% = [(SP−CP)/CP]×100 | Loss% = [(CP−SP)/CP]×100 | SP = CP×(100±P%)/100 | Discount% = [(MP−SP)/MP]×100',
+    note: 'SP = MP × (100−d)/100. If discount d% on MP and profit p%: MP = CP×(100+p)/(100−d).'
+  },
+  {
+    category: 'Profit & Loss',
+    title: 'Dishonest Dealer & Successive Discounts',
+    formula: 'Dishonest gain% = [True weight − False weight]/False weight × 100 | Successive discounts d₁,d₂: Net = 1−(1−d₁/100)(1−d₂/100)',
+    note: 'Equivalent single discount for 20% & 10% = 1−(0.8×0.9) = 1−0.72 = 28%.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 6. SIMPLE & COMPOUND INTEREST (Days 19–20)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Interest',
+    title: 'Simple Interest (SI)',
+    formula: 'SI = P × R × T / 100 | Amount = P + SI | P = 100×SI/(R×T) | Rate to double = 100/T years',
+    note: 'SI is same every year. If SI = P, then RT = 100. Money doubles in 100/R years at SI.'
+  },
+  {
+    category: 'Interest',
+    title: 'Compound Interest (CI)',
+    formula: 'A = P(1 + R/100)^T | CI = A − P | CI − SI (2 yrs) = P(R/100)² | CI − SI (3 yrs) = P×R²(300+R)/100³',
+    note: 'Half-yearly: rate=R/2, time=2T. Quarterly: rate=R/4, time=4T. Rule of 72: doubling time ≈ 72/R years.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 7. MIXTURES & ALLIGATION (Days 22–23)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Mixtures & Alligation',
+    title: 'Alligation Cross Rule',
+    formula: 'Cheaper/Dearer = (Dearer price − Mean) / (Mean − Cheaper price) | Replacement: After n ops, pure qty = Q × (1 − R/Q)^n',
+    note: 'Works for price, concentration, marks, speed blending. Replacement formula: R = quantity replaced each time, Q = total.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 8. TIME & WORK (Days 24–26)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Time & Work',
+    title: 'Work Rate Formulas',
+    formula: 'If A does in x days → rate = 1/x per day | A+B together: 1/x + 1/y = 1/T → T = xy/(x+y) | Efficiency ∝ 1/Time',
+    note: 'Use LCM of days as total work units for cleaner calculations. If A is twice as efficient as B, A takes half the time.'
+  },
+  {
+    category: 'Time & Work',
+    title: 'Pipes & Cisterns',
+    formula: 'Inlet fills in x hrs → rate = 1/x | Outlet empties in y hrs → rate = −1/y | Net rate = 1/x − 1/y | Fill time = xy/(y−x)',
+    note: 'When both work: net rate is sum of individual rates. Leak reduces effective rate. Use +ve for fill, −ve for empty.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 9. SPEED, DISTANCE & TIME (Days 29–32)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Speed, Distance & Time',
+    title: 'Core SDT Formulas & Conversions',
+    formula: 'D = S × T | S = D/T | T = D/S | km/h to m/s: × 5/18 | m/s to km/h: × 18/5',
+    note: '72 km/h = 20 m/s. 36 km/h = 10 m/s. Always convert to same units before calculating.'
+  },
+  {
+    category: 'Speed, Distance & Time',
+    title: 'Average Speed & Relative Speed',
+    formula: 'Avg speed (same distance) = 2S₁S₂/(S₁+S₂) | Same direction: S_rel = S₁−S₂ | Opposite: S_rel = S₁+S₂',
+    note: 'Average speed ≠ average of speeds. For 3 equal distances at speeds a,b,c: avg = 3abc/(ab+bc+ca).'
+  },
+  {
+    category: 'Speed, Distance & Time',
+    title: 'Trains Crossing',
+    formula: 'Pole/Person: T = L_train / S | Platform: T = (L_train + L_platform) / S | Two trains same dir: T = (L₁+L₂)/(S₁−S₂) | Opposite: T = (L₁+L₂)/(S₁+S₂)',
+    note: 'A person/pole has zero length. Two trains crossing = sum of lengths ÷ relative speed.'
+  },
+  {
+    category: 'Speed, Distance & Time',
+    title: 'Boats & Streams',
+    formula: 'Downstream speed = B + S | Upstream speed = B − S | Speed in still water B = (D+U)/2 | Stream speed S = (D−U)/2',
+    note: 'B = boat speed, S = stream speed, D = downstream speed, U = upstream speed. Time upstream > time downstream.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 10. AGES (Days 33–34)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Ages',
+    title: 'Age Problem Setup Rules',
+    formula: 'Present age = x | n years ago = x−n | n years hence = x+n | Age difference never changes | Ratio of ages changes over time',
+    note: 'Set up linear equations. If ratio of ages is a:b now, and c:d after n years, then (ax+n)/(bx+n) = c/d. Solve for x.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 11. ALGEBRA (Days 36–39)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Algebra',
+    title: 'Key Algebraic Identities',
+    formula: '(a+b)² = a²+2ab+b² | (a−b)² = a²−2ab+b² | a²−b² = (a+b)(a−b) | (a+b)³ = a³+3a²b+3ab²+b³ | a³+b³ = (a+b)(a²−ab+b²)',
+    note: 'If a+b and ab are known: a²+b² = (a+b)²−2ab. If a−b and ab are known: a²+b² = (a−b)²+2ab.'
+  },
+  {
+    category: 'Algebra',
+    title: 'Linear & Simultaneous Equations',
+    formula: 'ax+b=0 → x=−b/a | System a₁x+b₁y=c₁, a₂x+b₂y=c₂: Unique if a₁/a₂ ≠ b₁/b₂ | Infinite if a₁/a₂=b₁/b₂=c₁/c₂ | No solution if a₁/a₂=b₁/b₂≠c₁/c₂',
+    note: 'Substitution or elimination method. Cross-multiplication: x/(b₁c₂−b₂c₁) = y/(c₁a₂−c₂a₁) = 1/(a₁b₂−a₂b₁).'
+  },
+  {
+    category: 'Algebra',
+    title: 'Quadratic & Inequalities',
+    formula: 'ax²+bx+c=0 → x = [−b ± √(b²−4ac)] / 2a | Sum of roots = −b/a | Product of roots = c/a | D>0: 2 real, D=0: equal, D<0: imaginary',
+    note: 'For inequalities: flip sign when multiplying/dividing by negative. |x| < a ⟹ −a < x < a.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 12. SEQUENCES & PROGRESSIONS (Day 40)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Sequences & Progressions',
+    title: 'Arithmetic Progression (AP)',
+    formula: 'nth term = a + (n−1)d | Sum of n terms = n/2 × [2a + (n−1)d] = n/2 × (first + last) | AM of a,b = (a+b)/2',
+    note: 'Sum of first n naturals = n(n+1)/2. Sum of first n odd = n². Sum of first n even = n(n+1). Sum of squares = n(n+1)(2n+1)/6.'
+  },
+  {
+    category: 'Sequences & Progressions',
+    title: 'Geometric Progression (GP)',
+    formula: 'nth term = ar^(n−1) | Sum of n terms = a(r^n − 1)/(r−1) [r≠1] | Sum to infinity (|r|<1) = a/(1−r) | GM of a,b = √(ab)',
+    note: 'AM ≥ GM ≥ HM always. HM of a,b = 2ab/(a+b). Three in GP: a, ar, ar². Product of 3 terms in GP = (middle)³.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 13. GEOMETRY (Days 43–48)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Geometry',
+    title: 'Lines, Angles & Triangles',
+    formula: 'Sum of angles in △ = 180° | Exterior angle = sum of remote interior angles | Angle sum of polygon = (n−2)×180° | Each angle of regular polygon = (n−2)×180°/n',
+    note: 'Vertically opposite angles are equal. Co-interior (same-side) angles on parallel lines sum to 180°. Alternate angles are equal.'
+  },
+  {
+    category: 'Geometry',
+    title: 'Pythagoras & Triangle Properties',
+    formula: 'a² + b² = c² (right △) | Common triplets: (3,4,5), (5,12,13), (7,24,25), (8,15,17) | Triangle inequality: sum of any 2 sides > 3rd side',
+    note: 'Median to hypotenuse = half of hypotenuse. Centroid divides median in 2:1 from vertex. In-radius r = Area/semi-perimeter.'
+  },
+  {
+    category: 'Geometry',
+    title: 'Similar & Congruent Triangles',
+    formula: 'Similar △: sides proportional, angles equal | Area ratio = (side ratio)² | Perimeter ratio = side ratio | BPT: line ∥ to base divides sides proportionally',
+    note: 'Congruence tests: SSS, SAS, ASA, AAS, RHS. Midpoint theorem: line joining midpoints is ∥ to base and half its length.'
+  },
+  {
+    category: 'Geometry',
+    title: 'Circle Theorems',
+    formula: 'Angle in semicircle = 90° | Angle at centre = 2 × angle at circumference | Tangent ⊥ radius | Two tangents from external point are equal',
+    note: 'Chord distance from centre: d² + (chord/2)² = r². Intersecting chords: PA×PB = PC×PD. Power of a point theorem.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 14. MENSURATION 2D (Day 48)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Mensuration 2D',
+    title: 'Area & Perimeter of Plane Figures',
+    formula: 'Rectangle: A=lb, P=2(l+b) | Square: A=s², P=4s | △: A=½bh | Heron: A=√[s(s−a)(s−b)(s−c)] s=(a+b+c)/2 | Equilateral △: A=(√3/4)s²',
+    note: 'Parallelogram: A=base×height. Rhombus: A=½×d₁×d₂. Trapezium: A=½(a+b)×h.'
+  },
+  {
+    category: 'Mensuration 2D',
+    title: 'Circle Measurements',
+    formula: 'Area = πr² | Circumference = 2πr | Sector area = (θ/360)πr² | Arc length = (θ/360)×2πr | Ring area = π(R²−r²)',
+    note: 'Semicircle area = πr²/2. Quadrant area = πr²/4. Use π = 22/7 or 3.14 as needed.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 15. MENSURATION 3D (Days 50–52)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Mensuration 3D',
+    title: 'Cube, Cuboid & Prism',
+    formula: 'Cube: V=a³, SA=6a², Diagonal=a√3 | Cuboid: V=lbh, SA=2(lb+bh+lh), Diagonal=√(l²+b²+h²)',
+    note: 'Longest rod in room = space diagonal. Prism: V = Base area × height. LA = perimeter of base × height.'
+  },
+  {
+    category: 'Mensuration 3D',
+    title: 'Cylinder, Cone & Sphere',
+    formula: 'Cylinder: V=πr²h, CSA=2πrh, TSA=2πr(r+h) | Cone: V=⅓πr²h, CSA=πrl, l=√(r²+h²) | Sphere: V=4/3πr³, SA=4πr²',
+    note: 'Hemisphere: V=2/3πr³, CSA=2πr², TSA=3πr². Frustum: V=πh/3(R²+r²+Rr). When shape recast, volume remains same.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 16. DATA INTERPRETATION (Days 53–55)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Data Interpretation',
+    title: 'DI Calculation Shortcuts',
+    formula: '% Change = [(New−Old)/Old]×100 | CAGR = [(Final/Initial)^(1/n) − 1]×100 | Pie chart: Value = (Angle/360)×Total = (%/100)×Total',
+    note: 'Bar/line graphs: always check scale. For ratios from pie chart: compare angle/percentage values directly without computing actual numbers.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 17. PERMUTATIONS, COMBINATIONS & PROBABILITY (Micro-Syllabus)
+  // ═══════════════════════════════════════════════════════════════
   {
     category: 'Combinatorics',
-    title: 'Circular Arrangements & Distribution',
-    formula: 'Circular Permutations = (n - 1)!  |  Identical Items to Distinct Groups = (n + r - 1)C(r - 1)',
-    note: 'For necklaces/garlands (no direction distinction), divide by 2: (n - 1)! / 2.'
+    title: 'Permutations & Combinations',
+    formula: 'nPr = n!/(n−r)! | nCr = n!/[r!(n−r)!] | nCr = nC(n−r) | nC0 = nCn = 1 | With repetition: (n+r−1)Cr',
+    note: 'Arrangement (order matters) = P. Selection (order doesn\'t matter) = C. Circular perm = (n−1)!. Necklace = (n−1)!/2.'
   },
   {
-    category: 'Logical Reasoning',
-    title: 'Clock Hand Angle Formula',
-    formula: 'θ = | (30 * H) - (11/2 * M) |',
-    note: 'H = Hour, M = Minute. Gives exact angle in degrees between clock hands.'
+    category: 'Probability',
+    title: 'Probability Rules',
+    formula: 'P(E) = Favorable/Total | 0 ≤ P ≤ 1 | P(A∪B) = P(A)+P(B)−P(A∩B) | P(A\') = 1−P(A) | Independent: P(A∩B) = P(A)×P(B)',
+    note: 'Mutually exclusive: P(A∩B)=0, so P(A∪B)=P(A)+P(B). Conditional: P(A|B) = P(A∩B)/P(B). Coins: 2^n outcomes for n tosses.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 18. LOGICAL REASONING — SERIES & PATTERNS (Day 57)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Series & Patterns',
+    title: 'Number & Letter Series Detection',
+    formula: 'Check: ±constant | ×÷constant | ±increasing/decreasing | Squares/cubes ± offset | Alternating patterns | Prime-based | Fibonacci-type (sum of prev 2)',
+    note: 'CSAT series usually have max 6–8 terms. Always check differences first, then second-order differences, then ratios. Letter series: A=1...Z=26.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 19. CODING-DECODING (Day 59)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Coding & Decoding',
+    title: 'Alphabet Position & Coding Rules',
+    formula: 'A=1, B=2...Z=26 | Reverse: A=26, B=25...Z=1 | Opposite letters: A↔Z, B↔Y, C↔X (sum=27) | Position from right = 27−position from left',
+    note: 'Common coding: shift by +1, +2, −1. Mirror coding: each letter replaced by its opposite. Matrix coding: row+column = code.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 20. DIRECTIONS (Day 60)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Directions',
+    title: 'Compass & Distance Rules',
+    formula: 'N-E-S-W clockwise | 90° right from N = E | 90° left from N = W | Shortest distance = √(x² + y²) [Pythagoras]',
+    note: 'Convert all turns to compass bearings. Track x (East +, West −) and y (North +, South −) separately, then find resultant.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 21. BLOOD RELATIONS (Day 61)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Blood Relations',
+    title: 'Relationship Mapping Rules',
+    formula: 'Father\'s/Mother\'s son = Brother | Father\'s/Mother\'s daughter = Sister | Father\'s father = Grandfather | Mother\'s brother = Maternal uncle',
+    note: 'Draw family tree top-down. Use + for male, − for female. Same generation = siblings/cousins. Track through coded symbols like +, −, ×, ÷.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 22. CLOCKS & CALENDARS (Day 75)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Clocks',
+    title: 'Clock Hand Angle & Coincidence',
+    formula: 'θ = |30H − 11M/2| | Min hand gains 5.5° per minute over hour hand | Hands coincide every 65 5/11 minutes | 22 times in 24 hours (not 24)',
+    note: 'Hands at right angle (90°): 44 times/day. Hands opposite (180°): 22 times/day. Hands overlap: 22 times/day.'
   },
   {
-    category: 'Logical Reasoning',
-    title: 'Painted Sub-Cubes Metric (n x n x n)',
-    formula: '3 Faces = 8 (corners) | 2 Faces = 12(n-2) | 1 Face = 6(n-2)^2 | 0 Faces = (n-2)^3',
-    note: 'n = number of cuts per edge + 1 (i.e. length of large cube / length of small cube).'
+    category: 'Calendars',
+    title: 'Odd Days & Day-of-Week Method',
+    formula: 'Odd days: Mon-Sun = 1-0 | 1 ordinary year = 1 odd day | 1 leap year = 2 odd days | 100 yrs = 5 odd days | 400 yrs = 0 odd days',
+    note: 'Leap year: divisible by 4 (not by 100, unless also by 400). Count total odd days mod 7: 0=Sun,1=Mon...6=Sat. Jan=3, Feb=0/1 odd days.'
   },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 23. CUBES & DICE (Micro-Syllabus)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Cubes & Dice',
+    title: 'Painted Sub-Cubes Metric (n × n × n)',
+    formula: '3 faces painted = 8 (corners always) | 2 faces = 12(n−2) edges | 1 face = 6(n−2)² face centres | 0 faces = (n−2)³ interior',
+    note: 'Total small cubes = n³. Standard dice: opposite faces sum = 7 (1-6, 2-5, 3-4). If 2 dice shown, check adjacent faces to determine opposite.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 24. VENN DIAGRAMS & SETS (Day 68)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Venn Diagrams',
+    title: 'Set Theory Formulas',
+    formula: 'n(A∪B) = n(A)+n(B)−n(A∩B) | n(A∪B∪C) = n(A)+n(B)+n(C)−n(A∩B)−n(B∩C)−n(A∩C)+n(A∩B∩C) | Only A = n(A)−n(A∩B)−n(A∩C)+n(A∩B∩C)',
+    note: 'For "at least one" = total in union. "Exactly two" = sum of pairwise intersections − 3×(all three). Start filling from innermost region.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 25. SYLLOGISMS (Day 67)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Syllogisms',
+    title: 'Syllogism Rules & Complementary Pairs',
+    formula: 'All A are B + All B are C → All A are C | Some A are B → Some B are A (converse) | No A are B → No B are A | All A are B → Some A are B',
+    note: '"Some A are not B" and "All A are B" are complementary (exactly one true). Use Venn diagrams for complex 3-statement syllogisms. "Some" means "at least one".'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 26. CRITICAL REASONING (Days 69–74)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Critical Reasoning',
+    title: 'Statements & Assumptions / Conclusions',
+    formula: 'Assumption = unstated necessary premise (negation test: if negated, conclusion fails) | Conclusion = directly provable from statement | Inference = what logically follows',
+    note: 'Strong argument: both relevant and significant. Weak: vague, extreme, or irrelevant. Course of action: practical and addresses the problem directly.'
+  },
+  {
+    category: 'Critical Reasoning',
+    title: 'Cause & Effect / Strengthen-Weaken',
+    formula: 'Cause → Effect (temporal + causal link) | Strengthen: add supporting evidence | Weaken: provide alternative cause or break the causal chain',
+    note: 'Independent causes = no causal connection. Common cause = both effects of a third factor. UPSC often tests whether two events are truly linked.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 27. READING COMPREHENSION (Days 78–84)
+  // ═══════════════════════════════════════════════════════════════
   {
     category: 'Reading Comprehension',
     title: 'Assumption vs Inference Rule',
-    formula: 'Assumption = Unstated Necessary Premise | Corollary = Direct Spin-off Impact',
-    note: 'In UPSC RC, if an assumption is negated, the author\'s main conclusion MUST fall apart.'
-  }
+    formula: 'Assumption = unstated necessary premise | Inference = logical deduction from stated facts | Corollary = direct spin-off impact',
+    note: 'Negation test for assumptions: if negating an option destroys the author\'s argument, it IS a necessary assumption.'
+  },
+  {
+    category: 'Reading Comprehension',
+    title: 'Tone, Purpose & Main Idea Strategy',
+    formula: 'Tone types: Analytical | Critical | Objective | Persuasive | Satirical | Laudatory | Cautionary | Purpose: Inform | Argue | Describe | Compare | Evaluate',
+    note: 'Main idea = what the ENTIRE passage is about (not just one paragraph). Eliminate options too narrow (detail) or too broad (beyond scope). Look at first & last paragraphs.'
+  },
+  {
+    category: 'Reading Comprehension',
+    title: 'Fact vs Opinion & Evidence',
+    formula: 'Fact = verifiable/provable statement | Opinion = subjective judgement/belief | Claim = assertion requiring evidence | Supporting evidence = data/example backing a claim',
+    note: 'Signal words: "studies show" (fact), "I believe" (opinion), "it is argued" (claim). UPSC RC tests distinction between stated facts vs author\'s opinions.'
+  },
 ];
 
 const DRILL_QUESTIONS = [

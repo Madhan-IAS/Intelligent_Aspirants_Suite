@@ -1,10 +1,43 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Modal, Platform } from 'react-native';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Modal, Platform, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../src/services/api';
 import { useTheme } from '../src/context/ThemeContext';
 import { CSAT_112_PLAN, CSAT_WEEK_LABELS, CATEGORY_CONFIG, DAILY_ROUTINE, CSAT_DAILY_SLOT } from '../src/data/csat112Plan';
+
+// ─── Formula Categorization & Macro Chapters ───
+const FORMULA_GROUPS = [
+  { key: 'All', label: 'All (79)' },
+  { key: 'Number System', label: '🔢 Number System' },
+  { key: 'Arithmetic', label: '🧮 Arithmetic' },
+  { key: 'Algebra & Series', label: '📈 Algebra & Series' },
+  { key: 'Geometry & Mensuration', label: '📐 Geometry' },
+  { key: 'Combinatorics & Prob', label: '🎲 P&C / Probability' },
+  { key: 'Mental Ability & GMA', label: '🧠 GMA & Clocks' },
+  { key: 'Logical Reasoning', label: '⚖️ Logical Reasoning' },
+  { key: 'Reading Comprehension', label: '📖 Reading Comp' },
+];
+
+const FORMULA_CATEGORY_MAP: Record<string, string> = {
+  'Number System': 'Number System', 'Divisibility': 'Number System', 'Remainders': 'Number System', 'Units Digit': 'Number System', 'HCF & LCM': 'Number System',
+  'Averages': 'Arithmetic', 'Percentages': 'Arithmetic', 'Ratios': 'Arithmetic', 'Alligation': 'Arithmetic', 'Profit & Loss': 'Arithmetic', 'Simple Interest': 'Arithmetic', 'Compound Interest': 'Arithmetic', 'Time & Work': 'Arithmetic', 'Speed & Distance': 'Arithmetic', 'Trains': 'Arithmetic', 'Boats & Streams': 'Arithmetic', 'Escalators & Circular': 'Arithmetic',
+  'Algebra': 'Algebra & Series', 'Progression': 'Algebra & Series',
+  'Geometry': 'Geometry & Mensuration', 'Mensuration 2D': 'Geometry & Mensuration', 'Mensuration 3D': 'Geometry & Mensuration', 'Coordinate Geometry': 'Geometry & Mensuration',
+  'Permutations': 'Combinatorics & Prob', 'Combinations': 'Combinatorics & Prob', 'Probability': 'Combinatorics & Prob',
+  'Alphabet Test': 'Mental Ability & GMA', 'Series': 'Mental Ability & GMA', 'Coding-Decoding': 'Mental Ability & GMA', 'Direction Test': 'Mental Ability & GMA', 'Blood Relations': 'Mental Ability & GMA', 'Ranking': 'Mental Ability & GMA', 'Clocks': 'Mental Ability & GMA', 'Calendars': 'Mental Ability & GMA', 'Cubes': 'Mental Ability & GMA',
+  'Syllogisms': 'Logical Reasoning', 'Assumptions': 'Logical Reasoning', 'Course of Action': 'Logical Reasoning', 'Cause & Effect': 'Logical Reasoning', 'Inference': 'Logical Reasoning',
+  'Reading Comprehension': 'Reading Comprehension',
+};
+
+const ROADMAP_CATEGORY_FILTERS = [
+  { key: 'all', label: 'All 112' },
+  { key: 'learn', label: '📖 Learn' },
+  { key: 'pyq', label: '📋 PYQs' },
+  { key: 'mock', label: '🎯 Mocks' },
+  { key: 'revision', label: '🔄 Revision' },
+  { key: 'test', label: '📝 Tests' },
+];
 
 const BLUEPRINT = [
   { segment: 'Number System & Permutations', count: '18–22 Qs', priority: 'Extreme High', color: '#ef4444' },
@@ -717,6 +750,16 @@ export default function CSATHub() {
   // ─── Top-level view toggle ───
   const [mainView, setMainView] = useState<'syllabus' | 'roadmap'>('roadmap');
 
+  // ─── Search & Category Filters State ───
+  const [formulaSearchQuery, setFormulaSearchQuery] = useState('');
+  const [formulaSelectedCategory, setFormulaSelectedCategory] = useState('All');
+
+  const [roadmapSearchQuery, setRoadmapSearchQuery] = useState('');
+  const [roadmapCategoryFilter, setRoadmapCategoryFilter] = useState('all');
+
+  const [syllabusSearchQuery, setSyllabusSearchQuery] = useState('');
+  const [collapsedChapters, setCollapsedChapters] = useState<Record<string, boolean>>({});
+
   // ─── Roadmap State ───
   const [roadmap, setRoadmap] = useState<RoadmapStatus | null>(null);
   const [roadmapLoading, setRoadmapLoading] = useState(true);
@@ -805,7 +848,71 @@ export default function CSATHub() {
     }
   };
 
-  const filteredTopics = topics.filter(t => t.chapter === activeTab);
+  // ─── Filtered Formulas ───
+  const filteredFormulas = useMemo(() => {
+    return EXTENDED_FORMULAS.filter(item => {
+      if (formulaSelectedCategory !== 'All') {
+        const group = FORMULA_CATEGORY_MAP[item.category] || item.category;
+        if (group !== formulaSelectedCategory) return false;
+      }
+      if (formulaSearchQuery.trim()) {
+        const q = formulaSearchQuery.toLowerCase();
+        const match = item.title.toLowerCase().includes(q) ||
+          item.formula.toLowerCase().includes(q) ||
+          item.category.toLowerCase().includes(q) ||
+          item.note.toLowerCase().includes(q);
+        if (!match) return false;
+      }
+      return true;
+    });
+  }, [formulaSearchQuery, formulaSelectedCategory]);
+
+  // ─── Filtered Roadmap Days (Search & Category Pill) ───
+  const isRoadmapFiltered = Boolean(roadmapSearchQuery.trim()) || roadmapCategoryFilter !== 'all';
+  const filteredRoadmapDays = useMemo(() => {
+    return CSAT_112_PLAN.filter(d => {
+      if (roadmapCategoryFilter !== 'all' && d.category !== roadmapCategoryFilter) return false;
+      if (roadmapSearchQuery.trim()) {
+        const q = roadmapSearchQuery.toLowerCase();
+        const match = d.topic.toLowerCase().includes(q) ||
+          d.weekLabel.toLowerCase().includes(q) ||
+          d.monthLabel.toLowerCase().includes(q) ||
+          `day ${d.day}`.toLowerCase().includes(q) ||
+          `d${d.day}`.toLowerCase().includes(q);
+        if (!match) return false;
+      }
+      return true;
+    });
+  }, [roadmapSearchQuery, roadmapCategoryFilter]);
+
+  // ─── Micro-Syllabus Filtered Topics & Grouped Chapters ───
+  const isSyllabusSearching = Boolean(syllabusSearchQuery.trim());
+  const filteredTopics = useMemo(() => {
+    return topics.filter(t => {
+      if (isSyllabusSearching) {
+        const q = syllabusSearchQuery.toLowerCase();
+        return t.title?.toLowerCase().includes(q) ||
+          t.heading?.toLowerCase().includes(q) ||
+          t.chapter?.toLowerCase().includes(q);
+      }
+      return t.chapter === activeTab;
+    });
+  }, [topics, syllabusSearchQuery, activeTab, isSyllabusSearching]);
+
+  // Group topics by chapter (heading)
+  const groupedChapters = useMemo(() => {
+    const map: Record<string, any[]> = {};
+    filteredTopics.forEach(t => {
+      const heading = t.heading || 'General Core Topics';
+      if (!map[heading]) map[heading] = [];
+      map[heading].push(t);
+    });
+    return map;
+  }, [filteredTopics]);
+
+  const toggleChapter = (heading: string) => {
+    setCollapsedChapters(prev => ({ ...prev, [heading]: !prev[heading] }));
+  };
 
   const completedCount = topics.filter(t => t.completed).length;
   const totalCount = topics.length;
@@ -1100,6 +1207,126 @@ export default function CSATHub() {
                 </View>
               )}
 
+              {/* ─── Roadmap Search & Category Filter ─── */}
+              <View style={{ marginBottom: 16 }}>
+                <View style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  backgroundColor: isDark ? '#1f2937' : '#ffffff',
+                  borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 10,
+                  borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb'
+                }}>
+                  <Ionicons name="search" size={18} color={isDark ? '#9ca3af' : '#6b7280'} style={{ marginRight: 8 }} />
+                  <TextInput
+                    value={roadmapSearchQuery}
+                    onChangeText={setRoadmapSearchQuery}
+                    placeholder="Search 112 days (e.g., 'Work', 'Mock', 'Day 25')..."
+                    placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
+                    style={{ flex: 1, color: isDark ? 'white' : '#111827', fontSize: 13, padding: 0 }}
+                  />
+                  {roadmapSearchQuery.length > 0 && (
+                    <TouchableOpacity onPress={() => setRoadmapSearchQuery('')} style={{ padding: 2 }}>
+                      <Ionicons name="close-circle" size={18} color={isDark ? '#9ca3af' : '#6b7280'} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {/* Category Filter Pills */}
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ maxHeight: 36 }}>
+                  <View style={{ flexDirection: 'row', gap: 6 }}>
+                    {ROADMAP_CATEGORY_FILTERS.map(cat => (
+                      <TouchableOpacity
+                        key={cat.key}
+                        onPress={() => setRoadmapCategoryFilter(cat.key)}
+                        style={{
+                          paddingHorizontal: 11, paddingVertical: 6, borderRadius: 8,
+                          backgroundColor: roadmapCategoryFilter === cat.key ? '#3b82f6' : (isDark ? '#1f2937' : '#ffffff'),
+                          borderWidth: 1, borderColor: roadmapCategoryFilter === cat.key ? '#3b82f6' : (isDark ? '#374151' : '#e5e7eb')
+                        }}
+                      >
+                        <Text style={{
+                          color: roadmapCategoryFilter === cat.key ? 'white' : (isDark ? '#9ca3af' : '#4b5563'),
+                          fontSize: 11, fontWeight: 'bold'
+                        }}>
+                          {cat.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </ScrollView>
+
+                {/* Filter Match Status */}
+                {isRoadmapFiltered && (
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
+                    <Text style={{ color: '#3b82f6', fontSize: 12, fontWeight: 'bold' }}>
+                      Found {filteredRoadmapDays.length} of 112 days matching filter
+                    </Text>
+                    <TouchableOpacity onPress={() => { setRoadmapSearchQuery(''); setRoadmapCategoryFilter('all'); }}>
+                      <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11, fontWeight: 'bold' }}>Clear Filter ✕</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+
+              {/* ─── Filtered Days List (Active when Searching or Categorizing) ─── */}
+              {isRoadmapFiltered ? (
+                <View style={{ gap: 8, marginBottom: 20 }}>
+                  {filteredRoadmapDays.length === 0 ? (
+                    <View style={{ alignItems: 'center', paddingVertical: 30 }}>
+                      <Text style={{ fontSize: 28, marginBottom: 8 }}>🔍</Text>
+                      <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 13, textAlign: 'center' }}>
+                        No days found matching your filter criteria.
+                      </Text>
+                    </View>
+                  ) : (
+                    filteredRoadmapDays.map(dayItem => {
+                      const status = getDayStatus(dayItem.day);
+                      return (
+                        <View
+                          key={dayItem.day}
+                          style={{
+                            flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                            backgroundColor: status === 'active' ? (isDark ? '#1e3a5f' : '#eff6ff') : (isDark ? '#1f2937' : '#ffffff'),
+                            padding: 12, borderRadius: 10, borderWidth: 1,
+                            borderColor: status === 'active' ? '#3b82f6' : status === 'completed' ? '#10b981' : (isDark ? '#374151' : '#e5e7eb')
+                          }}
+                        >
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+                            <TouchableOpacity
+                              onPress={() => status === 'completed' ? handleUncompleteDay(dayItem.day) : handleCompleteDay(dayItem.day)}
+                              style={{
+                                width: 22, height: 22, borderRadius: 6, borderWidth: 2,
+                                borderColor: status === 'completed' ? '#10b981' : status === 'active' ? '#3b82f6' : (isDark ? '#4b5563' : '#d1d5db'),
+                                backgroundColor: status === 'completed' ? '#10b981' : 'transparent',
+                                alignItems: 'center', justifyContent: 'center'
+                              }}
+                            >
+                              {status === 'completed' && <Ionicons name="checkmark" size={14} color="white" />}
+                            </TouchableOpacity>
+                            <View style={{ flex: 1 }}>
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                <Text style={{ color: '#3b82f6', fontSize: 11, fontWeight: 'bold' }}>Day {dayItem.day}</Text>
+                                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 10 }}>• Week {dayItem.week} • {formatDate(dayItem.date)}</Text>
+                              </View>
+                              <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 13, fontWeight: '500', marginTop: 2, textDecorationLine: status === 'completed' ? 'line-through' : 'none' }}>
+                                {dayItem.topic}
+                              </Text>
+                            </View>
+                          </View>
+                          <View style={{
+                            backgroundColor: `${CATEGORY_CONFIG[dayItem.category]?.color}20`,
+                            paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6, marginLeft: 8
+                          }}>
+                            <Text style={{ color: CATEGORY_CONFIG[dayItem.category]?.color, fontSize: 10, fontWeight: 'bold' }}>
+                              {CATEGORY_CONFIG[dayItem.category]?.emoji} {CATEGORY_CONFIG[dayItem.category]?.label}
+                            </Text>
+                          </View>
+                        </View>
+                      );
+                    })
+                  )}
+                </View>
+              ) : null}
+
               {/* ─── 16-Week Checklist Accordion ─── */}
               <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 16, fontWeight: 'bold', marginBottom: 10 }}>
                 📋 16-Week Checklist
@@ -1303,69 +1530,184 @@ export default function CSATHub() {
             </TouchableOpacity>
           </View>
 
-          {/* Module Tabs */}
-          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-            {[
-              { key: 'Quantitative Aptitude', label: '🧮 Quant & Math (35-40 Qs)' },
-              { key: 'Logical Reasoning', label: '🧠 Reasoning & Puzzles (20-25 Qs)' },
-              { key: 'Reading Comprehension', label: '📖 RC & Data (25-30 Qs)' }
-            ].map(tab => (
-              <TouchableOpacity
-                key={tab.key}
-                onPress={() => setActiveTab(tab.key)}
-                style={{
-                  paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10,
-                  backgroundColor: activeTab === tab.key ? '#3b82f6' : (isDark ? '#1f2937' : '#ffffff'),
-                  borderWidth: 1, borderColor: activeTab === tab.key ? '#3b82f6' : (isDark ? '#374151' : '#e5e7eb')
-                }}
-              >
-                <Text style={{ color: activeTab === tab.key ? 'white' : (isDark ? '#9ca3af' : '#4b5563'), fontWeight: 'bold', fontSize: 12 }}>
-                  {tab.label}
-                </Text>
+          {/* Syllabus Search Bar */}
+          <View style={{
+            flexDirection: 'row', alignItems: 'center',
+            backgroundColor: isDark ? '#1f2937' : '#ffffff',
+            borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 12,
+            borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb'
+          }}>
+            <Ionicons name="search" size={18} color={isDark ? '#9ca3af' : '#6b7280'} style={{ marginRight: 8 }} />
+            <TextInput
+              value={syllabusSearchQuery}
+              onChangeText={setSyllabusSearchQuery}
+              placeholder="Search micro-topics across all chapters..."
+              placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
+              style={{ flex: 1, color: isDark ? 'white' : '#111827', fontSize: 13, padding: 0 }}
+            />
+            {syllabusSearchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSyllabusSearchQuery('')} style={{ padding: 2 }}>
+                <Ionicons name="close-circle" size={18} color={isDark ? '#9ca3af' : '#6b7280'} />
               </TouchableOpacity>
-            ))}
+            )}
           </View>
 
-          {/* Topics List */}
-          {loading ? (
-            <ActivityIndicator size="large" color="#3b82f6" style={{ marginVertical: 40 }} />
-          ) : filteredTopics.length === 0 ? (
-            <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', textAlign: 'center', marginVertical: 30 }}>No micro-topics found under this module.</Text>
-          ) : (
-            <View style={{ gap: 10, marginBottom: 30 }}>
-              {filteredTopics.map(topic => (
+          {/* Module Tabs (Shown when not searching globally) */}
+          {!isSyllabusSearching ? (
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+              {[
+                { key: 'Quantitative Aptitude', label: '🧮 Quant & Math (35-40 Qs)' },
+                { key: 'Logical Reasoning', label: '🧠 Reasoning & Puzzles (20-25 Qs)' },
+                { key: 'Reading Comprehension', label: '📖 RC & Data (25-30 Qs)' }
+              ].map(tab => (
                 <TouchableOpacity
-                  key={topic._id}
-                  onPress={() => router.push(`/topic/${topic._id}` as any)}
+                  key={tab.key}
+                  onPress={() => setActiveTab(tab.key)}
                   style={{
-                    flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 12,
-                    backgroundColor: topic.completed ? (isDark ? 'rgba(16, 185, 129, 0.1)' : '#f0fdf4') : (isDark ? '#1f2937' : '#ffffff'),
-                    borderWidth: 1, borderColor: topic.completed ? '#10b981' : (isDark ? '#374151' : '#e5e7eb'),
-                    opacity: topic.completed ? 0.75 : 1
+                    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10,
+                    backgroundColor: activeTab === tab.key ? '#3b82f6' : (isDark ? '#1f2937' : '#ffffff'),
+                    borderWidth: 1, borderColor: activeTab === tab.key ? '#3b82f6' : (isDark ? '#374151' : '#e5e7eb')
                   }}
                 >
-                  <TouchableOpacity
-                    onPress={(e) => handleToggleCheckbox(topic._id, e)}
-                    style={{
-                      width: 22, height: 22, borderRadius: 6, borderWidth: 2, marginRight: 12,
-                      borderColor: topic.completed ? '#10b981' : (isDark ? '#4b5563' : '#d1d5db'),
-                      backgroundColor: topic.completed ? '#10b981' : 'transparent',
-                      alignItems: 'center', justifyContent: 'center'
-                    }}
-                  >
-                    {topic.completed && <Ionicons name="checkmark" size={14} color="white" />}
-                  </TouchableOpacity>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 13, fontWeight: '600', textDecorationLine: topic.completed ? 'line-through' : 'none' }}>
-                      {topic.title}
-                    </Text>
-                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11, marginTop: 2 }}>{topic.heading}</Text>
-                  </View>
-                  <View style={{ backgroundColor: topic.difficulty === 'Hard' ? 'rgba(239, 68, 68, 0.15)' : topic.difficulty === 'Medium' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
-                    <Text style={{ color: topic.difficulty === 'Hard' ? '#ef4444' : topic.difficulty === 'Medium' ? '#f59e0b' : '#10b981', fontSize: 10, fontWeight: 'bold' }}>{topic.difficulty}</Text>
-                  </View>
+                  <Text style={{ color: activeTab === tab.key ? 'white' : (isDark ? '#9ca3af' : '#4b5563'), fontWeight: 'bold', fontSize: 12 }}>
+                    {tab.label}
+                  </Text>
                 </TouchableOpacity>
               ))}
+            </View>
+          ) : (
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <Text style={{ color: '#3b82f6', fontSize: 12, fontWeight: 'bold' }}>
+                Found {filteredTopics.length} topics matching "{syllabusSearchQuery}"
+              </Text>
+              <TouchableOpacity onPress={() => setSyllabusSearchQuery('')}>
+                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11, fontWeight: 'bold' }}>Clear Search ✕</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Chapter-Grouped Micro-Syllabus */}
+          {loading ? (
+            <ActivityIndicator size="large" color="#3b82f6" style={{ marginVertical: 40 }} />
+          ) : Object.keys(groupedChapters).length === 0 ? (
+            <View style={{ alignItems: 'center', paddingVertical: 30 }}>
+              <Text style={{ fontSize: 28, marginBottom: 8 }}>🔍</Text>
+              <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', textAlign: 'center' }}>
+                No micro-topics found matching your search.
+              </Text>
+            </View>
+          ) : (
+            <View style={{ gap: 12, marginBottom: 30 }}>
+              {Object.keys(groupedChapters).map((heading) => {
+                const chapterTopics = groupedChapters[heading];
+                const chapterDone = chapterTopics.filter(t => t.completed).length;
+                const chapterTotal = chapterTopics.length;
+                const isAllDone = chapterDone === chapterTotal && chapterTotal > 0;
+                const isCollapsed = Boolean(collapsedChapters[heading]);
+                const chapterPct = chapterTotal > 0 ? Math.round((chapterDone / chapterTotal) * 100) : 0;
+
+                return (
+                  <View
+                    key={heading}
+                    style={{
+                      backgroundColor: isDark ? '#1f2937' : '#ffffff',
+                      borderRadius: 14,
+                      borderWidth: 1,
+                      borderColor: isAllDone ? '#10b981' : (isDark ? '#374151' : '#e5e7eb'),
+                      overflow: 'hidden'
+                    }}
+                  >
+                    {/* Chapter Accordion Header */}
+                    <TouchableOpacity
+                      onPress={() => toggleChapter(heading)}
+                      style={{
+                        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                        padding: 14,
+                        backgroundColor: isDark ? '#1f2937' : '#ffffff'
+                      }}
+                    >
+                      <View style={{ flex: 1, marginRight: 10 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                          <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 14, fontWeight: 'bold' }}>
+                            📁 {heading}
+                          </Text>
+                          <View style={{
+                            backgroundColor: isAllDone ? 'rgba(16, 185, 129, 0.15)' : 'rgba(59, 130, 246, 0.12)',
+                            paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6
+                          }}>
+                            <Text style={{
+                              color: isAllDone ? '#10b981' : '#3b82f6',
+                              fontSize: 10, fontWeight: 'bold'
+                            }}>
+                              {chapterDone}/{chapterTotal} Done
+                            </Text>
+                          </View>
+                        </View>
+
+                        {/* Mini Chapter Progress Bar */}
+                        <View style={{ height: 4, backgroundColor: isDark ? '#374151' : '#e5e7eb', borderRadius: 2, overflow: 'hidden', width: '80%' }}>
+                          <View style={{ height: '100%', width: `${chapterPct}%`, backgroundColor: isAllDone ? '#10b981' : '#3b82f6', borderRadius: 2 }} />
+                        </View>
+                      </View>
+
+                      <Ionicons
+                        name={isCollapsed ? 'chevron-down' : 'chevron-up'}
+                        size={18}
+                        color={isDark ? '#9ca3af' : '#6b7280'}
+                      />
+                    </TouchableOpacity>
+
+                    {/* Topics Inside Chapter */}
+                    {!isCollapsed && (
+                      <View style={{ paddingHorizontal: 12, paddingBottom: 12, gap: 8, borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#f3f4f6', paddingTop: 10 }}>
+                        {chapterTopics.map(topic => (
+                          <TouchableOpacity
+                            key={topic._id}
+                            onPress={() => router.push(`/topic/${topic._id}` as any)}
+                            style={{
+                              flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10,
+                              backgroundColor: topic.completed ? (isDark ? 'rgba(16, 185, 129, 0.08)' : '#f0fdf4') : (isDark ? '#111827' : '#f9fafb'),
+                              borderWidth: 1, borderColor: topic.completed ? '#10b981' : (isDark ? '#374151' : '#e5e7eb'),
+                              opacity: topic.completed ? 0.75 : 1
+                            }}
+                          >
+                            <TouchableOpacity
+                              onPress={(e) => handleToggleCheckbox(topic._id, e)}
+                              style={{
+                                width: 22, height: 22, borderRadius: 6, borderWidth: 2, marginRight: 12,
+                                borderColor: topic.completed ? '#10b981' : (isDark ? '#4b5563' : '#d1d5db'),
+                                backgroundColor: topic.completed ? '#10b981' : 'transparent',
+                                alignItems: 'center', justifyContent: 'center'
+                              }}
+                            >
+                              {topic.completed && <Ionicons name="checkmark" size={14} color="white" />}
+                            </TouchableOpacity>
+                            <View style={{ flex: 1 }}>
+                              <Text style={{
+                                color: isDark ? 'white' : '#111827', fontSize: 13, fontWeight: '600',
+                                textDecorationLine: topic.completed ? 'line-through' : 'none'
+                              }}>
+                                {topic.title}
+                              </Text>
+                            </View>
+                            <View style={{
+                              backgroundColor: topic.difficulty === 'Hard' ? 'rgba(239, 68, 68, 0.15)' : topic.difficulty === 'Medium' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                              paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6
+                            }}>
+                              <Text style={{
+                                color: topic.difficulty === 'Hard' ? '#ef4444' : topic.difficulty === 'Medium' ? '#f59e0b' : '#10b981',
+                                fontSize: 10, fontWeight: 'bold'
+                              }}>
+                                {topic.difficulty}
+                              </Text>
+                            </View>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
             </View>
           )}
         </>
@@ -1402,25 +1744,92 @@ export default function CSATHub() {
       {/* Formula Reference Modal */}
       <Modal visible={showFormulaModal} animationType="slide" transparent={true} onRequestClose={() => setShowFormulaModal(false)}>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 16 }}>
-          <View style={{ backgroundColor: isDark ? '#1f2937' : 'white', borderRadius: 16, padding: 20, maxHeight: '80%' }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <View style={{ backgroundColor: isDark ? '#1f2937' : 'white', borderRadius: 16, padding: 20, maxHeight: '85%' }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
               <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 18, fontWeight: 'bold' }}>⚡ High-Yield CSAT Formulas</Text>
               <TouchableOpacity onPress={() => setShowFormulaModal(false)} style={{ padding: 4 }}>
                 <Ionicons name="close" size={24} color={isDark ? 'white' : '#111827'} />
               </TouchableOpacity>
             </View>
 
+            {/* Formula Search Bar */}
+            <View style={{
+              flexDirection: 'row', alignItems: 'center',
+              backgroundColor: isDark ? '#111827' : '#f3f4f6',
+              borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 10,
+              borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb'
+            }}>
+              <Ionicons name="search" size={16} color={isDark ? '#9ca3af' : '#6b7280'} style={{ marginRight: 8 }} />
+              <TextInput
+                value={formulaSearchQuery}
+                onChangeText={setFormulaSearchQuery}
+                placeholder="Search formulas, shortcuts, topics..."
+                placeholderTextColor={isDark ? '#6b7280' : '#9ca3af'}
+                style={{ flex: 1, color: isDark ? 'white' : '#111827', fontSize: 13, padding: 0 }}
+              />
+              {formulaSearchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setFormulaSearchQuery('')} style={{ padding: 2 }}>
+                  <Ionicons name="close-circle" size={16} color={isDark ? '#9ca3af' : '#6b7280'} />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Category / Macro Chapter Filter Chips */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10, maxHeight: 36 }}>
+              <View style={{ flexDirection: 'row', gap: 6 }}>
+                {FORMULA_GROUPS.map(grp => (
+                  <TouchableOpacity
+                    key={grp.key}
+                    onPress={() => setFormulaSelectedCategory(grp.key)}
+                    style={{
+                      paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8,
+                      backgroundColor: formulaSelectedCategory === grp.key ? '#3b82f6' : (isDark ? '#111827' : '#f3f4f6'),
+                      borderWidth: 1, borderColor: formulaSelectedCategory === grp.key ? '#3b82f6' : (isDark ? '#374151' : '#e5e7eb')
+                    }}
+                  >
+                    <Text style={{
+                      color: formulaSelectedCategory === grp.key ? 'white' : (isDark ? '#9ca3af' : '#4b5563'),
+                      fontSize: 11, fontWeight: 'bold'
+                    }}>
+                      {grp.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+
+            {/* Match Counter & Reset */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11 }}>
+                Showing {filteredFormulas.length} of {EXTENDED_FORMULAS.length} formulas
+              </Text>
+              {(formulaSearchQuery.length > 0 || formulaSelectedCategory !== 'All') && (
+                <TouchableOpacity onPress={() => { setFormulaSearchQuery(''); setFormulaSelectedCategory('All'); }}>
+                  <Text style={{ color: '#3b82f6', fontSize: 11, fontWeight: 'bold' }}>Reset Filters</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
             <ScrollView style={{ gap: 12 }}>
-              {EXTENDED_FORMULAS.map((item, idx) => (
-                <View key={idx} style={{ backgroundColor: isDark ? '#111827' : '#f9fafb', padding: 14, borderRadius: 10, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', marginBottom: 10 }}>
-                  <Text style={{ color: '#3b82f6', fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase' }}>{item.category}</Text>
-                  <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 13, fontWeight: 'bold', marginTop: 2 }}>{item.title}</Text>
-                  <View style={{ backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#eff6ff', padding: 8, borderRadius: 6, marginVertical: 6 }}>
-                    <Text style={{ color: '#2563eb', fontWeight: 'bold', fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace', fontSize: 12 }}>{item.formula}</Text>
-                  </View>
-                  <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11 }}>💡 {item.note}</Text>
+              {filteredFormulas.length === 0 ? (
+                <View style={{ alignItems: 'center', paddingVertical: 30 }}>
+                  <Text style={{ fontSize: 28, marginBottom: 8 }}>🔍</Text>
+                  <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 13, textAlign: 'center' }}>
+                    No formulas found matching your filter.
+                  </Text>
                 </View>
-              ))}
+              ) : (
+                filteredFormulas.map((item, idx) => (
+                  <View key={idx} style={{ backgroundColor: isDark ? '#111827' : '#f9fafb', padding: 14, borderRadius: 10, borderWidth: 1, borderColor: isDark ? '#374151' : '#e5e7eb', marginBottom: 10 }}>
+                    <Text style={{ color: '#3b82f6', fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase' }}>{item.category}</Text>
+                    <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 13, fontWeight: 'bold', marginTop: 2 }}>{item.title}</Text>
+                    <View style={{ backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#eff6ff', padding: 8, borderRadius: 6, marginVertical: 6 }}>
+                      <Text style={{ color: '#2563eb', fontWeight: 'bold', fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace', fontSize: 12 }}>{item.formula}</Text>
+                    </View>
+                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11 }}>💡 {item.note}</Text>
+                  </View>
+                ))
+              )}
             </ScrollView>
           </View>
         </View>

@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../src/services/api';
 import { useTheme } from '../src/context/ThemeContext';
-import { CSAT_112_PLAN, CSAT_WEEK_LABELS, CATEGORY_CONFIG, DAILY_ROUTINE } from '../src/data/csat112Plan';
+import { CSAT_112_PLAN, CSAT_WEEK_LABELS, CATEGORY_CONFIG, DAILY_ROUTINE, CSAT_DAILY_SLOT } from '../src/data/csat112Plan';
 
 const BLUEPRINT = [
   { segment: 'Number System & Permutations', count: '18–22 Qs', priority: 'Extreme High', color: '#ef4444' },
@@ -453,6 +453,194 @@ const EXTENDED_FORMULAS = [
     formula: 'Fact = verifiable/provable statement | Opinion = subjective judgement/belief | Claim = assertion requiring evidence | Supporting evidence = data/example backing a claim',
     note: 'Signal words: "studies show" (fact), "I believe" (opinion), "it is argued" (claim). UPSC RC tests distinction between stated facts vs author\'s opinions.'
   },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 28. ADVANCED NUMBER SYSTEM — EXTRAS
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Number System',
+    title: 'Wilson\'s Theorem',
+    formula: '(p−1)! ≡ −1 (mod p) when p is prime | (p−1)! mod p = p−1',
+    note: 'Quick test: (6−1)! = 120 → 120 mod 7 = 6 = 7−1 ✓. Only works for primes. Useful for factorial remainder questions.'
+  },
+  {
+    category: 'Number System',
+    title: 'Sum of Series (Standard Results)',
+    formula: 'Σn = n(n+1)/2 | Σn² = n(n+1)(2n+1)/6 | Σn³ = [n(n+1)/2]² | Sum of first n odd = n² | Sum of first n even = n(n+1)',
+    note: 'Σn³ = (Σn)² is a beautiful identity. Sum of cubes of first 10 naturals = 55² = 3025. These appear directly in CSAT pattern Qs.'
+  },
+  {
+    category: 'Number System',
+    title: 'Co-primes & Euler Totient Applications',
+    formula: 'Count of integers 1 to N co-prime with N = N × ∏(1−1/p) for each distinct prime factor p | Sum of co-primes = N × φ(N) / 2',
+    note: 'φ(12) = 12×(1−1/2)×(1−1/3) = 4. Co-primes of 12 less than 12: {1,5,7,11}. Used in advanced remainder problems.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 29. PERCENTAGES — EXTRAS
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Percentages',
+    title: 'Expenditure = Price × Consumption',
+    formula: 'If price ↑ x%, reduce consumption by [x/(100+x)]×100% to keep spend constant | If price ↓ x%, increase consumption by [x/(100−x)]×100%',
+    note: 'Price ↑ 25% → reduce consumption by 25/125×100 = 20%. Price ↓ 20% → increase consumption by 20/80×100 = 25%. Very common CSAT Q.'
+  },
+  {
+    category: 'Percentages',
+    title: 'Chain Percentage & Multi-Step',
+    formula: 'A is x% of B, B is y% of C → A = (x/100)×(y/100)×C = xy/10000 × C | If A > B by x%, then B < A by [x/(100+x)]×100%',
+    note: 'If A earns 20% more than B, B earns 100×20/120 = 16.67% less than A. Always clarify "more/less than WHOM".'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 30. PROFIT & LOSS — EXTRAS
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Profit & Loss',
+    title: 'CP of x = SP of y Shortcut',
+    formula: 'If CP of x items = SP of y items → Profit% = [(x−y)/y] × 100 (when x>y) | Loss% = [(y−x)/x] × 100 (when y>x)',
+    note: 'CP of 20 = SP of 16 → Profit% = (20−16)/16 × 100 = 25%. No need to find actual CP or SP.'
+  },
+  {
+    category: 'Profit & Loss',
+    title: 'Buy x Get y Free',
+    formula: 'Effective discount = [y/(x+y)] × 100% | Equivalent profit on selling all at original price after free items',
+    note: 'Buy 3 get 1 free = 1/(3+1) = 25% discount. Buy 5 get 2 free = 2/7 ≈ 28.57% discount.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 31. TIME & WORK — EXTRAS
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Time & Work',
+    title: 'MDH (Man-Days-Hours) Formula',
+    formula: 'M₁ × D₁ × H₁ / W₁ = M₂ × D₂ × H₂ / W₂ | Add efficiency: M₁×D₁×H₁×E₁ / W₁ = M₂×D₂×H₂×E₂ / W₂',
+    note: 'If 10 men finish in 6 days working 8 hrs, how many men for same work in 4 days at 10 hrs? 10×6×8 = M₂×4×10 → M₂ = 12.'
+  },
+  {
+    category: 'Time & Work',
+    title: 'Alternate Day & Cyclic Work',
+    formula: 'If A works Day 1, B works Day 2: find work done in 2-day cycle | Total cycles = Total work / (Work per cycle) | Check remainder for fractional cycle',
+    note: 'A does 1/10 per day, B does 1/15 per day. In 2-day cycle: 1/10+1/15 = 1/6. After 6 cycles (12 days) = work done. Adjust for who finishes.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 32. SPEED/DISTANCE — EXTRAS
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Speed, Distance & Time',
+    title: 'Circular Track Meetings',
+    formula: 'Same direction first meet: T = L/(S₁−S₂) | Opposite direction first meet: T = L/(S₁+S₂) | All meet at start: LCM of individual round times',
+    note: 'L = track length. For 3+ runners: first meet of all = LCM of pairwise meeting times. Problems often combine with ratio of speeds.'
+  },
+  {
+    category: 'Speed, Distance & Time',
+    title: 'Escalator & Conveyor Problems',
+    formula: 'Visible steps = (Person speed ± Escalator speed) × Time | Moving with: fewer steps visible | Moving against: more steps visible',
+    note: 'Let total steps = N, escalator speed = E steps/sec. Walking with: N = (P+E)×T₁. Walking against: N = (P−E)×T₂. Solve simultaneously.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 33. SI/CI — EXTRAS
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Interest',
+    title: 'Installments & EMI',
+    formula: 'SI equal installment: Each = P(1+nR/100)/n where n=number of installments | CI installment: P = x/(1+R/100) + x/(1+R/100)² + ...',
+    note: 'For 2 equal CI installments: P = x/(1+r) + x/(1+r)². For 3: add x/(1+r)³. Clear each installment with accumulated interest.'
+  },
+  {
+    category: 'Interest',
+    title: 'Doubling & Tripling Rules',
+    formula: 'SI doubling time = 100/R years | CI doubling ≈ 72/R years (Rule of 72) | CI tripling ≈ 114/R years (Rule of 114)',
+    note: 'At 10% SI: doubles in 10 yrs. At 10% CI: doubles in ~7.2 yrs. At 8% CI: doubles in ~9 yrs. Quick elimination in MCQs.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 34. ALGEBRA — EXTRAS
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Algebra',
+    title: 'Remainder & Factor Theorems',
+    formula: 'Remainder of f(x) ÷ (x−a) = f(a) | If f(a) = 0, then (x−a) is a factor of f(x) | f(x) ÷ (ax−b): remainder = f(b/a)',
+    note: 'Example: remainder of x³+2x−1 when divided by (x−2) = 2³+2(2)−1 = 11. Factor theorem: if f(1)=0, (x−1) is a factor.'
+  },
+  {
+    category: 'Algebra',
+    title: 'Surds & Rationalization',
+    formula: '√a × √b = √(ab) | √(a/b) = √a/√b | 1/(√a+√b) = (√a−√b)/(a−b) | 1/(√a−√b) = (√a+√b)/(a−b) | (√a+√b)(√a−√b) = a−b',
+    note: 'Always rationalize denominators. For comparing surds: square both sides. √2≈1.414, √3≈1.732, √5≈2.236.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 35. GEOMETRY — EXTRAS
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Geometry',
+    title: 'Coordinate Geometry — Triangle Area',
+    formula: 'Area = ½|x₁(y₂−y₃) + x₂(y₃−y₁) + x₃(y₁−y₂)| | Collinear if Area = 0 | Distance = √[(x₂−x₁)² + (y₂−y₁)²]',
+    note: 'Midpoint = ((x₁+x₂)/2, (y₁+y₂)/2). Section formula (m:n internally) = (mx₂+nx₁)/(m+n), (my₂+ny₁)/(m+n).'
+  },
+  {
+    category: 'Geometry',
+    title: 'Circumradius & Inradius',
+    formula: 'Circumradius R = abc/(4×Area) | Inradius r = Area/s (s = semi-perimeter) | For equilateral △: R = a/√3, r = a/(2√3)',
+    note: 'Area using inradius: A = r × s. For right triangle: r = (a+b−c)/2, R = c/2 (hypotenuse/2). Useful with Heron\'s formula.'
+  },
+  {
+    category: 'Geometry',
+    title: 'Apollonius Theorem & Median',
+    formula: 'AB² + AC² = 2(AD² + BD²) where AD is median to BC | Median length = ½√(2b²+2c²−a²) | Centroid divides median 2:1 from vertex',
+    note: 'Stewart\'s theorem (general): b²×m + c²×n − a×m×n = a×d² (cevian). Apollonius is special case when D is midpoint.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 36. LOGICAL REASONING — EXTRAS
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Ranking & Ordering',
+    title: 'Position & Rank Formulas',
+    formula: 'Total = Rank from top + Rank from bottom − 1 | If interchanged: new rank = Total − old rank + 1 | Between two: |Rank₁ − Rank₂| − 1',
+    note: 'Rank 5 from top, 20 from bottom → Total = 5+20−1 = 24. People between rank 5 and rank 20 = |20−5|−1 = 14.'
+  },
+  {
+    category: 'Arrangements',
+    title: 'Seating & Linear Order Rules',
+    formula: 'n people in line = n! | Adjacent pair as unit: (n−1)! × 2! | Never adjacent: Total − Adjacent | Circular = (n−1)!',
+    note: 'Constraints: fix one person, arrange rest. For "not at ends": Total − (at either end). For gaps: use slot method.'
+  },
+  {
+    category: 'Input-Output',
+    title: 'Machine Input-Output Patterns',
+    formula: 'Track: sorting direction (ascending/descending) | shifting pattern (left/right by position) | alternating numbers & words | step count to reach output',
+    note: 'Each step typically performs ONE operation (swap, sort, shift). Identify the rule from Step 1. CSAT asks "what is Step N?" or "how many steps to reach output?"'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 37. DATA SUFFICIENCY — EXTRAS
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Data Sufficiency',
+    title: 'DS Decision Framework',
+    formula: 'Check: (1) Statement I alone sufficient? (2) Statement II alone sufficient? (3) Both together sufficient? (4) Each alone sufficient? (5) Neither sufficient?',
+    note: 'Answer options: A=I alone, B=II alone, C=Both needed, D=Each alone sufficient, E=Neither. Never assume extra info. Test with specific values.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 38. READING COMPREHENSION — EXTRAS
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Reading Comprehension',
+    title: 'Para-Jumble & Rearrangement Technique',
+    formula: 'Step 1: Find opener (no pronoun/back-reference) | Step 2: Find mandatory pairs (pronoun links, cause-effect) | Step 3: Eliminate wrong sequences | Step 4: Check flow',
+    note: 'Look for: "This/That/These" → must follow the referenced noun. "However/But" → must follow a contrasting idea. "Therefore" → must follow reasoning.'
+  },
+  {
+    category: 'Reading Comprehension',
+    title: 'Inference Strength Scale (5-Level)',
+    formula: 'Definitely True → Probably True → Data Inadequate → Probably False → Definitely False',
+    note: '"Definitely true" = directly stated or logically certain. "Probably true" = likely but not guaranteed. Use this scale for inference-type RC questions in CSAT.'
+  },
 ];
 
 const DRILL_QUESTIONS = [
@@ -802,7 +990,7 @@ export default function CSATHub() {
                   </View>
                   <View style={{ alignItems: 'center' }}>
                     <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold', fontSize: 16 }}>90 min</Text>
-                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 10 }}>Daily Goal</Text>
+                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 10 }}>9:00–10:30 PM</Text>
                   </View>
                 </View>
               </View>
@@ -839,10 +1027,15 @@ export default function CSATHub() {
                     {todayDayInfo.topic}
                   </Text>
 
-                  {/* 90-min Time Splitter */}
-                  <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 10, fontWeight: 'bold', marginBottom: 6, textTransform: 'uppercase' }}>
-                    Daily 90-Minute Routine
-                  </Text>
+                  {/* 90-min Time Splitter with 9:00 PM – 10:30 PM Slot */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase' }}>
+                      Daily 90-Minute Routine
+                    </Text>
+                    <View style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)', paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 }}>
+                      <Text style={{ color: '#3b82f6', fontSize: 10, fontWeight: 'bold' }}>⏰ {CSAT_DAILY_SLOT.label}</Text>
+                    </View>
+                  </View>
                   <View style={{ flexDirection: 'row', borderRadius: 6, overflow: 'hidden', height: 22, marginBottom: 12 }}>
                     {DAILY_ROUTINE.map((seg, i) => (
                       <View key={i} style={{
@@ -853,11 +1046,16 @@ export default function CSATHub() {
                       </View>
                     ))}
                   </View>
-                  <View style={{ gap: 3, marginBottom: 14 }}>
+                  <View style={{ gap: 4, marginBottom: 14 }}>
                     {DAILY_ROUTINE.map((seg, i) => (
-                      <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: seg.color }} />
-                        <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 10 }}>{seg.minutes}m — {seg.label}</Text>
+                      <View key={i} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
+                          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: seg.color }} />
+                          <Text style={{ color: isDark ? '#e5e7eb' : '#374151', fontSize: 11, fontWeight: '500' }}>{seg.label}</Text>
+                        </View>
+                        <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 10, fontWeight: 'bold' }}>
+                          {seg.time} ({seg.minutes}m)
+                        </Text>
                       </View>
                     ))}
                   </View>

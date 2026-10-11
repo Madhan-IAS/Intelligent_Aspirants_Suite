@@ -206,11 +206,18 @@ export const CATEGORY_CONFIG: Record<string, { emoji: string; label: string; col
     mock: { emoji: '🎯', label: 'Mock', color: '#ef4444' },
 };
 
-// Helper: get the 90-min daily routine structure
+// Helper: get the 90-min daily routine structure (Daily 9:00 PM – 10:30 PM slot)
+export const CSAT_DAILY_SLOT = {
+    start: '9:00 PM',
+    end: '10:30 PM',
+    duration: '90 Mins',
+    label: '9:00 PM – 10:30 PM (90 Mins)',
+};
+
 export const DAILY_ROUTINE = [
-    { minutes: 10, label: 'Revise previous topics & formulas', color: '#f59e0b' },
-    { minutes: 30, label: 'Learn the day\'s main topic', color: '#3b82f6' },
-    { minutes: 25, label: 'Solve practice questions or PYQs', color: '#10b981' },
-    { minutes: 15, label: 'Reading comprehension or reasoning', color: '#8b5cf6' },
-    { minutes: 10, label: 'Error notebook & revision planning', color: '#ec4899' },
+    { time: '9:00 PM – 9:10 PM', minutes: 10, label: 'Revise previous topics & formulas', color: '#f59e0b' },
+    { time: '9:10 PM – 9:40 PM', minutes: 30, label: 'Learn the day\'s main topic', color: '#3b82f6' },
+    { time: '9:40 PM – 10:05 PM', minutes: 25, label: 'Solve practice questions or PYQs', color: '#10b981' },
+    { time: '10:05 PM – 10:20 PM', minutes: 15, label: 'Reading comprehension or reasoning', color: '#8b5cf6' },
+    { time: '10:20 PM – 10:30 PM', minutes: 10, label: 'Error notebook & revision planning', color: '#ec4899' },
 ];

@@ -8,7 +8,7 @@ import { CSAT_112_PLAN, CSAT_WEEK_LABELS, CATEGORY_CONFIG, DAILY_ROUTINE, CSAT_D
 
 // ─── Formula Categorization & Macro Chapters ───
 const FORMULA_GROUPS = [
-  { key: 'All', label: 'All (79)' },
+  { key: 'All', label: 'All' },
   { key: 'Number System', label: '🔢 Number System' },
   { key: 'Arithmetic', label: '🧮 Arithmetic' },
   { key: 'Algebra & Series', label: '📈 Algebra & Series' },
@@ -20,13 +20,21 @@ const FORMULA_GROUPS = [
 ];
 
 const FORMULA_CATEGORY_MAP: Record<string, string> = {
+  // Number System
   'Number System': 'Number System', 'Divisibility': 'Number System', 'Remainders': 'Number System', 'Units Digit': 'Number System', 'HCF & LCM': 'Number System',
-  'Averages': 'Arithmetic', 'Percentages': 'Arithmetic', 'Ratios': 'Arithmetic', 'Alligation': 'Arithmetic', 'Profit & Loss': 'Arithmetic', 'Simple Interest': 'Arithmetic', 'Compound Interest': 'Arithmetic', 'Time & Work': 'Arithmetic', 'Speed & Distance': 'Arithmetic', 'Trains': 'Arithmetic', 'Boats & Streams': 'Arithmetic', 'Escalators & Circular': 'Arithmetic',
-  'Algebra': 'Algebra & Series', 'Progression': 'Algebra & Series',
+  // Arithmetic
+  'Averages': 'Arithmetic', 'Percentages': 'Arithmetic', 'Ratios': 'Arithmetic', 'Ratio & Proportion': 'Arithmetic', 'Alligation': 'Arithmetic', 'Mixtures & Alligation': 'Arithmetic', 'Profit & Loss': 'Arithmetic', 'Simple Interest': 'Arithmetic', 'Compound Interest': 'Arithmetic', 'Interest': 'Arithmetic', 'Time & Work': 'Arithmetic', 'Speed & Distance': 'Arithmetic', 'Speed, Distance & Time': 'Arithmetic', 'Trains': 'Arithmetic', 'Boats & Streams': 'Arithmetic', 'Escalators & Circular': 'Arithmetic', 'Ages': 'Arithmetic', 'Data Interpretation': 'Arithmetic',
+  // Algebra & Series
+  'Algebra': 'Algebra & Series', 'Progression': 'Algebra & Series', 'Sequences & Progressions': 'Algebra & Series',
+  // Geometry & Mensuration
   'Geometry': 'Geometry & Mensuration', 'Mensuration 2D': 'Geometry & Mensuration', 'Mensuration 3D': 'Geometry & Mensuration', 'Coordinate Geometry': 'Geometry & Mensuration',
-  'Permutations': 'Combinatorics & Prob', 'Combinations': 'Combinatorics & Prob', 'Probability': 'Combinatorics & Prob',
-  'Alphabet Test': 'Mental Ability & GMA', 'Series': 'Mental Ability & GMA', 'Coding-Decoding': 'Mental Ability & GMA', 'Direction Test': 'Mental Ability & GMA', 'Blood Relations': 'Mental Ability & GMA', 'Ranking': 'Mental Ability & GMA', 'Clocks': 'Mental Ability & GMA', 'Calendars': 'Mental Ability & GMA', 'Cubes': 'Mental Ability & GMA',
-  'Syllogisms': 'Logical Reasoning', 'Assumptions': 'Logical Reasoning', 'Course of Action': 'Logical Reasoning', 'Cause & Effect': 'Logical Reasoning', 'Inference': 'Logical Reasoning',
+  // Combinatorics & Probability
+  'Permutations': 'Combinatorics & Prob', 'Combinations': 'Combinatorics & Prob', 'Probability': 'Combinatorics & Prob', 'Combinatorics': 'Combinatorics & Prob',
+  // Mental Ability & GMA
+  'Alphabet Test': 'Mental Ability & GMA', 'Series': 'Mental Ability & GMA', 'Series & Patterns': 'Mental Ability & GMA', 'Coding-Decoding': 'Mental Ability & GMA', 'Coding & Decoding': 'Mental Ability & GMA', 'Direction Test': 'Mental Ability & GMA', 'Directions': 'Mental Ability & GMA', 'Blood Relations': 'Mental Ability & GMA', 'Ranking': 'Mental Ability & GMA', 'Ranking & Ordering': 'Mental Ability & GMA', 'Clocks': 'Mental Ability & GMA', 'Calendars': 'Mental Ability & GMA', 'Cubes': 'Mental Ability & GMA', 'Cubes & Dice': 'Mental Ability & GMA', 'Arrangements': 'Mental Ability & GMA', 'Input-Output': 'Mental Ability & GMA',
+  // Logical Reasoning
+  'Syllogisms': 'Logical Reasoning', 'Assumptions': 'Logical Reasoning', 'Course of Action': 'Logical Reasoning', 'Cause & Effect': 'Logical Reasoning', 'Inference': 'Logical Reasoning', 'Data Sufficiency': 'Logical Reasoning', 'Set Theory': 'Logical Reasoning', 'Venn Diagrams': 'Logical Reasoning', 'Critical Reasoning': 'Logical Reasoning',
+  // Reading Comprehension
   'Reading Comprehension': 'Reading Comprehension',
 };
 
@@ -673,6 +681,312 @@ const EXTENDED_FORMULAS = [
     title: 'Inference Strength Scale (5-Level)',
     formula: 'Definitely True → Probably True → Data Inadequate → Probably False → Definitely False',
     note: '"Definitely true" = directly stated or logically certain. "Probably true" = likely but not guaranteed. Use this scale for inference-type RC questions in CSAT.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 39. ADVANCED NUMBER THEORY (UPSC 2022–2024 FOCUS)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Remainders',
+    title: "Fermat's Little Theorem",
+    formula: 'If p is prime and gcd(a, p) = 1, then a^(p-1) ≡ 1 (mod p). Hence a^k mod p = a^(k mod (p-1)) mod p',
+    note: 'Essential for astronomical power remainders. Example: 2^2024 mod 17: since 2024 = 16*126 + 8, 2^2024 ≡ 2^8 mod 17 = 256 mod 17 = 1.'
+  },
+  {
+    category: 'Remainders',
+    title: 'Successive Division Algorithm',
+    formula: 'N = d1 * [d2 * (d3 * q + r3) + r2] + r1  (where d_i are successive divisors and r_i are successive remainders)',
+    note: 'When N is divided successively by 3, 4, 7 leaving remainders 2, 1, 4: minimum positive N is found by setting final quotient q = 0 or 1.'
+  },
+  {
+    category: 'Number System',
+    title: 'Product of All Factors of N',
+    formula: 'Product of Factors = N^(d(N) / 2), where d(N) is the total number of factors of N',
+    note: 'If d(N) is odd (which happens if and only if N is a perfect square), the middle factor is √N. Example: 36 has 9 factors; product = 36^(9/2) = 6^9.'
+  },
+  {
+    category: 'Number System',
+    title: 'Even vs Odd Factors Count',
+    formula: 'For N = 2^a * p1^b * p2^c: Total Factors = (a+1)(b+1)(c+1) | Even Factors = a(b+1)(c+1) | Odd Factors = (b+1)(c+1)',
+    note: 'To find even factors, 2 must have power at least 1 (a choices: 1 to a). To find odd factors, power of 2 must be 0 (only 1 choice).'
+  },
+  {
+    category: 'Number System',
+    title: 'Sum of Reciprocals of Factors',
+    formula: 'Sum of Reciprocals = (Sum of all Factors of N) / N',
+    note: 'Since pairs of factors (f, N/f) multiply to N, 1/f + 1/(N/f) = (f + N/f) / N. Summing across all pairs yields (Sum of Factors) / N.'
+  },
+  {
+    category: 'Number System',
+    title: 'Digital Root & Casting Out Nines (Vedic)',
+    formula: 'Digital Root(N) = N mod 9 (if N mod 9 = 0 and N > 0, Root = 9). Root(A * B) = Root[Root(A) * Root(B)]',
+    note: 'Verify huge multiplication, squares, and additions in seconds without full scratchwork.'
+  },
+  {
+    category: 'Number System',
+    title: 'Base-N Conversion Formula',
+    formula: 'Number (d_k ... d_1 d_0)_b in base b = d_k*b^k + ... + d_1*b^1 + d_0*b^0 (Decimal equivalent)',
+    note: 'To convert Decimal N to Base b, repeatedly divide N by b and record remainders bottom-to-top. For base arithmetic, carry whenever sum ≥ b.'
+  },
+  {
+    category: 'Algebra',
+    title: 'Linear Diophantine Spacing (ax + by = c)',
+    formula: 'Solutions exist iff gcd(a, b) divides c. If (x0, y0) is one solution, general solutions: x = x0 + k*(b/g), y = y0 - k*(a/g)',
+    note: 'Finds the exact number of positive integer pairs (x, y) without trial and error. Consecutive x-values jump by b/gcd(a,b).'
+  },
+  {
+    category: 'Units Digit',
+    title: 'Last Two Digits (Cyclicity mod 100)',
+    formula: 'Numbers ending in 1: (..a1)^k ends in [(a * k mod 10)]1. Numbers ending in 5: (..a5)^k ends in 25 (if a*k even) or 75 (if odd)',
+    note: 'For 3, 7, 9, convert to power ending in 1 (e.g. 7^4 = 2401). For even bases (2, 4, 6, 8), note 2^10 = 1024, 2^20 ends in 76.'
+  },
+  {
+    category: 'HCF & LCM',
+    title: 'HCF & LCM of Fractions & Recurring Decimals',
+    formula: 'HCF of Fractions = HCF(Numerators) / LCM(Denominators) | LCM = LCM(Numerators) / HCF(Denominators)',
+    note: 'Always reduce all fractions to simplest co-prime form p/q BEFORE taking HCF or LCM to prevent incorrect overcounting.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 40. ADVANCED COMBINATORICS & CHESSBOARDS
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Combinations',
+    title: 'Total Squares on an n x n Chessboard',
+    formula: 'Total Squares = 1^2 + 2^2 + 3^2 + ... + n^2 = [n(n + 1)(2n + 1)] / 6',
+    note: 'For standard 8x8 chessboard: (8 * 9 * 17) / 6 = 204 squares. For m x n rectangle (m < n): m*n + (m-1)(n-1) + ... down to 1.'
+  },
+  {
+    category: 'Combinations',
+    title: 'Total Rectangles on an n x n Chessboard',
+    formula: 'Total Rectangles = C(n+1, 2) * C(n+1, 2) = [n(n + 1) / 2]^2 | Rectangles (not squares) = Total Rectangles - Total Squares',
+    note: 'For standard 8x8 chessboard: [8*9/2]^2 = 36^2 = 1,296 total rectangles. Non-square rectangles = 1,296 - 204 = 1,092.'
+  },
+  {
+    category: 'Permutations',
+    title: 'Identical Items to Distinct Groups (Lower Bounds)',
+    formula: 'At least 1 to each: C(n - 1, r - 1) | Non-negative (≥ 0): C(n + r - 1, r - 1) | At least k to each: C(n - r*k + r - 1, r - 1)',
+    note: 'Distributing 12 identical apples among 4 kids so each gets at least 1 apple = C(12-1, 4-1) = C(11, 3) = 165 ways.'
+  },
+  {
+    category: 'Combinations',
+    title: 'Pigeonhole Principle (PHP Worst-Case Guarantee)',
+    formula: 'Minimum items needed to guarantee at least k items in the same category = (k - 1) * (number of categories) + 1',
+    note: 'Worst-case logic: To guarantee 1 pair (k=2) from 3 colors of socks, pick (2-1)*3 + 1 = 4 socks. Guarantee 3 of same color = (3-1)*3 + 1 = 7 socks.'
+  },
+  {
+    category: 'Combinations',
+    title: 'Selection of At Least One Item',
+    formula: 'From n distinct items: 2^n - 1 | From p identical of Type 1, q of Type 2, r of Type 3: (p + 1)(q + 1)(r + 1) - 1',
+    note: 'Adding 1 accounts for the choice of selecting 0 items of that type. Subtracting 1 removes the empty set where no item is picked.'
+  },
+  {
+    category: 'Permutations',
+    title: 'Grouping and Partitioning Formula',
+    formula: 'Dividing (m + n) distinct items into 2 groups of size m and n: (m+n)! / (m! * n!) | If equal size m and m: (2m)! / [(m!)^2 * 2!]',
+    note: 'Divide by k! whenever k groups have identical sizes and are unassigned/unnamed to avoid overcounting group permutations.'
+  },
+  {
+    category: 'Probability',
+    title: 'Odds in Favor vs Odds Against',
+    formula: 'Odds in favor of E = P(E) : P(E\') = a : b (where P(E) = a / (a + b)) | Odds against E = P(E\') : P(E) = b : a',
+    note: 'If odds in favor of horse winning are 3:7, probability of winning is 3 / (3 + 7) = 3/10 = 30%.'
+  },
+  {
+    category: 'Probability',
+    title: 'Independent vs Mutually Exclusive Events',
+    formula: 'Independent: P(A ∩ B) = P(A) * P(B) | Mutually Exclusive: P(A ∩ B) = 0, P(A ∪ B) = P(A) + P(B)',
+    note: 'Two events with non-zero probabilities CANNOT be both mutually exclusive and independent simultaneously.'
+  },
+  {
+    category: 'Combinations',
+    title: 'Number of Intersections & Triangles from Points',
+    formula: 'Max intersections of n straight lines = C(n, 2) | Triangles from n points with m collinear = C(n, 3) - C(m, 3)',
+    note: 'For straight lines to form maximum intersection points, no two lines must be parallel and no three lines must be concurrent.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 41. ARITHMETIC, SPEED & COMMERCIAL MATH SHORTCUTS
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Speed & Distance',
+    title: 'Meeting After Crossing (Speed Ratio)',
+    formula: 'S1 / S2 = √(T2 / T1)  (where T1, T2 are times taken by trains to reach destinations AFTER crossing each other)',
+    note: 'If Train A takes 4 hrs and Train B takes 9 hrs to finish journey after crossing, S_A / S_B = √(9/4) = 3/2.'
+  },
+  {
+    category: 'Speed & Distance',
+    title: 'Early & Late Arrival Distance Formula',
+    formula: 'Distance = [S1 * S2 / |S1 - S2|] * [(t_late + t_early) in hours]',
+    note: 'If both late or both early, subtract: |t1 - t2|. If one late and one early, add: (t1 + t2). Example: 4 km/h (10m late) vs 5 km/h (5m early) → D = 20/1 * (15/60) = 5 km.'
+  },
+  {
+    category: 'Speed & Distance',
+    title: 'Harmonic Average Speed for 3 Equal Distances',
+    formula: 'Average Speed = (3 * S1 * S2 * S3) / (S1*S2 + S2*S3 + S3*S1)',
+    note: 'Applies ONLY when 3 equal distance segments are covered at speeds S1, S2, S3. If time intervals are equal, use simple arithmetic mean.'
+  },
+  {
+    category: 'Alligation',
+    title: 'Repeated Dilution / Replacement Formula',
+    formula: 'Final Quantity of Pure Liquid = Initial Quantity * (1 - x / V)^n  (where V = capacity, x = replaced volume, n = repetitions)',
+    note: 'Ratio of Pure Liquid to Replaced Liquid after n operations = (1 - x/V)^n : [1 - (1 - x/V)^n]. Classic milk-water cask problem.'
+  },
+  {
+    category: 'Profit & Loss',
+    title: 'Dishonest Merchant Consolidated Ratio',
+    formula: 'Overall SP / CP = [(100 + Markup%) / 100] * [(100 - Discount%) / 100] * (Claimed Weight / True Weight)',
+    note: 'If overall SP/CP > 1, Net Profit% = (SP/CP - 1) * 100. Handles markup, discount, and false weights simultaneously in one equation.'
+  },
+  {
+    category: 'Simple Interest',
+    title: 'Simple Interest Equal Annual Installments',
+    formula: 'Annual Installment A = (100 * Debt) / [100*T + (R * T * (T - 1)) / 2]',
+    note: 'Example: Debt of ₹6,450 due in 4 years at 5% p.a. SI: A = 645000 / [400 + (5*4*3)/2] = 645000 / [400 + 30] = ₹1,500/year.'
+  },
+  {
+    category: 'Compound Interest',
+    title: 'Compound Interest Loan EMI / Installments',
+    formula: 'Principal Borrowed P = x / (1 + r) + x / (1 + r)^2 + ... + x / (1 + r)^n  (where x = annual installment, r = R/100)',
+    note: 'For 2 equal annual installments: P = [x / (1 + r)] * [1 + 1 / (1 + r)]. Multiply out to find equal installment x directly.'
+  },
+  {
+    category: 'Percentages',
+    title: 'Three Successive Discounts Formula',
+    formula: 'Net Discount% = 100 - 100 * (1 - d1/100) * (1 - d2/100) * (1 - d3/100)',
+    note: 'For 2 discounts: d1 + d2 - (d1*d2)/100. For three discounts of 10%, 20%, 30%: Net = 100 - 100*(0.9)*(0.8)*(0.7) = 100 - 50.4 = 49.6%.'
+  },
+  {
+    category: 'Time & Work',
+    title: 'Work and Wages Efficiency Proportion',
+    formula: 'Wage Share of Worker i = (Total Wages) * (Work done by i / Total Work) = (Efficiency_i * Days_i) / ∑(Efficiency * Days)',
+    note: 'Wages are proportional to efficiency ONLY if all workers work for the same number of days. Otherwise, proportional to actual work done.'
+  },
+  {
+    category: 'Averages',
+    title: 'Weighted Average / Change in Average Formula',
+    formula: 'New Average = Old Average + (Added Value - Old Average) / (New Count)',
+    note: 'When someone joins: Net deviation is distributed equally. If avg age of 20 students is 15, and teacher (age 36) joins: New avg = 15 + (36 - 15)/21 = 16.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 42. GEOMETRY & MENSURATION SHORTCUTS
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Geometry',
+    title: 'Right-Angled Triangle Inradius & Circumradius',
+    formula: 'Inradius r = (a + b - c) / 2  (where c is hypotenuse) | Circumradius R = c / 2 (Hypotenuse / 2)',
+    note: 'In any right triangle, the hypotenuse is the diameter of its circumcircle. Area of right triangle = r * (r + 2R).'
+  },
+  {
+    category: 'Geometry',
+    title: 'Equilateral Triangle Inradius & Circumradius',
+    formula: 'Inradius r = a / (2√3) | Circumradius R = a / √3 = 2r | Incircle Area : Circumcircle Area = 1 : 4',
+    note: 'The circumradius is always exactly double the inradius in an equilateral triangle. Height h = r + R = a√3 / 2.'
+  },
+  {
+    category: 'Geometry',
+    title: 'Tangent-Secant & Intersecting Chord Theorems',
+    formula: 'Intersecting Chords: PA * PB = PC * PD | Tangent-Secant: PT^2 = PA * PB (where PT is tangent from P)',
+    note: 'Applies whether chords intersect inside the circle or externally when extended to point P.'
+  },
+  {
+    category: 'Mensuration 3D',
+    title: 'Longest Rod in a Cuboidal Room',
+    formula: 'Diagonal D = √(L^2 + B^2 + H^2) | Total Surface Area = (L + B + H)^2 - D^2',
+    note: 'Frequent UPSC question: "Longest bamboo pole that fits in room 10m x 10m x 5m?" D = √(100+100+25) = √225 = 15m.'
+  },
+  {
+    category: 'Mensuration 3D',
+    title: 'Frustum of a Cone (Bucket) Formulas',
+    formula: 'Volume = (1/3) * π * h * (R^2 + r^2 + R*r) | Slant height l = √[h^2 + (R - r)^2] | Curved Surface = π * l * (R + r)',
+    note: 'R is larger base radius, r is smaller base radius. Total surface area = Curved Surface + πR^2 + πr^2.'
+  },
+  {
+    category: 'Geometry',
+    title: 'Trapezium Area & Midpoint Line Segment',
+    formula: 'Area = (1/2) * (a + b) * h | Length of line joining midpoints of diagonals = |a - b| / 2',
+    note: 'The line segment joining the midpoints of non-parallel sides is parallel to both bases and has length (a + b) / 2.'
+  },
+  {
+    category: 'Geometry',
+    title: 'General Triangle Inradius & Circumradius',
+    formula: 'Inradius r = Area / Semi-perimeter = Δ / s | Circumradius R = (a * b * c) / (4 * Δ)',
+    note: 'Applies to any triangle. Area Δ = r * s = abc / (4R). For integer sides, use Heron\'s formula to find Δ.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 43. LOGICAL REASONING, CLOCKS, CALENDARS & SETS
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Set Theory',
+    title: '3-Set Venn Diagram (Principle of Inclusion-Exclusion)',
+    formula: 'n(A ∪ B ∪ C) = n(A) + n(B) + n(C) - [n(A∩B) + n(B∩C) + n(C∩A)] + n(A∩B∩C)',
+    note: 'Crucial for surveys. Number in EXACTLY TWO sets = [n(A∩B) + n(B∩C) + n(C∩A)] - 3*n(A∩B∩C). Exactly ONE set = n(A∪B∪C) - [n(exactly 2) + n(all 3)].'
+  },
+  {
+    category: 'Calendars',
+    title: 'Repetition of Calendars (Year Recycling)',
+    formula: 'Leap Year: repeats in +28 years | Leap Year + 1: repeats in +6 years | Leap Year + 2 or + 3: repeats in +11 years',
+    note: '2024 (leap) repeats in 2052. 2025 (leap+1) repeats in 2031. 2026 (leap+2) repeats in 2037. 2027 (leap+3) repeats in 2038.'
+  },
+  {
+    category: 'Calendars',
+    title: 'Century Odd Days & Impossible Century Weekdays',
+    formula: '100 yrs = 5 odd days (Fri) | 200 yrs = 3 (Wed) | 300 yrs = 1 (Mon) | 400 yrs = 0 (Sun). Last day CANNOT be Tue, Thu, Sat',
+    note: 'First day of a century can only be Monday, Tuesday, Thursday, or Saturday. Last day can only be Sunday, Wednesday, Friday, or Monday.'
+  },
+  {
+    category: 'Clocks',
+    title: 'Clock Hands Coincidence & Opposite Frequencies',
+    formula: 'Hands coincide every 65 (5/11) minutes (11 times in 12 hrs, 22 times in 24 hrs) | Hands opposite (180°): 22 times in 24 hrs',
+    note: 'Between 11:00 and 1:00, hands coincide only once (at exactly 12:00). Between 5:00 and 7:00, hands are opposite only once (at 6:00).'
+  },
+  {
+    category: 'Clocks',
+    title: 'Clock Right Angles (90°) & Straight Line Count',
+    formula: 'Hands at 90°: 2 times per hour (except 22 times in 12 hrs, 44 times in 24 hrs) | Straight Line (0° or 180°): 44 times in 24 hrs',
+    note: 'Right angles occur only 3 times between 2:00-4:00 (one at 3:00) and only 3 times between 8:00-10:00 (one at 9:00).'
+  },
+  {
+    category: 'Direction Test',
+    title: 'Displacement Vector & Shortest Distance',
+    formula: 'Shortest Distance = √[(∑ Net East-West Distance)^2 + (∑ Net North-South Distance)^2]',
+    note: 'Treat East as +x, West as -x, North as +y, South as -y. Net displacement is the hypotenuse from origin (0, 0).'
+  },
+  {
+    category: 'Ranking',
+    title: 'Overlapping vs Non-Overlapping Interchanging Ranks',
+    formula: 'Total = Position from Left + Position from Right - 1 | When overlapping: Total = (Rank1 + Rank2) - (Between + 2)',
+    note: 'Minimum number of people in row when A is mth from left, B is nth from right and k people between = (m + n) - k - 2.'
+  },
+  {
+    category: 'Algebra',
+    title: 'Quadratic Vertex (Extrema Maxima/Minima)',
+    formula: 'For y = ax^2 + bx + c: Extrema occurs at x = -b / (2a). If a > 0, Minimum = (4ac - b^2)/(4a). If a < 0, Maximum = (4ac - b^2)/(4a)',
+    note: 'Solves maximum area, maximum product, or minimum cost problems in CSAT without calculus.'
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 44. READING COMPREHENSION ANALYTICAL ELIMINATION RULES
+  // ═══════════════════════════════════════════════════════════════
+  {
+    category: 'Reading Comprehension',
+    title: 'Extreme Words Trap Elimination Rule',
+    formula: 'Red Flag Words: Always, Never, All, None, Entirely, Solely, Exclusively, Invariably, Must, Any',
+    note: 'UPSC options containing absolute generalizations are incorrect >90% of the time. Prefer moderate statements ("can lead to", "some", "tends to").'
+  },
+  {
+    category: 'Reading Comprehension',
+    title: 'Crux vs Supporting Detail Elimination Rule',
+    formula: 'Valid Crux = Core Claim + Central Rationale (Must encompass the passage\'s scope, NOT a single subordinate premise)',
+    note: 'A statement may be 100% factually true according to the passage, but if it only restates an example or secondary point, it is NOT the crux or main idea.'
+  },
+  {
+    category: 'Reading Comprehension',
+    title: 'Logical Corollary Definition & Verification',
+    formula: 'Corollary = Direct, inescapable consequence of a proven argument requiring NO external unstated assumptions',
+    note: 'When UPSC asks for "the most logical corollary", choose the deduction that immediately follows as a natural next step from author\'s main conclusion.'
   },
 ];
 
@@ -1746,7 +2060,7 @@ export default function CSATHub() {
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 16 }}>
           <View style={{ backgroundColor: isDark ? '#1f2937' : 'white', borderRadius: 16, padding: 20, maxHeight: '85%' }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 18, fontWeight: 'bold' }}>⚡ High-Yield CSAT Formulas</Text>
+              <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 18, fontWeight: 'bold' }}>⚡ High-Yield CSAT Formulas ({EXTENDED_FORMULAS.length})</Text>
               <TouchableOpacity onPress={() => setShowFormulaModal(false)} style={{ padding: 4 }}>
                 <Ionicons name="close" size={24} color={isDark ? 'white' : '#111827'} />
               </TouchableOpacity>
@@ -1791,7 +2105,7 @@ export default function CSATHub() {
                       color: formulaSelectedCategory === grp.key ? 'white' : (isDark ? '#9ca3af' : '#4b5563'),
                       fontSize: 11, fontWeight: 'bold'
                     }}>
-                      {grp.label}
+                      {grp.key === 'All' ? `All (${EXTENDED_FORMULAS.length})` : grp.label}
                     </Text>
                   </TouchableOpacity>
                 ))}

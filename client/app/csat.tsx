@@ -1975,9 +1975,8 @@ export default function CSATHub() {
                     {!isCollapsed && (
                       <View style={{ paddingHorizontal: 12, paddingBottom: 12, gap: 8, borderTopWidth: 1, borderTopColor: isDark ? '#374151' : '#f3f4f6', paddingTop: 10 }}>
                         {chapterTopics.map(topic => (
-                          <TouchableOpacity
+                          <View
                             key={topic._id}
-                            onPress={() => router.push(`/topic/${topic._id}` as any)}
                             style={{
                               flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10,
                               backgroundColor: topic.completed ? (isDark ? 'rgba(16, 185, 129, 0.08)' : '#f0fdf4') : (isDark ? '#111827' : '#f9fafb'),
@@ -1985,8 +1984,9 @@ export default function CSATHub() {
                               opacity: topic.completed ? 0.75 : 1
                             }}
                           >
+                            {/* Checkbox — independent touch target */}
                             <TouchableOpacity
-                              onPress={(e) => handleToggleCheckbox(topic._id, e)}
+                              onPress={() => handleToggleCheckbox(topic._id)}
                               style={{
                                 width: 22, height: 22, borderRadius: 6, borderWidth: 2, marginRight: 12,
                                 borderColor: topic.completed ? '#10b981' : (isDark ? '#4b5563' : '#d1d5db'),
@@ -1996,14 +1996,21 @@ export default function CSATHub() {
                             >
                               {topic.completed && <Ionicons name="checkmark" size={14} color="white" />}
                             </TouchableOpacity>
-                            <View style={{ flex: 1 }}>
+
+                            {/* Topic Name — tapping navigates to topic detail */}
+                            <TouchableOpacity
+                              onPress={() => router.push(`/topic/${topic._id}` as any)}
+                              style={{ flex: 1 }}
+                            >
                               <Text style={{
                                 color: isDark ? 'white' : '#111827', fontSize: 13, fontWeight: '600',
                                 textDecorationLine: topic.completed ? 'line-through' : 'none'
                               }}>
                                 {topic.title}
                               </Text>
-                            </View>
+                            </TouchableOpacity>
+
+                            {/* Difficulty Badge */}
                             <View style={{
                               backgroundColor: topic.difficulty === 'Hard' ? 'rgba(239, 68, 68, 0.15)' : topic.difficulty === 'Medium' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)',
                               paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6
@@ -2015,7 +2022,15 @@ export default function CSATHub() {
                                 {topic.difficulty}
                               </Text>
                             </View>
-                          </TouchableOpacity>
+
+                            {/* Navigate Arrow */}
+                            <TouchableOpacity
+                              onPress={() => router.push(`/topic/${topic._id}` as any)}
+                              style={{ paddingLeft: 8 }}
+                            >
+                              <Ionicons name="chevron-forward" size={16} color={isDark ? '#6b7280' : '#9ca3af'} />
+                            </TouchableOpacity>
+                          </View>
                         ))}
                       </View>
                     )}

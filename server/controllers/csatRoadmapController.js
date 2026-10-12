@@ -107,6 +107,7 @@ exports.completeDay = async (req, res) => {
             return res.status(400).json({ message: 'Day number must be between 1 and 112.' });
         }
 
+        // Find or auto-create roadmap
         let roadmap = await CSATRoadmap.findOne({ userId });
         if (!roadmap) {
             roadmap = await CSATRoadmap.create({
@@ -119,15 +120,17 @@ exports.completeDay = async (req, res) => {
         }
 
         // Check if already completed
-        const alreadyDone = roadmap.completedDays.find(d => d.dayNumber === dayNumber);
+        const alreadyDone = roadmap.completedDays.some(d => d.dayNumber === dayNumber);
         if (alreadyDone) {
-            return res.status(400).json({ message: `Day ${dayNumber} is already marked complete.` });
+            // Return current status instead of error so UI stays in sync
+            const status = computeStatus(roadmap);
+            return res.json(status);
         }
 
         roadmap.completedDays.push({
             dayNumber,
             completedAt: new Date(),
-            notes: req.body.notes || ''
+            notes: req.body?.notes || ''
         });
 
         await roadmap.save();
@@ -135,7 +138,7 @@ exports.completeDay = async (req, res) => {
         const status = computeStatus(roadmap);
         res.json(status);
     } catch (error) {
-        console.error('Error completing CSAT roadmap day:', error);
+        console.error('Error completing CSAT roadmap day:', error.message, error.stack);
         res.status(500).json({ message: error.message });
     }
 };

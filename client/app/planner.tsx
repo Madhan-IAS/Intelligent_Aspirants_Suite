@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, Platform, StatusBar, Activity
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useAuth } from '../src/context/AuthContext';
 import { useTheme } from '../src/context/ThemeContext';
 import api from '../src/services/api';
 import { playCompletionSound } from '../src/services/sound';
@@ -39,20 +40,26 @@ const CATEGORY_ICONS: Record<string, string> = {
   'Sleep': 'moon',
 };
 
-// 8-Day Subject Rotation
-const ROTATION_SCHEDULE = [
-  { morning: 'Sociology Paper I', day: 'GS-I', pyqs: 'GS-I + Sociology', writing: '1 GS-I + 1 Sociology Paper-I' },
-  { morning: 'Sociology Paper II', day: 'GS-II', pyqs: 'GS-II + Sociology', writing: '1 GS-II + 1 Sociology Paper-II' },
-  { morning: 'Sociology Paper I', day: 'GS-III', pyqs: 'GS-III + Sociology', writing: '1 GS-III + 1 Sociology Paper-I' },
-  { morning: 'Sociology Paper II', day: 'GS-IV', pyqs: 'GS-IV + Sociology', writing: '2 Ethics Case Studies + 1 Sociology Paper-II' },
-  { morning: 'Sociology Paper I', day: 'GS-I', pyqs: 'GS-I + Sociology', writing: '1 GS-I + 1 Sociology Paper-I' },
-  { morning: 'Sociology Paper II', day: 'GS-II', pyqs: 'GS-II + Sociology', writing: '1 GS-II + 1 Sociology Paper-II' },
-  { morning: 'Sociology Paper I', day: 'GS-III', pyqs: 'GS-III + Sociology', writing: '1 GS-III + 1 Sociology Paper-I' },
-  { morning: 'Sociology Paper II', day: 'GS-IV', pyqs: 'GS-IV + Sociology', writing: '2 Ethics Case Studies + 1 Sociology Paper-II' },
-];
+// 8-Day Subject Rotation — built dynamically based on optional subject
+const buildRotationSchedule = (optSubject: string) => {
+  const opt = optSubject || 'Optional';
+  const p1 = `${opt} Paper I`;
+  const p2 = `${opt} Paper II`;
+  return [
+    { morning: p1, day: 'GS-I', pyqs: `GS-I + ${opt}`, writing: `1 GS-I + 1 ${p1}` },
+    { morning: p2, day: 'GS-II', pyqs: `GS-II + ${opt}`, writing: `1 GS-II + 1 ${p2}` },
+    { morning: p1, day: 'GS-III', pyqs: `GS-III + ${opt}`, writing: `1 GS-III + 1 ${p1}` },
+    { morning: p2, day: 'GS-IV', pyqs: `GS-IV + ${opt}`, writing: `2 Ethics Case Studies + 1 ${p2}` },
+    { morning: p1, day: 'GS-I', pyqs: `GS-I + ${opt}`, writing: `1 GS-I + 1 ${p1}` },
+    { morning: p2, day: 'GS-II', pyqs: `GS-II + ${opt}`, writing: `1 GS-II + 1 ${p2}` },
+    { morning: p1, day: 'GS-III', pyqs: `GS-III + ${opt}`, writing: `1 GS-III + 1 ${p1}` },
+    { morning: p2, day: 'GS-IV', pyqs: `GS-IV + ${opt}`, writing: `2 Ethics Case Studies + 1 ${p2}` },
+  ];
+};
 
 export default function Planner() {
   const router = useRouter();
+  const { user } = useAuth();
   const { mode } = useTheme();
   const isDark = mode === 'dark';
 
@@ -91,7 +98,10 @@ export default function Planner() {
   };
 
   const rotationIndex = getRotationDay();
+  const optName = user?.optionalSubject && user.optionalSubject !== 'Not decided yet' ? user.optionalSubject : 'Sociology';
+  const ROTATION_SCHEDULE = buildRotationSchedule(optName);
   const todayRotation = ROTATION_SCHEDULE[rotationIndex];
+  const examYear = user?.targetAttempt && user.targetAttempt > 0 ? user.targetAttempt : 2027;
 
   useEffect(() => {
     fetchData();
@@ -246,7 +256,7 @@ export default function Planner() {
     const activity = getDynamicActivity(slot).toLowerCase();
     const category = slot.category;
 
-    if (activity.includes('sociology')) return '/gs/Sociology';
+    if (activity.includes(optName.toLowerCase())) return `/gs/${optName}`;
     if (activity.includes('gs-i') || activity.includes('gs-1')) return '/gs/GS I';
     if (activity.includes('gs-ii') || activity.includes('gs-2')) return '/gs/GS II';
     if (activity.includes('gs-iii') || activity.includes('gs-3')) return '/gs/GS III';
@@ -279,7 +289,7 @@ export default function Planner() {
               <Ionicons name="arrow-back" size={20} color={isDark ? 'white' : '#111827'} />
             </TouchableOpacity>
             <View>
-              <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 4 }}>UPSC CSE 2027</Text>
+              <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 4 }}>UPSC CSE {examYear}</Text>
               <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 24, fontWeight: 'bold' }}>Master Planner</Text>
             </View>
           </View>

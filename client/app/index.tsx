@@ -264,12 +264,18 @@ export default function Dashboard() {
 
   const overallPct = stats.totalTopics > 0 ? ((stats.topics / stats.totalTopics) * 100).toFixed(1) : '0.0';
 
-  // Calculate days remaining to Dec 31, 2026 and May 23, 2027
+  // Dynamic exam year from onboarding (fallback to 2027)
+  const examYear = user?.targetAttempt && user.targetAttempt > 0 ? user.targetAttempt : 2027;
   const now = new Date();
-  const dec31 = new Date(2026, 11, 31);
-  const prelimsDate = new Date(2027, 4, 23);
+  const dec31 = new Date(examYear - 1, 11, 31);
+  const prelimsDate = new Date(examYear, 4, 23);
   const dec31Days = Math.max(0, Math.ceil((dec31.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
   const prelimsDays = Math.max(0, Math.ceil((prelimsDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+
+  // Exam stage and attempt info from onboarding
+  const stageIcons: Record<string, string> = { 'Beginner': '🌱', 'First Reading': '📖', 'Revision': '🔄', 'Test Phase': '📝', 'Interview': '🎤', 'Foundation': '🧱' };
+  const userStage = user?.examStage || 'Beginner';
+  const userAttempt = user?.attemptNumber || 1;
 
   return (
     <View style={{ flex: 1, backgroundColor: isDark ? '#111827' : '#f9fafb' }}>
@@ -280,6 +286,18 @@ export default function Dashboard() {
           <View>
             <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 18, fontWeight: '500', marginBottom: 4 }}>{getGreeting()}</Text>
             <Text style={{ color: isDark ? 'white' : '#111827', fontSize: 32, fontWeight: 'bold' }}>{user.name?.split(' ')[0] || 'Aspirant'}</Text>
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+              <View style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Text style={{ fontSize: 12 }}>{stageIcons[userStage] || '🌱'}</Text>
+                <Text style={{ color: '#10b981', fontSize: 11, fontWeight: 'bold' }}>{userStage}</Text>
+              </View>
+              <View style={{ backgroundColor: 'rgba(139, 92, 246, 0.15)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 }}>
+                <Text style={{ color: '#8b5cf6', fontSize: 11, fontWeight: 'bold' }}>{userAttempt === 1 ? '1st' : userAttempt === 2 ? '2nd' : userAttempt === 3 ? '3rd' : `${userAttempt}th`} Attempt</Text>
+              </View>
+              <View style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 }}>
+                <Text style={{ color: '#3b82f6', fontSize: 11, fontWeight: 'bold' }}>CSE {examYear}</Text>
+              </View>
+            </View>
           </View>
           <View style={{ flexDirection: 'row', gap: 12 }}>
             <TouchableOpacity onPress={() => router.push('/notifications')} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#2563eb', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
@@ -358,7 +376,7 @@ export default function Dashboard() {
                 <Text style={{ fontSize: 18 }}>🎯</Text>
               </View>
               <View style={{ flexShrink: 1 }}>
-                <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold', fontSize: 13 }} numberOfLines={1}>Dec 31, 2026 Target</Text>
+                <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold', fontSize: 13 }} numberOfLines={1}>Dec 31, {examYear - 1} Target</Text>
                 <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11 }} numberOfLines={1} adjustsFontSizeToFit>100% Syllabus + 2x Revision</Text>
               </View>
             </View>
@@ -373,8 +391,8 @@ export default function Dashboard() {
                 <Text style={{ fontSize: 18 }}>🏛️</Text>
               </View>
               <View style={{ flexShrink: 1 }}>
-                <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold', fontSize: 13 }} numberOfLines={1}>UPSC Prelims 2027</Text>
-                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11 }} numberOfLines={1} adjustsFontSizeToFit>May 23, 2027 Exam Date</Text>
+                <Text style={{ color: isDark ? 'white' : '#111827', fontWeight: 'bold', fontSize: 13 }} numberOfLines={1}>UPSC Prelims {examYear}</Text>
+                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 11 }} numberOfLines={1} adjustsFontSizeToFit>May {examYear} (Tentative)</Text>
               </View>
             </View>
             <View style={{ backgroundColor: 'rgba(139, 92, 246, 0.15)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}>

@@ -486,7 +486,7 @@ async function main() {
                 topicsToInsert.push({
                     subjectId: subject._id,
                     paper: 'GS III',
-                    subjectName: 'Indian Economy',
+                    subjectName: 'Economy',
                     chapter: chapterData.chapter,
                     heading: chapterData.heading,
                     title: topicTitle.trim(),
